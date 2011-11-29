@@ -1,0 +1,10 @@
+/**************************************************************************/
+				Readme
+/**************************************************************************/
+
+FILE FORMAT
+The test data's file format, using one or four column(s), is as follows:
+<n := #jobs>
+<C := bin capacity>
+<X := n x 4, each line is a vector of (duration, size, weight, due-date)>
+

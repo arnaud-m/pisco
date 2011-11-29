@@ -1,0 +1,10 @@
+/**************************************************************************/
+				Readme
+/**************************************************************************/
+
+FILE FORMAT
+The test data's file format, using only one column, is as follows:
+<n := #items>
+<C := bin capacity>
+<S := nx1 vector of items sizes>
+

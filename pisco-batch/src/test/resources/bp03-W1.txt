@@ -1,0 +1,10 @@
+3
+##commentaire 1
+10 12 
+ 1 2 #commentaire pourri
+3 4 #autre commentaire pourri
+ 5 6 7 8 ##comment
+#
+##
+ 9 10 11 12
+

@@ -1,0 +1,17 @@
+#Data4-M_1-N_10-B_10-S_3-D_1_2
+#<n := #jobs>
+10
+#<C := bin capacity>
+10
+#<X := n x 4, each line is a vector of (duration, size, weight, due-date)>
+89 4 1 331
+87 10 1 253
+34 9 1 104
+56 4 1 227
+90 10 1 165
+10 4 1 29
+78 9 1 102
+60 10 1 157
+83 6 1 339
+40 10 1 82
+#End

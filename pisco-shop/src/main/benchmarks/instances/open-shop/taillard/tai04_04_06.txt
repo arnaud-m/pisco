@@ -1,0 +1,8 @@
+#file : tai04_04_06.txt
+#Number of jobs numbers of machines
+4 4
+#processing times :
+ 37  91   7  50 
+ 46   1  91  36 
+ 91  10   4  42 
+ 11  76  61  30 

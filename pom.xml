@@ -1,0 +1,234 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>choco</groupId>
+	<artifactId>pisco</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>pisco</name>
+	<url>http://github.com/arnaud-m/pisco/</url>
+	<licenses>
+		<license>
+			<name>BSD Berkeley Software Distribution License</name>
+			<url>src/main/resources/LICENSE.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+	<description>
+        Pisco is a java library for solving packing and scheduling problems with the constraint programming solver Choco.
+        Pisco is an open-source software, distributed under a Pisco Licence and hosted by github.com.
+    </description>
+	<organization>
+		<name>Laboratoire d'Informatique, Signaux et Systèmes de Sophia-Antipolis I3S - UMR6070 - UNS CNRS</name>
+		<url>http://www.i3s.unice.fr/I3S/</url>
+	</organization>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>2.0.2</version>
+					<configuration>
+						<source>1.6</source>
+						<target>1.6</target>
+						<encoding>ISO-8859-1</encoding>
+					</configuration>
+				</plugin>
+				<plugin>
+					<artifactId>maven-assembly-plugin</artifactId>
+					<executions>
+						<execution>
+							<id>create-jar-bundle</id>
+							<phase>package</phase>
+							<goals>
+								<goal>single</goal>
+							</goals>
+							<configuration>
+								<descriptorRefs>
+									<descriptorRef>jar-with-dependencies</descriptorRef>
+								</descriptorRefs>
+							</configuration>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>com.mycila.maven-license-plugin</groupId>
+					<artifactId>maven-license-plugin</artifactId>
+					<version>1.9.0</version>
+					<configuration>
+						<header>src/etc/header.txt</header>
+						<failIfMissing>false</failIfMissing>
+						<aggregate>true</aggregate>
+						<properties>
+							<owner>Arnaud Malapert</owner>
+							<year>2011</year>
+							<email>malapert@i3s.unice.fr</email>
+						</properties>
+						<strictCheck>true</strictCheck>
+						<includes>
+							<include>**/*.java</include>
+						</includes>
+						<excludes>
+							<exclude>**/site/**</exclude>
+							<exclude>**/target/**</exclude>
+						</excludes>
+						<headerDefinitions>
+							<headerDefinition>src/etc/old.xml</headerDefinition>
+						</headerDefinitions>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.4</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>gnu</groupId>
+			<artifactId>trove</artifactId>
+			<version>2.1.0</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>choco</groupId>
+			<artifactId>choco-visu</artifactId>
+			<version>2.1.4-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>choco</groupId>
+			<artifactId>choco-parsers</artifactId>
+			<version>2.1.4-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>choco</groupId>
+			<artifactId>choco-cli</artifactId>
+			<version>2.1.4-SNAPSHOT</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>choco</groupId>
+			<artifactId>choco-db</artifactId>
+			<version>2.1.4-SNAPSHOT</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>choco</groupId>
+			<artifactId>choco-cp</artifactId>
+			<version>2.1.4-SNAPSHOT</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>choco</groupId>
+			<artifactId>choco-kernel</artifactId>
+			<version>2.1.4-SNAPSHOT</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>choco</groupId>
+			<artifactId>choco-contribs</artifactId>
+			<version>2.1.4-SNAPSHOT</version>
+			<scope>compile</scope>
+		</dependency>
+		<!-- <dependency> <groupId>jfree</groupId> <artifactId>jfreechart</artifactId> 
+			<version>1.0.13</version> <scope>compile</scope> </dependency> <dependency> 
+			<groupId>jfree</groupId> <artifactId>jcommon</artifactId> <version>1.0.15</version> 
+			</dependency> <dependency> <groupId>org.apache.commons</groupId> <artifactId>commons-math</artifactId> 
+			<version>2.0</version> <scope>compile</scope> </dependency> <dependency> 
+			<groupId>args4j</groupId> <artifactId>args4j</artifactId> <version>2.0.12</version> 
+			<scope>compile</scope> </dependency> -->
+	</dependencies>
+
+	<modules>
+		<module>pisco-batch</module>
+		<module>pisco-pack</module>
+		<module>pisco-shop</module>
+	</modules>
+
+	<repositories>
+		<!-- <repository> -->
+		<!-- <id>jboss.releases</id> -->
+		<!-- <name>JBoss releases</name> -->
+		<!-- <url>http://repository.jboss.org/maven2</url> -->
+		<!-- <releases> -->
+		<!-- <enabled>true</enabled> -->
+		<!-- </releases> -->
+		<!-- <snapshots> -->
+		<!-- <enabled>false</enabled> -->
+		<!-- </snapshots> -->
+		<!-- </repository> -->
+		<repository>
+			<id>central.repos</id>
+			<url>http://repo1.maven.org/maven2/</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>choco.repo</id>
+			<url>http://www.emn.fr/z-info/choco-solver/mvn/repository/</url>
+		</repository>
+		<!-- <repository> -->
+		<!-- <id>choco.repo</id> -->
+		<!-- <url>http://www.emn.fr/z-info/choco-solver/mvn/repository/</url> -->
+		<!-- </repository> -->
+	</repositories>
+
+	<developers>
+
+		<developer>
+			<name>Arnaud Malapert</name>
+			<email>malapert@i3s.unice.fr</email>
+			<url>http://www.i3s.unice.fr/~malapert/</url>
+			<organization>
+			Laboratoire d'Informatique, Signaux et Systèmes de Sophia-Antipolis I3S - UMR6070 - UNS CNRS
+		</organization>
+			<organizationUrl>
+               http://www.i3s.unice.fr/I3S/
+            </organizationUrl>
+			<roles>
+				<role>administrator</role>
+			</roles>
+		</developer>
+
+		<!-- <developer> -->
+		<!-- <name>Jean-Charles Régin</name> -->
+		<!-- <email>jcregin@gmail.com</email> -->
+		<!-- <url>http://www.constraint-programming.com/people/regin/index.html</url> -->
+		<!-- <organization> -->
+		<!-- Laboratoire d'Informatique, Signaux et Systèmes de Sophia-Antipolis 
+			I3S - UMR6070 - UNS CNRS -->
+		<!-- </organization> -->
+		<!-- <organizationUrl> -->
+		<!-- http://www.i3s.unice.fr/I3S/ -->
+		<!-- </organizationUrl> -->
+		<!-- <roles> -->
+		<!-- <role>administrator</role> -->
+		<!-- </roles> -->
+		<!-- </developer> -->
+
+		<!-- <developer> -->
+		<!-- <name>Mohammed Rezgui</name> -->
+		<!-- <email>kyo.alone@gmail.com</email> -->
+		<!-- <organization> -->
+		<!-- Laboratoire d'Informatique, Signaux et Systèmes de Sophia-Antipolis 
+			I3S - UMR6070 - UNS CNRS -->
+		<!-- </organization> -->
+		<!-- <organizationUrl> -->
+		<!-- http://www.i3s.unice.fr/I3S/ -->
+		<!-- </organizationUrl> -->
+		<!-- <roles> -->
+		<!-- <role>steering committee</role> -->
+		<!-- </roles> -->
+		<!-- </developer> -->
+
+	</developers>
+
+
+</project>
