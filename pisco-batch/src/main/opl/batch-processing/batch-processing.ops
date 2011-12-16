@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<settings>
+  <category name="cplex">
+    <setting name="brdir" value="1" type="int"/>
+    <setting name="cutsfactor" value="30" type="double"/>
+  </category>
+</settings>
