@@ -1,5 +1,5 @@
 int NbJobs = ...;
-int NbMachines = 1;
+//int NbMachines = 1;
 
 range Jobs = 1..NbJobs;
 range Batches = 1..NbJobs;
@@ -19,18 +19,19 @@ tuple machineData {
    int   capacity;
 }
 //Single-machine 
-machineData MachineData[1..1] = ...;
+machineData MachineData = ...;
 
-//int MaxValue = max(r in Resources) Capacity[r];
 int MaxDueDate = max( i in Jobs) JobData[i].dueDate;
-int MinDueDate = min( i in Jobs) JobData[i].dueDate;
+int SumDurations = sum( i in Jobs) JobData[i].duration;
+ 
+//int MaxValue = max(r in Resources) Capacity[r];
 
 
 dvar int obj;
 dvar int Takes[Jobs][Batches] in 0..1;
 dvar int+ Durations[Batches];
-dvar int+ DueDates[Batches];
 dvar int+ CompletionTimes[0..NbJobs];
+
 
 execute PARAMS {
   //cplex.tilim = 3600*12; //12h
@@ -57,7 +58,7 @@ subject to {
  forall( k in Batches ) 
     ctCapa:
       sum( i in Jobs ) 
-        Takes[i][k] * JobData[i].size <= MachineData[1].capacity;
+        Takes[i][k] * JobData[i].size <= MachineData.capacity;
 
   forall( i in Jobs ) 
    forall( k in Batches ) 
@@ -71,18 +72,7 @@ subject to {
      ctSequencing:
       	CompletionTimes[k] == CompletionTimes[k-1] + Durations[k];
 
- forall( i in Jobs ) 
-   forall( k in Batches ) 
-     ctDueDates:
-      	MaxDueDate * ( 1 - Takes[i][k]) + JobData[i].dueDate >= DueDates[k] ;
 
- forall( k in 2..NbJobs ) 
-     ctRuleEDD:
-      	DueDates[k-1] <= DueDates[k] ;
-
-  forall( k in Batches ) 
-     ctLateness:
-      	CompletionTimes[k] - DueDates[k] <= obj;
 
 };
 
@@ -101,8 +91,7 @@ execute DISPLAY {
    if(Durations[b] > 0 ) nbB++;
 }
  writeln("d BATCHES ", nbB);
- writeln("c DMIN ", MinDueDate);
- writeln("\n\nSOLUTION:\nobj=",obj,"\nTakes=", Takes, "\nDurations=", Durations, 
- "\nCompletionTimes=", CompletionTimes,"\nDueDates=", DueDates);
+  writeln("\n\nSOLUTION:\nobj=",obj,"\nTakes=", Takes, "\nDurations=", Durations, 
+ "\nCompletionTimes=", CompletionTimes);
 
 };
