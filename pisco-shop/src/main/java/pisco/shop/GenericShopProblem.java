@@ -236,12 +236,12 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 	@Override
 	public Model buildModel() {
 		final int n = nbJobs * nbMachines;
-		final int horizon = getHorizon();
 		CPModel model =new CPModel( 2 * n, 4 * n, 10, 10, n, 10, n );
-		makespan = Choco.makeIntVar("makespan",getComputedLowerBound(), horizon, Options.V_MAKESPAN,Options.V_OBJECTIVE,Options.V_BOUND, Options.V_NO_DECISION);
+		makespan = buildObjective("makespan", MathUtils.sum(processingTimes) - 1);
+		makespan.addOption(Options.V_MAKESPAN);
 		model.addVariables(makespan);
 		//m.addConstraint( Choco.geq( makespan, getComputedLowerBound()));
-		tasks = Choco.makeTaskVarArray("T", 0, horizon, processingTimes, Options.V_BOUND);
+		tasks = Choco.makeTaskVarArray("T", 0, makespan.getUppB(), processingTimes, Options.V_BOUND);
 		for (int i = 0; i < tasks.length; i++) {
 			for (int j = 0; j < tasks[i].length; j++) {
 				if( processingTimes[i][j] == 0) model.addConstraint(Choco.eq(tasks[i][j].start(), 0));

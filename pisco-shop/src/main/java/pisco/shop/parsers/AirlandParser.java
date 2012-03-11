@@ -47,6 +47,7 @@ public class AirlandParser extends AbstractTextParser {
 			releaseDates[i] = readInteger();
 			dueDates[i] = readInteger();
 			deadlines[i] = readInteger();
+			// TODO - convert from double to int - created 11 mars 2012 by A. Malapert
 			earlinessPenalties[i] = readInteger(); 
 			tardinessPenalties[i] = readInteger();
 			for (int j = 0; j < nbJobs; j++) {

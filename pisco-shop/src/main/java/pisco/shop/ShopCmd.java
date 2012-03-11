@@ -46,7 +46,8 @@ public class ShopCmd extends AbstractBenchmarkCmd {
 		OSP("Open-Shop Problem"),
 		JSP("Job-Shop Problem"),
 		FSP("Flow-Shop Problem"),
-		AP("Airland Problem");
+		AFP("Airland Flowtime Problem"),
+		ALP("Airland Lmax Problem");
 		
 		private final String name;
 
@@ -130,7 +131,8 @@ public class ShopCmd extends AbstractBenchmarkCmd {
 		case FSP: return new FlowShopProblem(cs);
 		case JSP: return new JobShopProblem(cs);
 		case OSP: return new OpenShopProblem(cs);
-		case AP: return new AirlandProblem(cs);
+		case AFP: return new AirLandFlow(cs);
+		case ALP: return new AirLandLmax(cs);
 		default : 	LOGGER.severe("unknown shop problem.");return null;
 		}
 	}

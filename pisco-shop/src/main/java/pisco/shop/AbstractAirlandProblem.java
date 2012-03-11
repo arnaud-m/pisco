@@ -41,6 +41,7 @@ import static choco.Choco.precedenceDisjoint;
 import static choco.Choco.sum;
 
 import java.io.File;
+import java.util.Arrays;
 
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.BasicSettings;
@@ -52,6 +53,7 @@ import choco.cp.model.CPModel;
 import choco.cp.solver.CPSolver;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
 import choco.cp.solver.preprocessor.PreProcessConfiguration;
+import choco.kernel.common.util.comparator.TaskComparators;
 import choco.kernel.common.util.tools.MathUtils;
 import choco.kernel.common.util.tools.TaskUtils;
 import choco.kernel.common.util.tools.VariableUtils;
@@ -62,6 +64,7 @@ import choco.kernel.model.variables.scheduling.TaskVariable;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.Solver;
 import choco.kernel.solver.constraints.global.scheduling.IResource;
+import choco.kernel.solver.variables.scheduling.TaskVar;
 import choco.kernel.visu.VisuFactory;
 import choco.visu.components.chart.ChocoChartFactory;
 
@@ -70,7 +73,7 @@ import choco.visu.components.chart.ChocoChartFactory;
  * @author Arnaud Malapert
  *
  */
-public class AirlandProblem extends AbstractDisjunctiveProblem {
+public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem {
 
 
 	public int[] processingTimes;
@@ -90,11 +93,11 @@ public class AirlandProblem extends AbstractDisjunctiveProblem {
 
 	public Constraint machine;
 
-	public AirlandProblem(BasicSettings settings) {
+	public AbstractAirlandProblem(BasicSettings settings) {
 		super(new AirlandParser(), settings);
 		setChartManager(ChocoChartFactory.getJFreeChartManager());
 		//	settings.putBoolean(BasicSettings.PREPROCESSING_HEURISTICS, false);
-		//settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);
+		settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);
 		//		settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
 		//		settings.putBoolean(BasicSettings.LIGHT_MODEL, true);
 		//	settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
@@ -110,11 +113,6 @@ public class AirlandProblem extends AbstractDisjunctiveProblem {
 		return tasks[job];
 	}
 
-
-	protected final int getHorizon() {
-		// TODO - getHorizon - created 11 mars 2012 by A. Malapert
-		return MAX_UPPER_BOUND;
-	}
 
 	@Override
 	public void initialize() {
@@ -153,6 +151,9 @@ public class AirlandProblem extends AbstractDisjunctiveProblem {
 
 
 
+
+
+
 	//	@Override
 	//	public Boolean preprocess() {
 	//		super.preprocess();
@@ -184,8 +185,7 @@ public class AirlandProblem extends AbstractDisjunctiveProblem {
 	@Override
 	public Model buildModel() {
 		CPModel model =new CPModel( nbJobs * nbJobs, 6 * nbJobs, 10, 10, 2 * nbJobs, 10, nbJobs );
-		final int horizon = getHorizon();
-		makespan = Choco.makeIntVar("makespan",0 , Math.min(getHorizon(), MAX_UPPER_BOUND), 
+		makespan = Choco.makeIntVar("makespan",0 , MAX_UPPER_BOUND,
 				Options.V_MAKESPAN,Options.V_BOUND, Options.V_NO_DECISION);
 		model.addVariables(makespan);
 		tasks = Choco.makeTaskVarArray("T", releaseDates, deadlines, constantArray(processingTimes), Options.V_BOUND);
@@ -209,7 +209,7 @@ public class AirlandProblem extends AbstractDisjunctiveProblem {
 					model.addConstraints( 
 							clause(new IntegerVariable[]{disjuncts[i][j], disjuncts[j][k]}, new IntegerVariable[]{disjuncts[i][k]}), 
 							clause(new IntegerVariable[]{disjuncts[i][k]}, new IntegerVariable[]{disjuncts[i][j], disjuncts[j][k]})
-					);
+							);
 				}
 			}
 		}
@@ -217,10 +217,6 @@ public class AirlandProblem extends AbstractDisjunctiveProblem {
 		if( ! defaultConf.readBoolean(BasicSettings.LIGHT_MODEL) ) {
 			model.addConstraint(machine);
 		}
-		//TODO - add a factory for the objective variable  - created 11 mars 2012 by A. Malapert
-		IntegerVariable obj = Choco.makeIntVar("flowtime",Math.max(getComputedLowerBound(), MIN_LOWER_BOUND), MAX_UPPER_BOUND, 
-				Options.V_OBJECTIVE,Options.V_BOUND, Options.V_NO_DECISION);
-		model.addConstraint( eq(obj, sum(VariableUtils.getEndVariables(tasks))));
 		return model;
 	}
 
@@ -251,15 +247,15 @@ public class AirlandProblem extends AbstractDisjunctiveProblem {
 
 	@Override
 	public Boolean solve() {
-//		//Print initial propagation		
-//		try {
-//			solver.propagate();
-//		} catch (ContradictionException e) {
-//			e.printStackTrace();
-//		}
-//		if( defaultConf.readBoolean(BasicSettings.SOLUTION_REPORT) ) {
-//			displayChart(disjSModel, VisuFactory.getDotManager());
-//		}
+		//		//Print initial propagation		
+		//		try {
+		//			solver.propagate();
+		//		} catch (ContradictionException e) {
+		//			e.printStackTrace();
+		//		}
+		//		if( defaultConf.readBoolean(BasicSettings.SOLUTION_REPORT) ) {
+		//			displayChart(disjSModel, VisuFactory.getDotManager());
+		//		}
 		return super.solve();
 	}
 
@@ -277,14 +273,35 @@ public class AirlandProblem extends AbstractDisjunctiveProblem {
 	public String getValuesMessage() {
 		if(solver != null && solver.existsSolution()) {
 			final StringBuilder b = new StringBuilder();
-			final int n = solver.getNbTaskVars();
-			for (int i = 0; i < n; i++) {
-				b.append(solver.getTaskVar(i).pretty()).append(' ');
+			TaskVar[] tvars = solver.getVar(tasks);
+			Arrays.sort(tvars, TaskComparators.makeEarliestStartingTimeCmp());
+			for (int i = 0; i < tvars.length; i++) {
+				b.append(tvars[i].pretty()).append(' ');
 			}
 			return b.toString();
 		}else return "";
 	}
 
+	protected int[] computeSolutionSetups() {
+		int[] setups = new int[nbJobs];
+		TaskVar[] tvars = solver.getVar(tasks);
+		boolean ordered = true;
+		for (int i = 0; i < tvars.length; i++) {
+			if(tvars[i].getID() != i) {
+				return setups;
+			}
+		}
+		Arrays.sort(tvars, TaskComparators.makeEarliestStartingTimeCmp());
+		for (int i = 0; i < tvars.length - 1; i++) {
+			final int j = tvars[i].getID();
+			final int k = tvars[i+1].getID();
+			if( tvars[i].getLCT() + setupTimes[j][k] > releaseDates[k]) {
+				//the next task is postponed because of the setup time 
+				setups[j] = setupTimes[j][k]; 
+			}
+		}
+		return setups;
+	}
 
 	@Override
 	public void makeReports() {
@@ -294,16 +311,6 @@ public class AirlandProblem extends AbstractDisjunctiveProblem {
 		}
 	}
 
-	@Override
-	protected Object makeSolutionChart() {
-		// TODO - Solution Chart - created 11 mars 2012 by A. Malapert
-		return null;
-		//		return solver != null && solver.existsSolution() ?
-		//				( defaultConf.readBoolean(BasicSettings.LIGHT_MODEL) ? 
-		//						ChocoChartFactory.createUnaryHChart(getInstanceName()+" - Cmax="+objective, solver, tasks) :
-		//							ChocoChartFactory.createUnaryHChart(getInstanceName()+" - Cmax="+objective, solver, machines)
-		//						) : null;
-	}
 
 }
 
