@@ -45,8 +45,9 @@ public class ShopCmd extends AbstractBenchmarkCmd {
 	public enum ShopType {
 		OSP("Open-Shop Problem"),
 		JSP("Job-Shop Problem"),
-		FSP("Flow-Shop Problem");
-
+		FSP("Flow-Shop Problem"),
+		AP("Airland Problem");
+		
 		private final String name;
 
 		private ShopType(String name) {
@@ -129,6 +130,7 @@ public class ShopCmd extends AbstractBenchmarkCmd {
 		case FSP: return new FlowShopProblem(cs);
 		case JSP: return new JobShopProblem(cs);
 		case OSP: return new OpenShopProblem(cs);
+		case AP: return new AirlandProblem(cs);
 		default : 	LOGGER.severe("unknown shop problem.");return null;
 		}
 	}

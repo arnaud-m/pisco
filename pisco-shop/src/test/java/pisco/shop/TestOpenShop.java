@@ -74,7 +74,6 @@ public class TestOpenShop {
 	
 	private void testInstances(String input,Branching[] branchings, String... wildcardPatterns) {
 		for (int i = 1; i <= NB_CONFS; i++) {
-		//for (int i = 5; i <= 5; i++) {
 			for (Branching br : branchings) {
 				testInstances(input, wildcardPatterns, br, i);
 			}
@@ -84,12 +83,12 @@ public class TestOpenShop {
 
 	@Test
 	public void testGP() {
-		testInstances(PATH+"gueret-prins/", "GP03-*", "GP04-*");
+		testInstances(PATH+"gueret-prins/", "GP04-*");
 	}
 
 	@Test
 	public void testTai() {
-		testInstances(PATH+"taillard/", "tai04_04_02.txt", "tai04_04_09.txt", "tai05_05_02.txt");
+		testInstances(PATH+"taillard/", "tai04_04_02.txt", "tai05_05_02.txt");
 	}
 
 	@Test
@@ -99,7 +98,7 @@ public class TestOpenShop {
 	
 	@Test
 	public void testBug() {
-		//ChocoLogging.setVerbosity(Verbosity.VERBOSE);
+		ChocoLogging.setVerbosity(Verbosity.VERBOSE);
 		testInstances(PATH+"/gueret-prins/", new Branching[]{Branching.ST}, "GP04-01*");
 	}
 
