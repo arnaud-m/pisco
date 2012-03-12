@@ -1,6 +1,5 @@
 package pisco.shop.parsers;
 
-import choco.kernel.common.util.tools.MathUtils;
 import parser.absconparseur.tools.UnsupportedConstraintException;
 
 public class AirlandParser extends AbstractTextParser {
@@ -17,15 +16,16 @@ public class AirlandParser extends AbstractTextParser {
 	
 	public int[] deadlines;
 	
-	public int[] earlinessPenalties;
+	public double[] earlinessPenalties;
 	
-	public int[] tardinessPenalties;
+	public double[] tardinessPenalties;
 	
 	public int[][] setupTimes;
 	@Override
 	public void cleanup() {
 		super.cleanup();
-		releaseDates = dueDates = deadlines = earlinessPenalties = tardinessPenalties = null;
+		releaseDates = dueDates = deadlines = null;
+		earlinessPenalties = tardinessPenalties = null;
 		setupTimes = null;
 	}
 
@@ -39,8 +39,8 @@ public class AirlandParser extends AbstractTextParser {
 		releaseDates = new int[nbJobs];
 		dueDates = new int[nbJobs];
 		deadlines = new int[nbJobs];
-		earlinessPenalties = new int[nbJobs];
-		tardinessPenalties = new int[nbJobs];
+		earlinessPenalties = new double[nbJobs];
+		tardinessPenalties = new double[nbJobs];
 		setupTimes = new int[nbJobs][nbJobs];
 		for (int i = 0; i < nbJobs; i++) {
 			appearanceDates[i] = readInteger();  
@@ -48,8 +48,8 @@ public class AirlandParser extends AbstractTextParser {
 			dueDates[i] = readInteger();
 			deadlines[i] = readInteger();
 			// TODO - convert from double to int - created 11 mars 2012 by A. Malapert
-			earlinessPenalties[i] = readInteger(); 
-			tardinessPenalties[i] = readInteger();
+			earlinessPenalties[i] = readDouble(); 
+			tardinessPenalties[i] = readDouble();
 			for (int j = 0; j < nbJobs; j++) {
 				setupTimes[i][j] = readInteger();
 			}

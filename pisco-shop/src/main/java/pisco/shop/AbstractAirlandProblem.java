@@ -86,7 +86,6 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 
 	public int[][] setupTimes;
 
-
 	protected TaskVariable[] tasks;
 
 	protected IntegerVariable[][] disjuncts;
@@ -97,7 +96,7 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 		super(new AirlandParser(), settings);
 		setChartManager(ChocoChartFactory.getJFreeChartManager());
 		//	settings.putBoolean(BasicSettings.PREPROCESSING_HEURISTICS, false);
-		settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);
+		//settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);
 		//		settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
 		//		settings.putBoolean(BasicSettings.LIGHT_MODEL, true);
 		//	settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
@@ -117,11 +116,11 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 	@Override
 	public void initialize() {
 		super.initialize();
-		processingTimes = null;
-		releaseDates = null;
-		dueDates = null;
-		deadlines = null;
+		processingTimes = releaseDates = dueDates = deadlines = null;
+		setupTimes = null;
 		tasks = null;
+		disjuncts = null;
+		machine = null;
 	}
 
 
@@ -136,10 +135,14 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 		dueDates = parser.dueDates;
 		deadlines = parser.deadlines;
 		setupTimes = parser.setupTimes;
-		//preprocess data
+		/////////////////
+		// Preprocess Data
 		processingTimes = new int[nbJobs];
+		// Initialize processing times
 		for (int i = 0; i < nbJobs; i++) {
+			
 			processingTimes[i] = MathUtils.min(setupTimes[i]);
+			//Update due dates, dealines, and setups
 			dueDates[i] += processingTimes[i];
 			deadlines[i] += processingTimes[i];
 			for (int j = 0; j < nbJobs; j++) {
@@ -306,9 +309,9 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 	@Override
 	public void makeReports() {
 		super.makeReports();
-		if( defaultConf.readBoolean(BasicSettings.SOLUTION_REPORT) ) {
-			displayChart(disjSModel, VisuFactory.getDotManager());
-		}
+//		if( defaultConf.readBoolean(BasicSettings.SOLUTION_REPORT) ) {
+//			displayChart(disjSModel, VisuFactory.getDotManager());
+//		}
 	}
 
 

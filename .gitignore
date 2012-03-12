@@ -4,6 +4,9 @@
 .settings
 target
 
+#OPL
+.oplproject
+
 #LateX
 *.toc
 *.aux

@@ -153,7 +153,18 @@ public abstract class AbstractTextParser implements InstanceFileParser {
 			if(tokenizer.nval<=0) {
 				LOGGER.log(Level.SEVERE, "txtparser...[read-negative-int:{0}][?]", tokenizer.nval);
 			}
+			if(tokenizer.nval != Math.round(tokenizer.nval)) {
+				LOGGER.log(Level.SEVERE, "txtparser...[read-double:{0}][?]", tokenizer.nval);
+			}
 			return Double.valueOf(tokenizer.nval).intValue();
+		}else {
+			throw new IllegalArgumentException("txtparser...[read-int][FAIL]");
+		}
+	}
+	
+	protected final double ireadDouble() throws IOException {
+		if(tokenizer.nextToken()==StreamTokenizer.TT_NUMBER) {
+			return tokenizer.nval;
 		}else {
 			throw new IllegalArgumentException("txtparser...[read-int][FAIL]");
 		}
@@ -173,6 +184,14 @@ public abstract class AbstractTextParser implements InstanceFileParser {
 	public final int readInteger()  {
 		try {
 			return ireadInteger();
+		} catch (IOException e) {
+			throw new IllegalArgumentException("txtparser...[read-int][FAIL]");
+		}
+	}
+	
+	public final double readDouble()  {
+		try {
+			return ireadDouble();
 		} catch (IOException e) {
 			throw new IllegalArgumentException("txtparser...[read-int][FAIL]");
 		}
