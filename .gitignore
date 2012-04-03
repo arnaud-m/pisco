@@ -29,3 +29,6 @@ Thumbs.db
 *.log
 *~
 
+#some instances files (temporary)
+pisco-single/src/main/benchmarks/**
+

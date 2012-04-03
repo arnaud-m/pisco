@@ -14,10 +14,7 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-	<description>
-        Pisco is a java library for solving packing and scheduling problems with the constraint programming solver Choco.
-        Pisco is an open-source software, distributed under a Pisco Licence and hosted by github.com.
-    </description>
+	<description>Pisco is a java library for solving packing and scheduling problems with the constraint programming solver Choco.Pisco is an open-source software, distributed under a BSD Licence and hosted by github.com.</description>
 	<organization>
 		<name>Laboratoire d'Informatique, Signaux et Systèmes de Sophia-Antipolis I3S - UMR6070 - UNS CNRS</name>
 		<url>http://www.i3s.unice.fr/I3S/</url>
@@ -64,7 +61,7 @@
 						<properties>
 							<owner>Arnaud Malapert</owner>
 							<year>2011</year>
-							<email>malapert@i3s.unice.fr</email>
+							<email>arnaud.malapert@unice.fr</email>
 						</properties>
 						<strictCheck>true</strictCheck>
 						<includes>
@@ -146,9 +143,11 @@
 	</dependencies>
 
 	<modules>
-		<module>pisco-batch</module>
-		<module>pisco-pack</module>
-		<module>pisco-shop</module>
+	  <module>pisco-common</module>
+	  <module>pisco-single</module>
+	  <module>pisco-shop</module>
+	  <module>pisco-pack</module>
+	  <module>pisco-batch</module>	
 	</modules>
 
 	<repositories>
