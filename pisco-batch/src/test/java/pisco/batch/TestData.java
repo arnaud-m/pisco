@@ -64,6 +64,7 @@ public class TestData {
 		parser.loadInstance(new File("./src/test/resources/bp03-W1.txt"));
 		parser.parse(false);
 	}
+	
 	@Test(expected=IllegalArgumentException.class)
 	public void testFormat2() throws UnsupportedConstraintException {
 		parser.loadInstance(new File("./src/test/resources/bp03-W2.txt"));
