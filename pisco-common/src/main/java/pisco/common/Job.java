@@ -30,13 +30,14 @@ public class Job extends AbstractJob {
 		this.completionTime = completionTime;
 	}
 
-	public final void scheduleIn(int start, int end) {
+	public final int scheduleIn(int start, int end) {
 		startingTime = start;
 		completionTime = start + getDuration();
 		if(completionTime > end) {
 			throw new IllegalArgumentException("Preemption not allowed");
 		}
 		assert(startingTime >= 0);
+		return completionTime;
 	}
 
 	public final void scheduleBetween(int start, int end) {

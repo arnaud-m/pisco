@@ -25,17 +25,18 @@ public class JobPmtn extends AbstractJob {
 		return timePeriods.get(timePeriods.size() - 1);
 	}
 
-	public final void scheduleIn(int start, int end) {
+	public final int scheduleIn(int start, int end) {
 		assert( end - start > 0 && remainingDuration > 0);
 		final int length = end - start;
 		timePeriods.add(start);
 		if(length > remainingDuration) {
-			timePeriods.add(start + remainingDuration);
-			remainingDuration = 0;
+			end = start + remainingDuration;
+			timePeriods.add(end);
 		} else {
 			timePeriods.add(end);
 			remainingDuration -= length;
 		}
+		return end;
 	}
 
 	public final void scheduleBetween(int start, int end) {
