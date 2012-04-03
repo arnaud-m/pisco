@@ -31,41 +31,34 @@ package pisco.shop;
 
 
 import static choco.Choco.MAX_UPPER_BOUND;
-import static choco.Choco.MIN_LOWER_BOUND;
-import static choco.Choco.clause;
 import static choco.Choco.constantArray;
 import static choco.Choco.disjunctive;
-import static choco.Choco.eq;
 import static choco.Choco.makeBooleanVar;
 import static choco.Choco.precedenceDisjoint;
-import static choco.Choco.sum;
 
+import java.awt.Point;
 import java.io.File;
 import java.util.Arrays;
 
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.BasicSettings;
-import pisco.shop.ChocoshopSettings.Branching;
 import pisco.shop.parsers.AirlandParser;
 import choco.Choco;
 import choco.Options;
 import choco.cp.model.CPModel;
-import choco.cp.solver.CPSolver;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
 import choco.cp.solver.preprocessor.PreProcessConfiguration;
+import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.common.util.comparator.TaskComparators;
 import choco.kernel.common.util.tools.MathUtils;
 import choco.kernel.common.util.tools.TaskUtils;
-import choco.kernel.common.util.tools.VariableUtils;
 import choco.kernel.model.Model;
 import choco.kernel.model.constraints.Constraint;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.scheduling.TaskVariable;
-import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.Solver;
 import choco.kernel.solver.constraints.global.scheduling.IResource;
 import choco.kernel.solver.variables.scheduling.TaskVar;
-import choco.kernel.visu.VisuFactory;
 import choco.visu.components.chart.ChocoChartFactory;
 
 
@@ -88,7 +81,7 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 
 	protected TaskVariable[] tasks;
 
-	protected IntegerVariable[][] disjuncts;
+	protected IntegerVariable[] disjuncts;
 
 	public Constraint machine;
 
@@ -108,6 +101,10 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 	//********* Getters/Setters *******************************************//
 	//****************************************************************//
 
+	public final int getDisjunctCount() {
+		return (nbJobs * (nbJobs -1)) /2;
+	}
+	
 	public final TaskVariable getTask(int job) {
 		return tasks[job];
 	}
@@ -140,7 +137,7 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 		processingTimes = new int[nbJobs];
 		// Initialize processing times
 		for (int i = 0; i < nbJobs; i++) {
-			
+
 			processingTimes[i] = MathUtils.min(setupTimes[i]);
 			//Update due dates, dealines, and setups
 			dueDates[i] += processingTimes[i];
@@ -181,6 +178,16 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 	//****************************************************************//
 
 
+	public final static int getDisjunct(final int i,final int j, final int n) {
+		//Flatten strictly upper triangular matrix (without diagonal)
+		if(i < j) {
+			final int row = n * i - (i * (i +1)) /2 ;
+			final int column = j-i-1;
+			return row + column;
+		} else return -1;
+
+
+	}
 
 	/**
 	 * @see pisco.shop.problem.AbstractChocoProblem#buildModel()
@@ -188,32 +195,40 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 	@Override
 	public Model buildModel() {
 		CPModel model =new CPModel( nbJobs * nbJobs, 6 * nbJobs, 10, 10, 2 * nbJobs, 10, nbJobs );
+		model.setDefaultExpressionDecomposition(true);
 		makespan = Choco.makeIntVar("makespan",0 , MAX_UPPER_BOUND,
 				Options.V_MAKESPAN,Options.V_BOUND, Options.V_NO_DECISION);
 		model.addVariables(makespan);
+
 		tasks = Choco.makeTaskVarArray("T", releaseDates, deadlines, constantArray(processingTimes), Options.V_BOUND);
 		for (int i = 0; i < tasks.length; i++) {
 			if( processingTimes[i] == 0) model.addConstraint(Choco.eq(tasks[i].start(), releaseDates[i]));
 			tasks[i].end().addOption(Options.V_NO_DECISION);
 
 		}
-		disjuncts = new IntegerVariable[nbJobs][nbJobs];
+		disjuncts = new IntegerVariable[getDisjunctCount()];
+		int idx=0;
 		for (int i = 0; i < tasks.length; i++) {
 			for (int j = i+1; j < tasks.length; j++) {
-				disjuncts[i][j] = makeBooleanVar("b"+i+"_"+j);
-				model.addConstraint( precedenceDisjoint(tasks[i], tasks[j], disjuncts[i][j], setupTimes[i][j], setupTimes[j][i]));
+				disjuncts[idx] = makeBooleanVar("b"+i+"_"+j);
+				model.addConstraint( precedenceDisjoint(tasks[i], tasks[j], disjuncts[idx], setupTimes[i][j], setupTimes[j][i]));
+				idx++;
 			}
 		}
 
 		// TODO - Validate transitive clauses - created 11 mars 2012 by A. Malapert
 		for (int i = 0; i < tasks.length; i++) {
 			for (int j = i+1; j < tasks.length; j++) {
-				for (int k = j+1; k < tasks.length; k++) {
-					model.addConstraints( 
-							clause(new IntegerVariable[]{disjuncts[i][j], disjuncts[j][k]}, new IntegerVariable[]{disjuncts[i][k]}), 
-							clause(new IntegerVariable[]{disjuncts[i][k]}, new IntegerVariable[]{disjuncts[i][j], disjuncts[j][k]})
-							);
-				}
+				System.out.println(i+ "," + j + " -> "+ getDisjunct(i, j, nbJobs));
+				IntegerVariable bij = disjuncts[getDisjunct(i, j, nbJobs)];
+				//				for (int k = j+1; k < tasks.length; k++) {
+				//					IntegerVariable bjk = disjuncts[getDisjunct(j, k, nbJobs)];
+				//					IntegerVariable bik = disjuncts[getDisjunct(i, k, nbJobs)];
+				//					model.addConstraints( 
+				//							clause(new IntegerVariable[]{bij, bjk}, new IntegerVariable[]{bik}), 
+				//							clause(new IntegerVariable[]{bik}, new IntegerVariable[]{bij,bjk})
+				//							);
+				//				}
 			}
 		}
 		machine = disjunctive(tasks, Options.C_DISJ_NFNL, Options.C_DISJ_EF, Options.C_NO_DETECTION);
@@ -240,9 +255,12 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 		BasicSettings.updateTimeLimit(solver.getConfiguration(),  - getPreProcTime());
 		PreProcessConfiguration.cancelPreProcess(defaultConf);
 		defaultConf.putTrue(PreProcessConfiguration.DISJUNCTIVE_MODEL_DETECTION);
-		defaultConf.putTrue(PreProcessConfiguration.DMD_USE_TIME_WINDOWS);
-		defaultConf.putFalse(PreProcessConfiguration.DMD_REMOVE_DISJUNCTIVE);
+		defaultConf.putFalse(PreProcessConfiguration.DMD_USE_TIME_WINDOWS);
+		//defaultConf.putFalse(PreProcessConfiguration.DMD_REMOVE_DISJUNCTIVE);
 		solver.read(model);
+		//		solver.setLubyRestart(nbJobs/10+1, 3);
+		//		solver.setRecordNogoodFromRestart(true);
+		//		solver.setRestartLimit(5);
 		setGoals(solver);
 		solver.generateSearchStrategy();
 		return solver;
@@ -259,6 +277,7 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 		//		if( defaultConf.readBoolean(BasicSettings.SOLUTION_REPORT) ) {
 		//			displayChart(disjSModel, VisuFactory.getDotManager());
 		//		}
+		ChocoLogging.flushLogs();
 		return super.solve();
 	}
 
@@ -309,11 +328,16 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 	@Override
 	public void makeReports() {
 		super.makeReports();
-//		if( defaultConf.readBoolean(BasicSettings.SOLUTION_REPORT) ) {
-//			displayChart(disjSModel, VisuFactory.getDotManager());
-//		}
+		//		if( defaultConf.readBoolean(BasicSettings.SOLUTION_REPORT) ) {
+		//			displayChart(disjSModel, VisuFactory.getDotManager());
+		//		}
 	}
 
+	@Override
+	protected Object makeSolutionChart() {
+		return solver != null && solver.existsSolution() ?
+				ChocoChartFactory.createGanttChart("", solver.getVar(tasks), releaseDates, computeSolutionSetups()) : null;
+	}
 
 }
 

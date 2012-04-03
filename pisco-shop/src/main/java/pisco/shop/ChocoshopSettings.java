@@ -117,6 +117,7 @@ public final class ChocoshopSettings extends BasicSettings {
 	@Default(value = VALUE_FALSE)
 	public static final String ASSIGN_BELLMAN = "tools.branching.assign.bellman";
 
+
 	//****************************************************************//
 	//********* Heuristics *******************************************//
 	//****************************************************************//

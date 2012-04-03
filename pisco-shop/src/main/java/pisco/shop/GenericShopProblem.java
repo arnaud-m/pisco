@@ -352,7 +352,7 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 	public void makeReports() {
 		super.makeReports();
 		if( defaultConf.readBoolean(BasicSettings.SOLUTION_REPORT) ) {
-			displayChart(disjSModel, VisuFactory.getDotManager());
+			displayChart(( (PreProcessCPSolver) solver).getDisjSModel(), VisuFactory.getDotManager());
 			displayChart(makeSolutionLog(), VisuFactory.getSolManager());
 		}
 	}

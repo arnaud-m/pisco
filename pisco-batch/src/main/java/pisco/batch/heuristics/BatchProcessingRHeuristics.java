@@ -97,6 +97,7 @@ public class BatchProcessingRHeuristics extends AbstractRandomizedHeuristic {
 			}while(j < n);
 		}
 		resetBatches(nbB);
+		// TODO - No more scheduling step ! - created 3 avr. 2012 by A. Malapert
 //		if(  PDRScheduler.lazySequence(batches, nbB, bpb.getPriorityDispatchingRule(), bestsol)) {
 //			bpb.getPriorityDispatchingRule().getGlobalCostFunction().getTotalCost();
 //		} else {

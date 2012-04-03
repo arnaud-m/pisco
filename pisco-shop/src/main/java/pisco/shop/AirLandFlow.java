@@ -39,11 +39,6 @@ public class AirLandFlow extends AbstractAirlandProblem {
 		return model;
 	}
 	
-	@Override
-	protected Object makeSolutionChart() {
-		return solver != null && solver.existsSolution() ?
-					ChocoChartFactory.createGanttChart("", solver.getVar(tasks), releaseDates) : null;
-	}
 
 
 }

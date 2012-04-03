@@ -21,6 +21,7 @@ import choco.cp.solver.configure.RestartFactory;
 import choco.cp.solver.constraints.global.scheduling.precedence.ITemporalSRelation;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
 import choco.cp.solver.preprocessor.PreProcessConfiguration;
+import choco.cp.solver.search.BranchingFactory;
 import choco.cp.solver.search.integer.valselector.MinVal;
 import choco.cp.solver.search.integer.valselector.RandomIntValSelector;
 import choco.cp.solver.search.task.ordering.CentroidOrdering;
@@ -49,11 +50,9 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 	protected static final ValSelector<IntDomainVar> MIN_VAL = new MinVal();
 
 	public int nbJobs;
-	
+
 	protected IntegerVariable makespan;
-	
-	protected DisjunctiveSModel disjSModel;
-	
+
 	protected Constraint constraintCut;
 
 	public AbstractDisjunctiveProblem(InstanceFileParser parser,
@@ -64,14 +63,6 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 	public final int getNbJobs() {
 		return nbJobs;
 	}
-	
-	public final DisjunctiveSModel getDisjSModel() {
-		return disjSModel;
-	}
-	
-	public final ITemporalSRelation[] getDisjuncts() {
-		return getDisjSModel().getEdges();
-	}
 
 	protected abstract IResource<?>[] generateFakeResources();
 
@@ -81,13 +72,17 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 		super.initialize();
 		nbJobs = 0;
 		makespan = null;
-		disjSModel = null;
 		constraintCut = null;
 		cancelHeuristic();
 	}
-	
 
-	protected AbstractIntBranchingStrategy generateDisjunctBranching(CPSolver solver, Branching br) {
+	public final ITemporalSRelation[] getDisjuncts(PreProcessCPSolver solver) {
+		final DisjunctiveSModel disjSMod = solver.getDisjSModel();
+			return disjSMod == null ? null : disjSMod.getEdges();
+	}
+
+	protected AbstractIntBranchingStrategy generateDisjunctBranching(PreProcessCPSolver solver) {
+		final Branching br = ChocoshopSettings.getBranching(defaultConf);
 		final boolean breakTie = defaultConf.readBoolean(BasicSettings.RANDOM_TIE_BREAKING);
 		switch (br) {
 		case LEX: {
@@ -99,11 +94,11 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 		case PROFILE: {
 			if( defaultConf.readBoolean(BasicSettings.LIGHT_MODEL) ) {
 				final IResource<?>[] resources = generateFakeResources();
-				if(breakTie) return profile(solver, resources, disjSModel, getSeed());
-				else return profile(solver, resources, disjSModel);
+				if(breakTie) return profile(solver, resources, solver.getDisjSModel(), getSeed());
+				else return profile(solver, resources, solver.getDisjSModel());
 			}else {
-				if(breakTie) return profile(solver, disjSModel, getSeed());
-				else return profile(solver, disjSModel);
+				if(breakTie) return profile(solver, solver.getDisjSModel(), getSeed());
+				else return profile(solver, solver.getDisjSModel());
 			}
 		}
 		case DDEG: {
@@ -141,30 +136,30 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 		}
 		case SWDEG: {
 			if( breakTie) {
-				return slackWDeg(solver, getDisjuncts(), new CentroidOrdering(getSeed())); 
+				return slackWDeg(solver, getDisjuncts(solver), new CentroidOrdering(getSeed())); 
 			} else {
-				return slackWDeg(solver, getDisjuncts(), new LexOrdering());
+				return slackWDeg(solver, getDisjuncts(solver), new LexOrdering());
 			}
 		}
 		case PWDEG: {
 			if( breakTie) {
-				return slackWDeg(solver, getDisjuncts(), new MinPreservedOrdering(getSeed())); 
+				return slackWDeg(solver, getDisjuncts(solver), new MinPreservedOrdering(getSeed())); 
 			} else {
-				return slackWDeg(solver, getDisjuncts(), new LexOrdering());
+				return slackWDeg(solver, getDisjuncts(solver), new LexOrdering());
 			}
 		}
 		case MINPRES: { 
 			if( breakTie) {
-				return minPreserved(solver, getDisjuncts(), getSeed()); 
+				return minPreserved(solver, getDisjuncts(solver), getSeed()); 
 			} else {
-				return minPreserved(solver, getDisjuncts(), new LexOrdering());
+				return minPreserved(solver, getDisjuncts(solver), new LexOrdering());
 			}
 		}
 		case MAXPRES: { 
 			if( breakTie) {
-				return maxPreserved(solver, getDisjuncts(), getSeed()); 
+				return maxPreserved(solver, getDisjuncts(solver), getSeed()); 
 			} else {
-				return maxPreserved(solver, getDisjuncts(), new LexOrdering());
+				return maxPreserved(solver, getDisjuncts(solver), new LexOrdering());
 			}
 		}
 		default: {
@@ -173,7 +168,18 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 		}
 	}
 
-	protected void setGoals(CPSolver solver) {
+	protected void setSecondaryGoals(PreProcessCPSolver solver) {
+		if(defaultConf.readBoolean(ChocoshopSettings.ASSIGN_BELLMAN)) {
+			final ITemporalSRelation[] disjuncts = getDisjuncts(solver);
+			if(disjuncts != null) {
+				solver.addGoal(new FinishBranchingGraph(solver, getDisjuncts(solver), constraintCut));
+				return;
+			}
+		}
+		solver.addGoal(new FinishBranchingNaive(solver, constraintCut));
+	}
+
+	protected void setGoals(PreProcessCPSolver solver) {
 		solver.clearGoals();
 		final Branching br = ChocoshopSettings.getBranching(defaultConf);
 		if( br == Branching.ST) {
@@ -184,17 +190,9 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 				solver.addGoal(setTimes(solver));
 			}
 		} else {
-			if( br.needDisjunctiveSModel()) {
-				disjSModel = new DisjunctiveSModel((PreProcessCPSolver) solver);
-			}
-			solver.addGoal(generateDisjunctBranching(solver, br));
-			if(defaultConf.readBoolean(ChocoshopSettings.ASSIGN_BELLMAN) 
-					&& disjSModel != null ) {
-				solver.addGoal(new FinishBranchingGraph(solver, getDisjuncts(), constraintCut));
-			} else {
-				solver.addGoal(new FinishBranchingNaive(solver, constraintCut));
-			}
-	
+			solver.addGoal(generateDisjunctBranching(solver));
+			setSecondaryGoals(solver);
+
 		}
 	}
 

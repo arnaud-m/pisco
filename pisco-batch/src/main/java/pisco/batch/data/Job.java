@@ -30,7 +30,7 @@ import static choco.Choco.MAX_UPPER_BOUND;
 
 public class Job {
 
-	// TODO - Fire when the job has changed to reset starting and completion times ? - created 4 nov. 2011 by Arnaud Malapert
+	// TODO - reset the schedule when the duration of the job has changed to reset . - created 4 nov. 2011 by Arnaud Malapert
 	public final int id;
 	protected int duration;
 	protected int size;
@@ -133,7 +133,7 @@ public class Job {
 
 	public final int getTardiness()
 	{
-		int t = getCompletionTime() - getDueDate();
+		final int t = getLateness();
 		return t > 0 ? t : 0;
 	}
 
@@ -142,13 +142,7 @@ public class Job {
 	}
 
 	
-	public void copy(Job job) {
-		duration = job.duration;
-		size=job.size;
-		weight=job.weight;
-		dueDate=job.weight;
-	}
-
+	
 	public void combine(Job j1, Job j2) {
 		duration = Math.max(j1.getDuration(), j2.getDuration());
 		size = j1.getSize() + j2.getSize();

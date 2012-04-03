@@ -141,7 +141,6 @@ public final class PDRScheduler {
 		while(npos + 1 < n && rule.priorityRule.compare(schedule[npos+1], job) < 0) {
 			npos++;
 		}
-		//System.out.println(cpos+" "+npos);
 		//re-schedule
 		rule.globalCostFunction.reset();
 		if(npos > cpos) {
@@ -237,6 +236,7 @@ public final class PDRScheduler {
 		int j = 0;
 		int[] machines = new int[m];
 		rule.globalCostFunction.reset();
+		// TODO - Not scheduling all jobs ! - created 3 avr. 2012 by A. Malapert
 		for (int k = 0; k < m; k++) {
 			if(j >= n) break;
 			jobs[j].setStartingTime(machines[k]);
@@ -298,6 +298,7 @@ public final class PDRScheduler {
 				}
 			}
 		}
+		// TODO - Ceil ? - created 3 avr. 2012 by A. Malapert
 		return (int) Math.ceil(totalCost);	
 	}
 
