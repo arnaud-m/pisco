@@ -71,6 +71,7 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 
 	public int[] processingTimes;
 
+	// TODO - Shift smallest release date to 0 - created 4 avr. 2012 by A. Malapert
 	public int[] releaseDates;
 
 	public int[] dueDates;

@@ -45,38 +45,108 @@ public final class PDRPmtnSchedule {
 		}
 	}
 
-	public final static void schedule(JobPmtn[] jobs) {
+	public final static void schedule(AbstractJob[] jobs) {
 		//initialize
 		for (int i = 0; i < jobs.length; i++) {
 			jobs[i].setHook(jobs[i].getPredecessorCount());
 		}
-		JobPmtn[] tjobs = Arrays.copyOf(jobs, jobs.length);
+		AbstractJob[] tjobs = Arrays.copyOf(jobs, jobs.length);
 		Arrays.sort(tjobs, JobComparators.getEarliestReleaseDate());
-		PriorityQueue<JobPmtn> pendingJobs= new PriorityQueue<JobPmtn>(10, JobComparators.getEarliestDueDate());
-		int time = tjobs[0].getReleaseDate();
-		int nextTime = time;
+		final PriorityQueue<AbstractJob> pendingJobs= new PriorityQueue<AbstractJob>(10, JobComparators.getEarliestDueDate());
+		int nextTime = tjobs[0].getReleaseDate();
 		int i = 0;
-		do { 
-			while( 	tjobs[i].getReleaseDate() == time) {
-				if(tjobs[i].getPredecessorCount() == 0) {
-					pendingJobs.add(tjobs[i]);
+		do {
+			final int time = nextTime;
+			do { 
+				while( 	i < jobs.length && tjobs[i].getReleaseDate() == time) {
+					if(tjobs[i].getPredecessorCount() == 0) {
+						pendingJobs.add(tjobs[i]);
+					}
+					i++;
 				}
-				i++;
+			} while(pendingJobs.isEmpty());
+			int currentTime = time;
+			nextTime =  i < jobs.length ? tjobs[i].getReleaseDate() : MAX_UPPER_BOUND;
+			while(currentTime < nextTime && ! pendingJobs.isEmpty() ) {
+				currentTime = pendingJobs.peek().scheduleIn(currentTime, nextTime);
+				if(pendingJobs.peek().isScheduled()) {
+					pendingJobs.remove().forEachSuccessor(new TObjectProcedure<TJobAdapter>() {
+
+						@Override
+						public boolean execute(TJobAdapter object) {
+							if( object.target.decHook() == 0) {
+								if(object.target.getReleaseDate() <= time) {
+									pendingJobs.add(object.target);
+								}
+							}
+							return true;
+						}
+					});
+
+				}
 			}
-		} while(pendingJobs.isEmpty());
-		int actualTime = time;
-		nextTime =  i < jobs.length - 1 ? tjobs[i].getReleaseDate() : MAX_UPPER_BOUND;
-		while(actualTime < nextTime && ! pendingJobs.isEmpty() ) {
-			actualTime = pendingJobs.peek().scheduleIn(time, nextTime);
-			if(pendingJobs.peek().isScheduled()) {
-				// TODO - Update hooks - created 3 avr. 2012 by A. Malapert
-				pendingJobs.remove();
-			}
-		}
-		time = nextTime;
+		} while(i < jobs.length);
 		assert(isScheduled(tjobs));
 	}
 
+	public final static void schedule2(AbstractJob[] jobs) {
+		//initialize
+		AbstractJob[] tjobs = Arrays.copyOf(jobs, jobs.length);
+		Arrays.sort(tjobs, JobComparators.getEarliestReleaseDate());
+		final PriorityQueue<AbstractJob> pendingJobs= new PriorityQueue<AbstractJob>(10, JobComparators.getShortestRemainingProcessingTime());
+		int nextTime = tjobs[0].getReleaseDate();
+		int i = 0;
+		do {
+			final int time = nextTime;
+			while( 	i < jobs.length && tjobs[i].getReleaseDate() == time) {
+				pendingJobs.add(tjobs[i]);
+				i++;
+			}
+			int currentTime = time;
+			nextTime =  i < jobs.length ? tjobs[i].getReleaseDate() : MAX_UPPER_BOUND;
+			while(currentTime < nextTime && ! pendingJobs.isEmpty() ) {
+				for (AbstractJob job : pendingJobs) {
+					System.out.print(job.getID()+":"+job.getRemainingDuration()+ " ");
+				}
+				System.out.println();
+				currentTime = pendingJobs.peek().scheduleIn(currentTime, nextTime);
+				System.out.println(pendingJobs.peek());
+				if(pendingJobs.peek().isScheduled()) {
+					pendingJobs.remove();
+				}
+			}
+		} while(i < jobs.length);
+		assert(isScheduled(tjobs));
+	}
+
+	public final static void ScheduleLawlerLmax(AbstractJob[] jobs) {
+		//initialize
+		int currentTime = 0;
+		final PriorityQueue<AbstractJob> pendingJobs= new PriorityQueue<AbstractJob>(10, JobComparators.getLatestDueDate());
+		for (int i = 0; i < jobs.length; i++) {
+			currentTime += jobs[i].getDuration();
+			jobs[i].setHook(jobs[i].getSuccessorCount());
+			if(jobs[i].getHook() == 0) {
+				pendingJobs.add(jobs[i]);
+			}
+		}
+		while( ! pendingJobs.isEmpty()) {
+			final AbstractJob job = pendingJobs.remove();
+			job.scheduleTo(currentTime);
+			currentTime = job.getEST();
+			job.forEachPredecessor(new TObjectProcedure<TJobAdapter>() {
+
+				@Override
+				public boolean execute(TJobAdapter object) {
+					if( object.target.decHook() == 0) {
+						pendingJobs.add(object.target);
+					}
+					return true;
+				}
+			});
+		}
+	}
+	
 	public final static boolean isScheduled(AbstractJob[] jobs) {
 		for (int i = 0; i < jobs.length; i++) {
 			if( ! jobs[i].isScheduled() ) {

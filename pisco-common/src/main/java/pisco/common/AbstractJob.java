@@ -3,10 +3,9 @@ package pisco.common;
 import gnu.trove.TLinkableAdapter;
 import gnu.trove.TLinkedList;
 import gnu.trove.TObjectProcedure;
-
-import java.awt.Point;
-
 import choco.Choco;
+import choco.kernel.solver.variables.scheduling.AbstractTask;
+import choco.kernel.solver.variables.scheduling.ITimePeriodList;
 
 
 class TJobAdapter extends TLinkableAdapter {
@@ -29,41 +28,41 @@ class TJobAdapter extends TLinkableAdapter {
 	} 	
 }
 
-public abstract class AbstractJob {
+public abstract class AbstractJob extends AbstractTask {
 
 
 	private final static TLinkedList<TJobAdapter> ADAPTER_POOL = new TLinkedList<TJobAdapter>();
 
-	
+
 	public final static void addJob(TLinkedList<TJobAdapter> list, AbstractJob job) {
 		list.add(makeTJobAdapter(job));
 	}
-	
+
 	public final static TJobAdapter makeTJobAdapter(AbstractJob job) {
 		if(ADAPTER_POOL.isEmpty() ) {
-			ADAPTER_POOL.getFirst().setTarget(job);
-			return ADAPTER_POOL.removeFirst();
+			return new TJobAdapter(job);
 		}
 		else {
-			return new TJobAdapter(job); 
+			ADAPTER_POOL.getFirst().setTarget(job);
+			return ADAPTER_POOL.removeFirst(); 
 		}
 	}
-	
+
 	public final static void free(TLinkedList<TJobAdapter> list) {
 		while( ! list.isEmpty()) {
 			free(list.removeFirst());
 		}
 	}
-	
+
 	public final static void free(TJobAdapter adapter) {
 		ADAPTER_POOL.add(adapter);
 	}
-	
+
 	public final int id;
 
 	//dimensions
 	private int duration = 0;
-	private int size = 1;
+	private int size = 0;
 
 	//time windows
 	private int releaseDate = 0;
@@ -80,17 +79,65 @@ public abstract class AbstractJob {
 
 	//algorithm 
 	public int hook;
-	
+
+
 	public AbstractJob(int id) {
 		super();
 		this.id = id;
+	}
+
+	public AbstractJob(int id, ITimePeriodList timePeriodList) {
+		super(timePeriodList);
+		this.id = id;
+	}
+
+	////////////////////////////////////////////////////////////////////
+	///////////////////// Reset  ///////////////////////////////////////
+	////////////////////////////////////////////////////////////////////
+
+	public final void resetDimensions() {
+		duration=0;
+		size=0;
+	}
+
+	public final void resetTimeWindow() {
+		releaseDate = 0;
+		deadline = Choco.MAX_UPPER_BOUND;
+	}
+
+	public final void resetCostParameters() {
+		weight = 1;
+		dueDate = Choco.MAX_UPPER_BOUND;
+
 	}
 
 	public final void resetPrecedences() {
 		free(predecessors);
 		free(successors);
 	}
-	
+
+	public void resetSchedule() {
+		getTimePeriodList().reset();
+	}
+
+	public void resetOthers() {
+
+	}
+
+	public final void reset() {
+		resetSchedule();
+		resetDimensions();
+		resetTimeWindow();
+		resetCostParameters();
+		resetPrecedences();
+		resetOthers();
+	}
+
+
+	////////////////////////////////////////////////////////////////////
+	///////////////////// Getters/Setters  /////////////////////////////
+	////////////////////////////////////////////////////////////////////
+
 	public final int getDuration() {
 		return duration;
 	}
@@ -139,10 +186,9 @@ public abstract class AbstractJob {
 		this.dueDate = dueDate;
 	}
 
-	public final int getId() {
-		return id;
-	}
-
+	////////////////////////////////////////////////////////////////////
+	/////////////////////// Hook  //////////////////////////////////////
+	////////////////////////////////////////////////////////////////////
 	public final int getHook() {
 		return hook;
 	}
@@ -150,31 +196,35 @@ public abstract class AbstractJob {
 	public final void setHook(int hook) {
 		this.hook = hook;
 	}
-	
+
 	public final int incHook() {
-		return hook++;
+		return ++hook;
 	}
-	
+
 	public final int decHook() {
-		return hook--;
+		return --hook;
 	}
-	
+
+
+	////////////////////////////////////////////////////////////////////
+	///////////////////// Precedence Graph  ////////////////////////////
+	////////////////////////////////////////////////////////////////////
 	public final void forEachPredecessor(TObjectProcedure<TJobAdapter> procedure) {
 		predecessors.forEachValue(procedure);
 	}
-	
+
 	public final void forEachSuccessor(TObjectProcedure<TJobAdapter> procedure) {
 		successors.forEachValue(procedure);
 	}
-	
+
 	public final int getPredecessorCount() {
 		return predecessors.size();
 	}
-	
+
 	public final int getSuccessorCount() {
 		return successors.size();
 	}
-	
+
 	public final void addPredecessor(AbstractJob pred) {
 		addJob(predecessors, pred);
 		addJob(pred.successors, this);
@@ -208,36 +258,56 @@ public abstract class AbstractJob {
 		remove(successors, succ);
 		remove(succ.predecessors, this);
 	}
-	
-	
-	public abstract int getStartingTime();
 
-	public abstract int getCompletionTime();
+	////////////////////////////////////////////////////////////////////
+	///////////////////// Scheduling  //////////////////////////////////
+	////////////////////////////////////////////////////////////////////
 
-	public abstract void scheduleAt(int startingTime);
+	public abstract void scheduleFrom(int startingTime);
 
 	public abstract void scheduleTo(int endingTime);
 
-	public abstract void scheduleBetween(int start, int end);
+	public abstract void scheduleFromTo(int start, int end);
 
 	public abstract int scheduleIn(int start, int end);
 
-	public abstract boolean isPartiallyScheduled();
-
-	public abstract boolean isScheduled();	
-
-	public final boolean isPreempted() {
-		return getCompletionTime() - getStartingTime() > duration;
+	public final int getRemainingDuration() {
+		return getMinDuration() - Math.max(0, getTimePeriodList().getExpendedDuration());
 	}
 
-	public abstract int getRemainingDuration();
 
-	public abstract int getTimePeriodCount(); 
+	////////////////////////////////////////////////////////////////////
+	///////////////////// ITask  ///////////////////////////////////////
+	////////////////////////////////////////////////////////////////////
 
-	public abstract Point getTimePeriod(int i);
+	@Override
+	public final int getID() {
+		return id;
+	}
 
-	public abstract int getPeriodStart(int i);
+	@Override
+	public final int getMinDuration() {
+		return duration;
+	}
 
-	public abstract int getPeriodEnd(int i);
+	@Override
+	public final int getMaxDuration() {
+		return duration;
+	}
 
+	////////////////////////////////////////////////////////////////////
+	///////////////////// toString and toDotty  ////////////////////////
+	////////////////////////////////////////////////////////////////////
+	public String desc2str() {
+		return "p=" + duration +
+				", s=" + this.size+ 
+				", w=" + this.weight + 
+				", d=" + this.dueDate;
+	}
+
+	@Override
+	public String toString()
+	{
+		return isPartiallyScheduled() ? super.toString() : getName()+"["+desc2str()+"]";
+	}
 }

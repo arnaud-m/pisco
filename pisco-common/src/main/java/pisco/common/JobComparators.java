@@ -37,13 +37,17 @@ public final class JobComparators {
 
 	public static Comparator<AbstractJob> getLongestProcessingTime() {return LongestProcessingTime.SINGLOTON;}
 
+	public static Comparator<AbstractJob> getShortestRemainingProcessingTime() {return ShortestRemainingProcessingTime.SINGLOTON;}
+	
 	public static Comparator<AbstractJob> getLongestRemainingProcessingTime() {return LongestRemainingProcessingTime.SINGLOTON;}
 
 	public static Comparator<AbstractJob> getWeightedShortestProcessingTime() {return WeightedShortestProcessingTime.SINGLOTON;}
 
-	public static Comparator<AbstractJob> getEarliestReleaseDate() {return EarliestDueDate.SINGLOTON;}
+	public static Comparator<AbstractJob> getEarliestReleaseDate() {return EarliestReleaseDate.SINGLOTON;}
 	
 	public static Comparator<AbstractJob> getEarliestDueDate() {return EarliestDueDate.SINGLOTON;}
+
+	public static Comparator<AbstractJob> getLatestDueDate() {return LatestDueDate.SINGLOTON;}
 
 	public static Comparator<AbstractJob> getMinimalSlackTime() {return MinimalSlackTime.SINGLOTON;}
 
@@ -91,6 +95,22 @@ final class LongestProcessingTime implements Comparator<AbstractJob> {
 		final int v1 = 	o1.getDuration();
 		final int v2 = 	o2.getDuration();
 		return (v1 > v2 ? -1 : (v1 == v2) ? 0 : 1);
+	}
+
+}
+
+
+final class ShortestRemainingProcessingTime implements Comparator<AbstractJob> {
+
+	public final static ShortestRemainingProcessingTime SINGLOTON = new ShortestRemainingProcessingTime();
+
+	private ShortestRemainingProcessingTime() {}
+
+	@Override
+	public int compare(AbstractJob o1, AbstractJob o2) {
+		final int v1 = 	o1.getRemainingDuration();
+		final int v2 = 	o2.getRemainingDuration();
+		return (v1 < v2 ? -1 : (v1 == v2) ? 0 : 1);
 	}
 
 }
@@ -156,6 +176,21 @@ final class EarliestDueDate implements Comparator<AbstractJob> {
 
 }
 
+
+final class LatestDueDate implements Comparator<AbstractJob> {
+
+	public final static LatestDueDate SINGLOTON = new LatestDueDate();
+
+	private LatestDueDate() {}
+
+	@Override
+	public int compare(AbstractJob o1, AbstractJob o2) {
+		final int v1 = 	o1.getDueDate();
+		final int v2 = 	o2.getDueDate();
+		return (v1 > v2 ? -1 : (v1 == v2) ? 0 : 1);
+	}
+
+}
 
 final class MinimalSlackTime implements Comparator<AbstractJob> {
 
