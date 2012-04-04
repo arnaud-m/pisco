@@ -54,11 +54,10 @@ public class AirLandProblem extends AbstractAirlandWeightedProblem {
 		return model;
 	}
 
-	@Override
+	
 	protected void setSecondaryGoals(PreProcessCPSolver solver) {
-		// TODO - Awful branching : use at least a due date oriented branching! - created 14 mars 2012 by A. Malapert
+		// FIXME - Awful and inactive branching : use at least a due date oriented branching! - created 14 mars 2012 by A. Malapert
 		solver.addGoal( BranchingFactory.minDomMinVal(solver, solver.getVar(VariableUtils.getStartVariables(tasks))));
-		super.setSecondaryGoals(solver);
 	}
 
 	

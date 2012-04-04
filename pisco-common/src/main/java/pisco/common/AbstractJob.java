@@ -28,7 +28,7 @@ class TJobAdapter extends TLinkableAdapter {
 	} 	
 }
 
-public abstract class AbstractJob extends AbstractTask {
+public abstract class AbstractJob extends AbstractTask implements IJob {
 
 
 	private final static TLinkedList<TJobAdapter> ADAPTER_POOL = new TLinkedList<TJobAdapter>();
@@ -95,16 +95,28 @@ public abstract class AbstractJob extends AbstractTask {
 	///////////////////// Reset  ///////////////////////////////////////
 	////////////////////////////////////////////////////////////////////
 
+	/* (non-Javadoc)
+	 * @see pisco.common.IJob#resetDimensions()
+	 */
+	@Override
 	public final void resetDimensions() {
 		duration=0;
 		size=0;
 	}
 
+	/* (non-Javadoc)
+	 * @see pisco.common.IJob#resetTimeWindow()
+	 */
+	@Override
 	public final void resetTimeWindow() {
 		releaseDate = 0;
 		deadline = Choco.MAX_UPPER_BOUND;
 	}
 
+	/* (non-Javadoc)
+	 * @see pisco.common.IJob#resetCostParameters()
+	 */
+	@Override
 	public final void resetCostParameters() {
 		weight = 1;
 		dueDate = Choco.MAX_UPPER_BOUND;
@@ -138,50 +150,62 @@ public abstract class AbstractJob extends AbstractTask {
 	///////////////////// Getters/Setters  /////////////////////////////
 	////////////////////////////////////////////////////////////////////
 
+	@Override
 	public final int getDuration() {
 		return duration;
 	}
 
+	@Override
 	public final void setDuration(int duration) {
 		this.duration = duration;
 	}
 
+	@Override
 	public final int getSize() {
 		return size;
 	}
 
+	@Override
 	public final void setSize(int size) {
 		this.size = size;
 	}
 
+	@Override
 	public final int getReleaseDate() {
 		return releaseDate;
 	}
 
+	@Override
 	public final void setReleaseDate(int releaseDate) {
 		this.releaseDate = releaseDate;
 	}
 
+	@Override
 	public final int getDeadline() {
 		return deadline;
 	}
 
+	@Override
 	public final void setDeadline(int deadline) {
 		this.deadline = deadline;
 	}
 
+	@Override
 	public final int getWeight() {
 		return weight;
 	}
 
+	@Override
 	public final void setWeight(int weight) {
 		this.weight = weight;
 	}
 
+	@Override
 	public final int getDueDate() {
 		return dueDate;
 	}
 
+	@Override
 	public final void setDueDate(int dueDate) {
 		this.dueDate = dueDate;
 	}

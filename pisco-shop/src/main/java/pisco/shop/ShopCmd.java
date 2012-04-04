@@ -35,7 +35,8 @@ import org.kohsuke.args4j.Option;
 import parser.instances.AbstractMinimizeModel;
 import parser.instances.BasicSettings;
 import parser.instances.checker.SCheckFactory;
-import pisco.shop.ChocoshopSettings.Branching;
+import pisco.common.SchedulingBranchingFactory;
+import pisco.common.SchedulingBranchingFactory.Branching;
 import pisco.shop.ChocoshopSettings.Heuristics;
 import choco.kernel.solver.Configuration;
 import cli.AbstractBenchmarkCmd;
@@ -74,7 +75,7 @@ public class ShopCmd extends AbstractBenchmarkCmd {
 	 * the branching strategy
 	 */
 	@Option(name="-b",aliases={"--branching"},usage="set the branching strategy")
-	protected Branching branching;
+	protected SchedulingBranchingFactory.Branching branching;
 	
 	/**
 	 * the branching strategy

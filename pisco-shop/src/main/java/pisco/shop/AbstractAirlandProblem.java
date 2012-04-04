@@ -42,6 +42,7 @@ import java.util.Arrays;
 
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.BasicSettings;
+import pisco.common.AbstractDisjunctiveProblem;
 import pisco.shop.parsers.AirlandParser;
 import choco.Choco;
 import choco.Options;

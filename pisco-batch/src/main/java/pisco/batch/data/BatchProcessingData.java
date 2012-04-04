@@ -49,8 +49,6 @@ public class BatchProcessingData {
 	 */
 	public final Job[] sjobs;
 	
-	// DONE 21 sept. 2011 - Insert weights - created 21 sept. 2011 by Arnaud Malapert
-	//// DONE 12 oct. 2011 - Add a method which overrides weigthts with units - created 21 sept. 2011 by Arnaud Malapert
 	
 	private final static int MIN=0; 
 	private final static int MAX=1; 
@@ -59,7 +57,7 @@ public class BatchProcessingData {
 	private final static int P=0; //processing time
 	private final static int S=1; //size
 	private final static int W=2; //weights
-	private final static int D=3; //weights
+	private final static int D=3; //due dates
 	private final static int DIM=4; //weights
 
 	private final int[][] data;
@@ -109,7 +107,7 @@ public class BatchProcessingData {
 		}
 		for (int t = 0; t < DIM; t++) {
 			preprocess(t, data[t]);
-		}// // DONE 22 sept. 2011 - Invalid initialization - created 22 sept. 2011 by Arnaud Malapert
+		}
 		// FIXME - Use SortUtils - created 22 sept. 2011 by Arnaud Malapert
 		IPermutation sortByDueDates = PermutationUtils.getSortingPermuation(getDueDates());
 		indicesSortedByDueDate = sortByDueDates.applyPermutation(ArrayUtils.zeroToN(nbJobs));
@@ -238,8 +236,6 @@ public class BatchProcessingData {
 				displayInterval(S) + " SIZES    " +
 				displayInterval(W) + " WEIGHTS    " +
 				displayInterval(D) + " DUE_DATES";
-
-
 	}
 
 

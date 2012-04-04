@@ -32,90 +32,18 @@ package pisco.shop;
 import java.io.File;
 import java.io.IOException;
 
-import parser.instances.BasicSettings;
+import pisco.common.DisjunctiveSettings;
+import pisco.common.SchedulingBranchingFactory;
 import pisco.shop.OpenShopProblem.CutOS;
 import choco.kernel.common.opres.heuristics.AbstractRandomizedHeuristic;
 import choco.kernel.solver.Configuration;
 
-// TODO - Sort properties when storing in a file ? - created 21 oct. 2011 by Arnaud Malapert
-public final class ChocoshopSettings extends BasicSettings {
+public final class ChocoshopSettings extends DisjunctiveSettings {
 	private static final long serialVersionUID = 936045358571219202L;
 
 	public static enum Heuristics {SPT, LPT, CROSH, LEX}
 
-	public static enum Branching {
-		//OFF("Only Heuristics"),
-		RAND("Static ordering", true),
-		LEX("Static ordering", true),
-	    ST("SetTimes"),
-		PROFILE("Prob. profile", true),
-		DDEG("Dom/DDEG", false),
-		WDEG("Dom/WDEG", false),
-		BWDEG("Binary Dom/WDEG (incremental)", false),
-		SWDEG("1Slack/WDEG", true),
-		PWDEG("Pres/WDEG", true),
-		MINPRES("Min-Preserved", true),
-		MAXPRES("Max-Preserved", true);
 	
-		private final String name;
-		
-		private final boolean precedenceBranching;
-		
-		private final boolean needDisjunctiveSModel;
-	
-		private Branching(String name) {
-			this.name = name;
-			this.precedenceBranching = false;
-			this.needDisjunctiveSModel = false;
-		}
-		
-		private Branching(String name, boolean precStoreNeeded) {
-			this.name = name;
-			this.precedenceBranching = true;
-			this.needDisjunctiveSModel = precStoreNeeded;
-		}
-	
-		private Branching(String name, boolean precedenceBranching,
-				boolean precStoreNeeded) {
-			this.name = name;
-			this.precedenceBranching = precedenceBranching;
-			this.needDisjunctiveSModel = precStoreNeeded;
-		}
-
-
-
-		public final String getName() {
-			return name;
-		}
-
-
-		public final boolean isPrecedenceBranching() {
-			return precedenceBranching;
-		}
-
-
-		public final boolean needDisjunctiveSModel() {
-			return needDisjunctiveSModel;
-		}
-	}
-	
-
-	/**
-	 * <br/><b>Goal</b>: branching type.
-	 * <br/><b>Type</b>: Branching
-	 * <br/><b>Default value</b>: ST
-	 */
-	@Default(value = "ST")
-	public static final String BRANCHING_TYPE = "tools.branching.type";
-
-	
-	/**
-	 * <br/><b>Goal</b>: assign starting times with bellman algorithm.
-	 * <br/><b>Type</b>: boolean
-	 * <br/><b>Default value</b>: false
-	 */
-	@Default(value = VALUE_FALSE)
-	public static final String ASSIGN_BELLMAN = "tools.branching.assign.bellman";
 
 
 	//****************************************************************//
@@ -176,9 +104,7 @@ public final class ChocoshopSettings extends BasicSettings {
 		return conf.readEnum(HEURISTICS_TYPE, Heuristics.class);
 	}
 	
-	public  static final Branching getBranching(Configuration conf) {
-		return conf.readEnum(BRANCHING_TYPE, Branching.class);
-	}
+	
 
 
 	//****************************************************************//
@@ -200,10 +126,9 @@ public final class ChocoshopSettings extends BasicSettings {
 		return new String(b);
 	}
 	
-	public  static String getBranchingMsg(Configuration conf) {
+	public static String getBranchingMsg(Configuration conf) {
 		StringBuilder b = new StringBuilder();
-		b.append(getBranching(conf)).append(" BRANCHING    ");
-		if(conf.readBoolean(ASSIGN_BELLMAN)) b.append(" ASSIGN_BELLMAN    ");
+		b.append(DisjunctiveSettings.getBranchingMsg(conf));
 		b.append(conf.readString(INITIAL_CUT)).append(" INITIAL_CUT");
 		return new String(b);
 	}

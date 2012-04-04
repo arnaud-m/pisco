@@ -36,7 +36,9 @@ import java.io.File;
 
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.BasicSettings;
-import pisco.shop.ChocoshopSettings.Branching;
+import pisco.common.AbstractDisjunctiveProblem;
+import pisco.common.SchedulingBranchingFactory;
+import pisco.common.SchedulingBranchingFactory.Branching;
 import pisco.shop.heuristics.CrashHeuristics;
 import pisco.shop.heuristics.ICrashLearning;
 import pisco.shop.parsers.IShopData;
@@ -52,6 +54,7 @@ import choco.kernel.common.util.tools.MathUtils;
 import choco.kernel.common.util.tools.TaskUtils;
 import choco.kernel.model.Model;
 import choco.kernel.model.constraints.Constraint;
+import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.scheduling.TaskVariable;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.Solver;
@@ -67,6 +70,7 @@ import choco.visu.components.chart.ChocoChartFactory;
  */
 public class GenericShopProblem extends AbstractDisjunctiveProblem {
 
+	
 	public int nbMachines;
 
 	public int[][] processingTimes;
@@ -81,6 +85,7 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 
 	public Constraint[] forbIntMachines;
 
+	
 	protected ICrashLearning crashLearning;
 
 	public GenericShopProblem(IShopData parser, BasicSettings settings) {
@@ -93,8 +98,7 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 		//	settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
 	}
 
-
-
+	
 	//****************************************************************//
 	//********* Getters/Setters *******************************************//
 	//****************************************************************//
@@ -269,9 +273,9 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 		PreProcessCPSolver solver = new PreProcessCPSolver(this.defaultConf);
 		BasicSettings.updateTimeLimit(solver.getConfiguration(),  - getPreProcTime());
 		PreProcessConfiguration.cancelPreProcess(defaultConf);
-		final Branching br = ChocoshopSettings.getBranching(defaultConf);
-		if( br != ChocoshopSettings.Branching.ST ||
-				( br == ChocoshopSettings.Branching.ST && defaultConf.readBoolean(BasicSettings.LIGHT_MODEL) ) ) {
+		final SchedulingBranchingFactory.Branching br = ChocoshopSettings.getBranching(defaultConf);
+		if( br != SchedulingBranchingFactory.Branching.ST ||
+				( br == SchedulingBranchingFactory.Branching.ST && defaultConf.readBoolean(BasicSettings.LIGHT_MODEL) ) ) {
 			defaultConf.putTrue(PreProcessConfiguration.DISJUNCTIVE_MODEL_DETECTION);
 			if( defaultConf.readBoolean(BasicSettings.LIGHT_MODEL) ) {
 				defaultConf.putTrue(PreProcessConfiguration.DMD_REMOVE_DISJUNCTIVE);

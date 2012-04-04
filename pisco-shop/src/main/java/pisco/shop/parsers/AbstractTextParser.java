@@ -51,8 +51,7 @@ import choco.kernel.common.logging.ChocoLogging;
 public abstract class AbstractTextParser implements InstanceFileParser {
 
 	public final static Logger LOGGER= ChocoLogging.getMainLogger();
-	//log:debug
-
+		
 	protected BufferedReader reader;
 
 	protected StreamTokenizer tokenizer;
@@ -193,66 +192,9 @@ public abstract class AbstractTextParser implements InstanceFileParser {
 		try {
 			return ireadDouble();
 		} catch (IOException e) {
-			throw new IllegalArgumentException("txtparser...[read-int][FAIL]");
+			throw new IllegalArgumentException("txtparser...[read-double][FAIL]");
 		}
 	}
 
-
-//	/**
-//	 * read best solution information.
-//	 *	can use the following string formats :*OPT, LB UB, LB *OPT.
-//	 */
-//	@Deprecated
-//	public final Bounds readBounds() {
-//		try {
-//			int lb=Integer.MIN_VALUE;
-//			switch (tokenizer.nextToken()) {
-//			case StreamTokenizer.TT_NUMBER: {
-//				lb = Double.valueOf(tokenizer.nval).intValue();
-//				break;
-//			}
-//			case '*': return new Bounds(lb,ireadInteger(),true);
-//			default:
-//				break;
-//			}
-//			switch (tokenizer.nextToken()) {
-//			case StreamTokenizer.TT_NUMBER:	return new Bounds(lb, Double.valueOf(tokenizer.nval).intValue());
-//			case '-': return new Bounds(lb,Integer.MAX_VALUE);
-//			case '*': return new Bounds(lb, ireadInteger(), true);
-//			default:
-//				break;
-//			}
-//		} catch (IOException e) {
-//			PARSER_LOGGER.log(Level.SEVERE, "can't read bounds", e);
-//		}
-//		return null;
-//	}
-
-//	public final IOptimChecker readObjectiveChecker() {
-//		try {
-//				int lb=Integer.MIN_VALUE;
-//				switch (tokenizer.nextToken()) {
-//				case StreamTokenizer.TT_NUMBER: {
-//					lb = Double.valueOf(tokenizer.nval).intValue();
-//					break;
-//				}
-//				case '-': break;
-//				case '*': return new OptimSChecker(ireadInteger());
-//				default:
-//					LOGGER.log(Level.SEVERE, "txtparser[read-bounds][FAIL]");
-//					return null;
-//				}
-//				switch (tokenizer.nextToken()) {
-//				case StreamTokenizer.TT_NUMBER:	return new OptimSChecker(lb, Double.valueOf(tokenizer.nval).intValue());
-//				case '-': return lb == Integer.MIN_VALUE ? null : new OptimSChecker(lb,Integer.MAX_VALUE);
-//				case '*': return new OptimSChecker(ireadInteger());
-//				default:
-//					LOGGER.log(Level.SEVERE, "txtparser[read-bounds][FAIL]");
-//				}
-//			} catch (IOException e) {
-//				LOGGER.log(Level.SEVERE, "txtparser[read-bounds][FAIL]", e);
-//			}
-//			return null;
-//	}
 
 }

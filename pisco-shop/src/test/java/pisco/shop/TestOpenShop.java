@@ -32,7 +32,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import pisco.shop.ChocoshopSettings.Branching;
+import pisco.common.SchedulingBranchingFactory;
+import pisco.common.SchedulingBranchingFactory.Branching;
 import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.common.logging.Verbosity;
 
@@ -58,10 +59,10 @@ public class TestOpenShop {
 	}
 
 	private void testInstances(String input, String... wildcardPatterns) {
-		testInstances(input,Branching.values(), wildcardPatterns);
+		testInstances(input,SchedulingBranchingFactory.Branching.values(), wildcardPatterns);
 	}
 	
-	private void testInstances(String input, String[] wildcardPatterns,Branching br, int prop) {
+	private void testInstances(String input, String[] wildcardPatterns,SchedulingBranchingFactory.Branching br, int prop) {
 		cmd.doMain(
 				append(CMD_PREFIX, new String[] {
 						"-f",input, 
@@ -72,9 +73,9 @@ public class TestOpenShop {
 		);
 	}
 	
-	private void testInstances(String input,Branching[] branchings, String... wildcardPatterns) {
+	private void testInstances(String input,SchedulingBranchingFactory.Branching[] branchings, String... wildcardPatterns) {
 		for (int i = 1; i <= NB_CONFS; i++) {
-			for (Branching br : branchings) {
+			for (SchedulingBranchingFactory.Branching br : branchings) {
 				testInstances(input, wildcardPatterns, br, i);
 			}
 		}
@@ -99,7 +100,7 @@ public class TestOpenShop {
 	@Test
 	public void testBug() {
 		ChocoLogging.setVerbosity(Verbosity.VERBOSE);
-		testInstances(PATH+"/gueret-prins/", new Branching[]{Branching.ST}, "GP04-01*");
+		testInstances(PATH+"/gueret-prins/", new SchedulingBranchingFactory.Branching[]{SchedulingBranchingFactory.Branching.ST}, "GP04-01*");
 	}
 
 	@Test
