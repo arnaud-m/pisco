@@ -1,11 +1,11 @@
-package pisco.shop.choco.constraints;
+package pisco.single.choco.constraints;
 
 import static choco.kernel.common.util.tools.VariableUtils.getIntVar;
 import static choco.kernel.common.util.tools.VariableUtils.getTaskVar;
 
 import java.util.List;
 
-import pisco.shop.AbstractAirlandProblem;
+import pisco.single.AbstractAirlandProblem;
 import choco.cp.model.managers.MixedConstraintManager;
 import choco.cp.solver.CPSolver;
 import choco.kernel.model.variables.Variable;

@@ -27,7 +27,7 @@
 /**
  *
  */
-package pisco.shop;
+package pisco.single;
 
 
 import static choco.Choco.MAX_UPPER_BOUND;
@@ -36,14 +36,14 @@ import static choco.Choco.disjunctive;
 import static choco.Choco.makeBooleanVar;
 import static choco.Choco.precedenceDisjoint;
 
-import java.awt.Point;
 import java.io.File;
 import java.util.Arrays;
 
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.BasicSettings;
 import pisco.common.AbstractDisjunctiveProblem;
-import pisco.shop.parsers.AirlandParser;
+import pisco.common.DisjunctiveSettings;
+import pisco.single.parsers.AirlandParser;
 import choco.Choco;
 import choco.Options;
 import choco.cp.model.CPModel;
@@ -130,9 +130,9 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 		super.load(fichier);
 		AirlandParser parser = (AirlandParser) this.parser;
 		nbJobs = parser.nbJobs;
-		releaseDates = parser.releaseDates;
-		dueDates = parser.dueDates;
-		deadlines = parser.deadlines;
+//		releaseDates = parser.releaseDates;
+//		dueDates = parser.dueDates;
+//		deadlines = parser.deadlines;
 		setupTimes = parser.setupTimes;
 		/////////////////
 		// Preprocess Data
@@ -288,7 +288,7 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 	@Override
 	protected void logOnConfiguration() {
 		super.logOnConfiguration();
-		logMsg.storeConfiguration(ChocoshopSettings.getBranchingMsg(defaultConf));
+		logMsg.storeConfiguration(DisjunctiveSettings.getBranchingMsg(defaultConf));
 	}
 
 

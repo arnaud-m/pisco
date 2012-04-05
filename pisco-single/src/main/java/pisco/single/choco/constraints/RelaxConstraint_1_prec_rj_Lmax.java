@@ -1,10 +1,10 @@
-package pisco.shop.choco.constraints;
+package pisco.single.choco.constraints;
 
 import gnu.trove.TIntArrayList;
 
 import java.util.Arrays;
 
-import pisco.shop.AbstractAirlandProblem;
+import pisco.single.AbstractAirlandProblem;
 
 import choco.cp.common.util.preprocessor.detector.scheduling.DisjunctiveSModel;
 import choco.cp.solver.variables.integer.IntVarEvent;

@@ -24,56 +24,77 @@
 *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package pisco.batch.data;
+package pisco.single.parsers;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.Arrays;
-import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 import parser.absconparseur.tools.UnsupportedConstraintException;
-import parser.instances.InstanceFileParser;
+import pisco.common.IJob;
+import pisco.common.Job;
 import pisco.common.parsers.AbstractTextParser;
-import choco.kernel.common.logging.ChocoLogging;
 
-public class BatchParser extends AbstractTextParser {
+public class AirlandParser extends AbstractTextParser {
 
-	private Job[] jobs;
+	public int nbJobs;
+	
+	public int freezeTime;
+	
+	public int[] appearanceDates;
+	
+	IJob[] jobs;
+	
+	public double[] earlinessPenalties;
+	
+	public double[] tardinessPenalties;
+	
+	public int[][] setupTimes;
+	//private Job[] jobs;
 	private int capacity;
 
 	public final int getCapacity() {
 		return capacity;
 	}
 
-	public final Job[] getJobs() {
-		return jobs;
-	}
+	//public final Job[] getJobs() {
+//		return jobs;
+//	}
 
 	@Override
 	public void cleanup() {
 		super.cleanup();
+		nbJobs = 0;
 		jobs = null;
-		capacity = Integer.MIN_VALUE;
+		freezeTime = 0;
+		appearanceDates = null;
+		earlinessPenalties = tardinessPenalties = null;
+		setupTimes = null;
 	}
-
-	
-
 
 	@Override
 	public void parse(boolean displayInstance)
 			throws UnsupportedConstraintException {
-		final int nbJobs = nextInt();
-		capacity = nextInt();
-		jobs = new Job[nbJobs];
+		nbJobs = nextInt();
+		freezeTime = nextInt(); // useless freeze time (for online algorithms
+		appearanceDates= new int[nbJobs];
+		jobs = new IJob[nbJobs];
+		earlinessPenalties = new double[nbJobs];
+		tardinessPenalties = new double[nbJobs];
+		setupTimes = new int[nbJobs][nbJobs];
 		for (int i = 0; i < nbJobs; i++) {
-			jobs[i] = new Job(i+1, nextInt(), nextInt(), nextInt(), nextInt());
+			appearanceDates[i] = nextInt();  
+			jobs[i] = new Job(i);
+			jobs[i].setReleaseDate(nextInt());
+			jobs[i].setDueDate(nextInt());
+			jobs[i].setDeadline(nextInt());
+			// TODO - convert from double to int - created 11 mars 2012 by A. Malapert
+			earlinessPenalties[i] = nextDouble(); 
+			tardinessPenalties[i] = nextDouble();
+			for (int j = 0; j < nbJobs; j++) {
+				setupTimes[i][j] = nextInt();
+			}
 		}
 		close();
 		if(displayInstance) {
-			LOGGER.info(Arrays.toString(jobs)+"\nCapacity="+capacity+"\n");
+			//LOGGER.info(Arrays.toString(jobs)+"\nCapacity="+capacity+"\n");
 		}
 	}
 

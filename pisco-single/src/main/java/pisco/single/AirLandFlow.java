@@ -1,4 +1,4 @@
-package pisco.shop;
+package pisco.single;
 import static choco.Choco.MAX_UPPER_BOUND;
 import static choco.Choco.MIN_LOWER_BOUND;
 import static choco.Choco.clause;

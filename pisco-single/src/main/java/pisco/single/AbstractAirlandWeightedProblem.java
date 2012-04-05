@@ -1,13 +1,11 @@
-package pisco.shop;
+package pisco.single;
 
 import java.io.File;
 
-import choco.kernel.common.logging.ChocoLogging;
-import choco.kernel.common.util.tools.MathUtils;
-import choco.visu.components.chart.ChocoChartFactory;
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.BasicSettings;
-import pisco.shop.parsers.AirlandParser;
+import pisco.single.parsers.AirlandParser;
+import choco.kernel.common.util.tools.MathUtils;
 
 public abstract class AbstractAirlandWeightedProblem extends
 		AbstractAirlandProblem {

@@ -1,26 +1,20 @@
-package pisco.shop;
+package pisco.single;
 
 import static choco.Choco.MAX_UPPER_BOUND;
-import static choco.Choco.*;
-import static choco.Choco.makeIntVar;
-import static choco.Choco.sum;
-
-import java.util.Arrays;
-
+import static choco.Choco.eq;
+import static choco.Choco.makeIntVarArray;
+import static choco.Choco.max;
+import static choco.Choco.minus;
+import parser.instances.BasicSettings;
+import pisco.single.choco.constraints.RelaxConstraint_1_prec_rj_Lmax_Manager;
 import choco.Options;
 import choco.kernel.common.logging.ChocoLogging;
-import choco.kernel.common.util.comparator.TaskComparators;
 import choco.kernel.common.util.tools.ArrayUtils;
 import choco.kernel.common.util.tools.MathUtils;
-import choco.kernel.common.util.tools.TaskUtils;
-import choco.kernel.common.util.tools.VariableUtils;
 import choco.kernel.model.Model;
 import choco.kernel.model.constraints.ComponentConstraint;
 import choco.kernel.model.variables.integer.IntegerVariable;
-import choco.kernel.solver.variables.scheduling.TaskVar;
 import choco.visu.components.chart.ChocoChartFactory;
-import parser.instances.BasicSettings;
-import pisco.shop.choco.constraints.RelaxConstraint_1_prec_rj_Lmax_Manager;
 
 public class AirLandLmax extends AbstractAirlandProblem {
 

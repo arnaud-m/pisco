@@ -134,10 +134,10 @@ public class ShopCmd extends AbstractBenchmarkCmd {
 		case FSP: return new FlowShopProblem(cs);
 		case JSP: return new JobShopProblem(cs);
 		case OSP: return new OpenShopProblem(cs);
-		case ALP: return new AirLandLmax(cs);
-		case AFP: return new AirLandFlow(cs);
-		case AWFP: return new AirLandWFlow(cs);
-		case AP: return new AirLandProblem(cs);
+//		case ALP: return new AirLandLmax(cs);
+//		case AFP: return new AirLandFlow(cs);
+//		case AWFP: return new AirLandWFlow(cs);
+//		case AP: return new AirLandProblem(cs);
 		default : 	LOGGER.severe("unknown shop problem.");return null;
 		}
 	}
