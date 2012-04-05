@@ -4,7 +4,7 @@ import gnu.trove.TIntArrayList;
 
 import java.util.Arrays;
 
-import pisco.single.AbstractAirlandProblem;
+import pisco.single.Abstract1MachineProblem;
 
 import choco.cp.common.util.preprocessor.detector.scheduling.DisjunctiveSModel;
 import choco.cp.solver.variables.integer.IntVarEvent;
@@ -20,7 +20,7 @@ import choco.kernel.solver.constraints.global.scheduling.AbstractTaskSConstraint
 import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.kernel.solver.variables.scheduling.TaskVar;
 
-public class RelaxConstraint_1_prec_rj_Lmax extends AbstractTaskSConstraint {
+public class RelaxPmtnLmaxConstraint extends AbstractTaskSConstraint {
 
 	protected final TaskVar[] tasks;
 
@@ -36,9 +36,9 @@ public class RelaxConstraint_1_prec_rj_Lmax extends AbstractTaskSConstraint {
 	//protected final TIntArrayList topologicalOrder;
 	protected final TIntArrayList currentIndices;
 
-	protected final AbstractAirlandProblem problem;
+	protected final Abstract1MachineProblem problem;
 
-	public RelaxConstraint_1_prec_rj_Lmax(AbstractAirlandProblem problem, TaskVar[] taskvars, IntDomainVar[] disjuncts, IntDomainVar lmax) {
+	public RelaxPmtnLmaxConstraint(Abstract1MachineProblem problem, TaskVar[] taskvars, IntDomainVar[] disjuncts, IntDomainVar lmax) {
 		super(taskvars, disjuncts, lmax);
 		this.problem = problem;
 		tasks = Arrays.copyOf(taskvars, taskvars.length);
@@ -166,7 +166,7 @@ public class RelaxConstraint_1_prec_rj_Lmax extends AbstractTaskSConstraint {
 		while( ! currentIndices.isEmpty()) {
 			final int i = currentIndices.remove(currentIndices.size() - 1);
 			for (int j = 0; j < i; j++) {
-				final int idx = taskIntVarOffset + AbstractAirlandProblem.getDisjunct(j, i, taskvars.length);
+				final int idx = taskIntVarOffset + Abstract1MachineProblem.getDisjunct(j, i, taskvars.length);
 				if(vars[idx].isInstantiatedTo(1)) {
 					handlePrecedence(j, i);
 				} else if(vars[idx].isInstantiatedTo(0)) {
@@ -174,7 +174,7 @@ public class RelaxConstraint_1_prec_rj_Lmax extends AbstractTaskSConstraint {
 				}
 			}
 			for (int j = i+1; j < taskvars.length; j++) {
-				final int idx = taskIntVarOffset + AbstractAirlandProblem.getDisjunct(i, j, taskvars.length);
+				final int idx = taskIntVarOffset + Abstract1MachineProblem.getDisjunct(i, j, taskvars.length);
 				if(vars[idx].isInstantiatedTo(1)) {
 					handlePrecedence(i, j);
 				} else if(vars[idx].isInstantiatedTo(0)) {

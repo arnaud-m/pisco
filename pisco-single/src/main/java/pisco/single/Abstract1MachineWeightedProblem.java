@@ -7,15 +7,15 @@ import parser.instances.BasicSettings;
 import pisco.single.parsers.AirlandParser;
 import choco.kernel.common.util.tools.MathUtils;
 
-public abstract class AbstractAirlandWeightedProblem extends
-		AbstractAirlandProblem {
+public abstract class Abstract1MachineWeightedProblem extends
+		Abstract1MachineProblem {
 
 	public int[] earlinessPenalties;
 	public int[] tardinessPenalties;
 	public boolean hasRealPenalties;
 	public boolean hasSymmetricPenalties;
 
-	public AbstractAirlandWeightedProblem(BasicSettings settings) {
+	public Abstract1MachineWeightedProblem(BasicSettings settings) {
 		super(settings);
 	}
 

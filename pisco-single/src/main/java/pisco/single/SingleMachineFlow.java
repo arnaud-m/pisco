@@ -19,9 +19,9 @@ import choco.visu.components.chart.ChocoChartFactory;
 import parser.instances.BasicSettings;
 
 
-public class AirLandFlow extends AbstractAirlandProblem {
+public class SingleMachineFlow extends Abstract1MachineProblem {
 
-	public AirLandFlow(BasicSettings settings) {
+	public SingleMachineFlow(BasicSettings settings) {
 		super(settings);
 	}
 	

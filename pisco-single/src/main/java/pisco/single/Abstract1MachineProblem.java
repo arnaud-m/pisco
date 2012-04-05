@@ -67,7 +67,7 @@ import choco.visu.components.chart.ChocoChartFactory;
  * @author Arnaud Malapert
  *
  */
-public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem {
+public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem {
 
 
 	public int[] processingTimes;
@@ -87,7 +87,7 @@ public abstract class AbstractAirlandProblem extends AbstractDisjunctiveProblem 
 
 	public Constraint machine;
 
-	public AbstractAirlandProblem(BasicSettings settings) {
+	public Abstract1MachineProblem(BasicSettings settings) {
 		super(new AirlandParser(), settings);
 		setChartManager(ChocoChartFactory.getJFreeChartManager());
 		//	settings.putBoolean(BasicSettings.PREPROCESSING_HEURISTICS, false);

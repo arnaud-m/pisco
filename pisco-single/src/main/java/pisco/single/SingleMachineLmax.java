@@ -6,7 +6,7 @@ import static choco.Choco.makeIntVarArray;
 import static choco.Choco.max;
 import static choco.Choco.minus;
 import parser.instances.BasicSettings;
-import pisco.single.choco.constraints.RelaxConstraint_1_prec_rj_Lmax_Manager;
+import pisco.single.choco.constraints.RelaxPmtnLmaxManager;
 import choco.Options;
 import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.common.util.tools.ArrayUtils;
@@ -16,9 +16,9 @@ import choco.kernel.model.constraints.ComponentConstraint;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.visu.components.chart.ChocoChartFactory;
 
-public class AirLandLmax extends AbstractAirlandProblem {
+public class SingleMachineLmax extends Abstract1MachineProblem {
 
-	public AirLandLmax(BasicSettings settings) {
+	public SingleMachineLmax(BasicSettings settings) {
 		super(settings);
 	}
 
@@ -42,7 +42,7 @@ public class AirLandLmax extends AbstractAirlandProblem {
 		}
 		model.addConstraint(max(lateness, obj));
 		model.addConstraints(
-				new ComponentConstraint(RelaxConstraint_1_prec_rj_Lmax_Manager.class, 
+				new ComponentConstraint(RelaxPmtnLmaxManager.class, 
 						this, 
 						ArrayUtils.append(tasks, disjuncts, new IntegerVariable[]{obj}))				
 				);

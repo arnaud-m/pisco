@@ -17,7 +17,7 @@ import choco.kernel.model.Model;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.solver.Solver;
 
-public class AirLandProblem extends AbstractAirlandWeightedProblem {
+public class AirLandProblem extends Abstract1MachineWeightedProblem {
 
 	public AirLandProblem(BasicSettings settings) {
 		super(settings);

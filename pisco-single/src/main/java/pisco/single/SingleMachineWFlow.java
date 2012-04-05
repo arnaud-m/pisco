@@ -8,9 +8,9 @@ import choco.kernel.model.Model;
 import choco.kernel.model.variables.integer.IntegerVariable;
 
 
-public class AirLandWFlow extends AbstractAirlandWeightedProblem {
+public class SingleMachineWFlow extends Abstract1MachineWeightedProblem {
 
-	public AirLandWFlow(BasicSettings settings) {
+	public SingleMachineWFlow(BasicSettings settings) {
 		super(settings);
 	}
 	

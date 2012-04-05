@@ -116,9 +116,9 @@ public class SingleMachineCmd extends AbstractBenchmarkCmd {
 	public AbstractMinimizeModel createInstance() {
 		final BasicSettings cs =getSingleMachineSettings();
 				switch (type) {
-				case LP: return new AirLandLmax(cs);
-				case FP: return new AirLandFlow(cs);
-				case WFP: return new AirLandWFlow(cs);
+				case LP: return new SingleMachineLmax(cs);
+				case FP: return new SingleMachineFlow(cs);
+				case WFP: return new SingleMachineWFlow(cs);
 				case AP: return new AirLandProblem(cs);
 				default : 	LOGGER.severe("unknown shop problem.");return null;
 				}
