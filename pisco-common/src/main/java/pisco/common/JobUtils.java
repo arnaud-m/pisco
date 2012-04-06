@@ -3,6 +3,7 @@ package pisco.common;
 import static pisco.common.TJobAdapter.*;
 import gnu.trove.TLinkedList;
 import gnu.trove.TObjectProcedure;
+import choco.kernel.common.IDotty;
 import choco.kernel.solver.variables.scheduling.ITask;
 
 public final class JobUtils {
@@ -23,7 +24,7 @@ public final class JobUtils {
 	}
 	
 
-	public final void modifyDueDates(final ITJob[] jobs) {
+	public final static void modifyDueDates(final ITJob[] jobs) {
 		final TLinkedList<TJobAdapter> pendingJobs = new TLinkedList<TJobAdapter>();
 		//initialize
 		for (int i = 0; i < jobs.length; i++) {
@@ -61,6 +62,8 @@ public final class JobUtils {
 		}
 		return true;
 	}
+	
+	
 	
 	public final static int minDuration(IJob... jobs) {
 		int min = Integer.MAX_VALUE;

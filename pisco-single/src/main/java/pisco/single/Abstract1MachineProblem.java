@@ -73,14 +73,14 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 
 
 	public ITJob[] jobs;
-
-	public int[][] setupTimes;
-
+	
 	protected TaskVariable[] tasks;
 
 	protected IntegerVariable[] disjuncts;
-
-	public Constraint machine;
+	
+	public int[][] setupTimes;
+	
+	protected Constraint machine;
 
 	public Abstract1MachineProblem(BasicSettings settings, Abstract1MachineParser parser) {
 		super(parser, settings);
@@ -98,6 +98,10 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 	//********* Getters/Setters *******************************************//
 	//****************************************************************//
 
+	public final boolean hasSetupTimes() {
+		return ( (Abstract1MachineParser) getParser()).hasSetupTimes();
+	}
+	
 	public final int getDisjunctCount() {
 		return (nbJobs * (nbJobs -1)) /2;
 	}
@@ -111,8 +115,8 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 	public void initialize() {
 		super.initialize();
 		jobs = null;
-		setupTimes = null;
 		tasks = null;
+		setupTimes = null;
 		disjuncts = null;
 		machine = null;
 	}
@@ -148,9 +152,6 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 
 	}
 
-	/**
-	 * @see pisco.shop.problem.AbstractChocoProblem#buildModel()
-	 */
 	@Override
 	public Model buildModel() {
 		CPModel model =new CPModel( nbJobs * nbJobs, 6 * nbJobs, 10, 10, 2 * nbJobs, 10, nbJobs );

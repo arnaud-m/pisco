@@ -40,3 +40,19 @@ public interface IJob {
 
 
 }
+
+
+interface ICostFunctions {
+	
+	int getCompletionTime();
+	
+	int getWeightedCompletionTime();
+	
+	int getLateness();
+	
+	int getDeviation();
+	
+	int getEarliness();
+	
+	int getTardiness();
+}

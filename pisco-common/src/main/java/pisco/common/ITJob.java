@@ -3,7 +3,7 @@ package pisco.common;
 import gnu.trove.TObjectProcedure;
 import choco.kernel.solver.variables.scheduling.ITask;
 
-public interface ITJob extends IJob, ITask, IHook {
+public interface ITJob extends IJob, ITask, ICostFunctions, IHook {
 
 
 	////////////////////////////////////////////////////////////////////
@@ -46,6 +46,9 @@ public interface ITJob extends IJob, ITask, IHook {
 	////////////////////////////////////////////////////////////////////
 	///////////////////// Merge and combination  ///////////////////////
 	////////////////////////////////////////////////////////////////////
+	
+	void setValues(IJob j);
+	
 	void parallelCombinaison(IJob j1, IJob j2);
 
 	void parallelMerge(IJob j);
@@ -54,4 +57,7 @@ public interface ITJob extends IJob, ITask, IHook {
 
 	void serialMerge(IJob j);
 
+	
+		
+	
 }

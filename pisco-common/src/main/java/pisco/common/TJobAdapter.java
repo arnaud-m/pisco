@@ -47,5 +47,12 @@ public final class TJobAdapter extends TLinkableAdapter {
 
 	public final void setTarget(ITJob target) {
 		this.target = target;
+	}
+
+	@Override
+	public String toString() {
+		return target == null ? "null" : toString();
 	} 	
+	
+	
 }

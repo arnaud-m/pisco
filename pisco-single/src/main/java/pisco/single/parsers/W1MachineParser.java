@@ -36,6 +36,11 @@ import pisco.common.NPJob;
 public class W1MachineParser extends Abstract1MachineParser {
 
 	@Override
+	public boolean hasSetupTimes() {
+		return true;
+	}
+	
+	@Override
 	public void parse(boolean displayInstance)
 			throws UnsupportedConstraintException {
 		nbJobs = nextInt();

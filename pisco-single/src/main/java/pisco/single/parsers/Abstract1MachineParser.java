@@ -17,6 +17,8 @@ public abstract class Abstract1MachineParser extends AbstractTextParser {
 		super();
 	}
 
+	public abstract boolean hasSetupTimes();
+	
 	@Override
 	public void cleanup() {
 		super.cleanup();

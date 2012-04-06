@@ -4,6 +4,7 @@ import static pisco.common.TJobAdapter.*;
 import gnu.trove.TLinkedList;
 import gnu.trove.TObjectProcedure;
 import choco.Choco;
+import choco.kernel.common.util.tools.MathUtils;
 import choco.kernel.solver.variables.scheduling.AbstractTask;
 import choco.kernel.solver.variables.scheduling.ITimePeriodList;
 
@@ -71,6 +72,7 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 		this.id = id;
 	}
 
+	
 	////////////////////////////////////////////////////////////////////
 	///////////////////// Reset  ///////////////////////////////////////
 	////////////////////////////////////////////////////////////////////
@@ -361,8 +363,55 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	}
 
 	////////////////////////////////////////////////////////////////////
+	///////////////////// Cost functions ///////////////////////////////
+	////////////////////////////////////////////////////////////////////
+
+	@Override
+	public int getCompletionTime() {
+		return getECT();
+	}
+
+	@Override
+	public int getWeightedCompletionTime() {
+		return weight * getECT();
+	}
+
+	@Override
+	public int getLateness() {
+		return getECT() - dueDate;
+	}
+
+	@Override
+	public int getDeviation() {
+		return Math.abs(getECT() - dueDate);
+	}
+
+	@Override
+	public int getEarliness() {
+		return Math.max( dueDate - getECT(), 0);
+	}
+
+	@Override
+	public int getTardiness() {
+		return Math.max( getECT() - dueDate, 0);
+	}
+	////////////////////////////////////////////////////////////////////
 	///////////////////// Combination and merge  ///////////////////////
 	////////////////////////////////////////////////////////////////////
+	
+	
+
+	@Override
+	public void setValues(IJob j) {
+		duration = j.getDuration();
+		size = j.getSize();
+		releaseDate = j.getReleaseDate();
+		deadline = j.getDeadline();
+		weight=j.getWeight();
+		dueDate = j.getDueDate();
+		
+	}
+
 	
 	private void combinaison(IJob j1, IJob j2) {
 		size = j1.getSize() + j2.getSize();
@@ -380,6 +429,8 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 		if(dueDate < j.getDueDate()) {dueDate = j.getDueDate();}
 		
 	}
+
+	
 	@Override
 	public void parallelCombinaison(IJob j1, IJob j2) {
 		duration = Math.max(j1.getDuration(), j2.getDuration());
@@ -424,4 +475,22 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	{
 		return isPartiallyScheduled() ? super.toString() : getName()+"["+desc2str()+"]";
 	}
+
+	@Override
+	public String toDotty() {
+		final StringBuilder b = new StringBuilder();
+		b.append(super.toDotty());
+		successors.forEachValue(new TObjectProcedure<TJobAdapter>() {
+
+			@Override
+			public boolean execute(TJobAdapter object) {
+				b.append(getID()).append("->");
+				b.append(object.target.getID()).append(";\n");
+				return true;
+			}
+		});
+		return b.toString();
+	}
+	
+	
 }

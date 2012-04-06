@@ -1,6 +1,7 @@
 package pisco.common;
 
 import static choco.Choco.MAX_UPPER_BOUND;
+import static choco.Choco.MIN_LOWER_BOUND;
 import static pisco.common.JobUtils.isScheduled;
 import gnu.trove.TObjectProcedure;
 
@@ -14,33 +15,39 @@ public final class Pmtn1Scheduler {
 	}
 
 
-	public final static void schedule(AbstractJob[] jobs) {
+	public final static int schedule1Lmax(ITJob[] jobs) {
 		//initialize
+		int lmax = MIN_LOWER_BOUND;
 		for (int i = 0; i < jobs.length; i++) {
 			jobs[i].setHook(jobs[i].getPredecessorCount());
 		}
-		AbstractJob[] tjobs = Arrays.copyOf(jobs, jobs.length);
-		Arrays.sort(tjobs, JobComparators.getEarliestReleaseDate());
+		Arrays.sort(jobs, JobComparators.getEarliestReleaseDate());
 		final PriorityQueue<ITJob> pendingJobs= new PriorityQueue<ITJob>(10, JobComparators.getEarliestDueDate());
-		int nextTime = tjobs[0].getReleaseDate();
+		int nextTime = jobs[0].getReleaseDate();
 		int i = 0;
+		//Start scheduling jobs
 		do {
 			final int time = nextTime;
+			// Add new pending jobs with a release date equals to time
 			do { 
-				while( 	i < jobs.length && tjobs[i].getReleaseDate() == time) {
-					if(tjobs[i].getPredecessorCount() == 0) {
-						pendingJobs.add(tjobs[i]);
+				while( 	i < jobs.length && jobs[i].getReleaseDate() == time) {
+					if(jobs[i].getHook() == 0) {
+						pendingJobs.add(jobs[i]);
 					}
 					i++;
 				}
 			} while(pendingJobs.isEmpty());
 			int currentTime = time;
-			nextTime =  i < jobs.length ? tjobs[i].getReleaseDate() : MAX_UPPER_BOUND;
+			nextTime =  i < jobs.length ? jobs[i].getReleaseDate() : MAX_UPPER_BOUND;
+			//Schedule pending jobs selected by EDD-rule until the next release date;
 			while(currentTime < nextTime && ! pendingJobs.isEmpty() ) {
 				currentTime = pendingJobs.peek().scheduleIn(currentTime, nextTime);
 				if(pendingJobs.peek().isScheduled()) {
+					//Job is entirely scheduled : compute cost
+					final int lateness = pendingJobs.peek().getLateness();
+					if(lmax < lateness) { lmax = lateness;}
+					//Update predecessor's counts and new pending jobs
 					pendingJobs.remove().forEachSuccessor(new TObjectProcedure<TJobAdapter>() {
-
 						@Override
 						public boolean execute(TJobAdapter object) {
 							if( object.target.decHook() == 0) {
@@ -55,11 +62,13 @@ public final class Pmtn1Scheduler {
 				}
 			}
 		} while(i < jobs.length);
-		assert(isScheduled(tjobs));
+		assert(isScheduled(jobs));
+		return lmax;
 	}
 
-	public final static void schedule2(AbstractJob[] jobs) {
+	public final static int schedule1rjFlow(AbstractJob[] jobs) {
 		//initialize
+		int sumCi = 0;
 		AbstractJob[] tjobs = Arrays.copyOf(jobs, jobs.length);
 		Arrays.sort(tjobs, JobComparators.getEarliestReleaseDate());
 		final PriorityQueue<AbstractJob> pendingJobs= new PriorityQueue<AbstractJob>(10, JobComparators.getShortestRemainingProcessingTime());
@@ -81,39 +90,12 @@ public final class Pmtn1Scheduler {
 				currentTime = pendingJobs.peek().scheduleIn(currentTime, nextTime);
 				System.out.println(pendingJobs.peek());
 				if(pendingJobs.peek().isScheduled()) {
-					pendingJobs.remove();
+					sumCi += pendingJobs.remove().getCompletionTime();
 				}
 			}
 		} while(i < jobs.length);
 		assert(isScheduled(tjobs));
-	}
-
-	public final static void ScheduleLawlerLmax(AbstractJob[] jobs) {
-		//initialize
-		int currentTime = 0;
-		final PriorityQueue<ITJob> pendingJobs= new PriorityQueue<ITJob>(10, JobComparators.getLatestDueDate());
-		for (int i = 0; i < jobs.length; i++) {
-			currentTime += jobs[i].getDuration();
-			jobs[i].setHook(jobs[i].getSuccessorCount());
-			if(jobs[i].getHook() == 0) {
-				pendingJobs.add(jobs[i]);
-			}
-		}
-		while( ! pendingJobs.isEmpty()) {
-			final ITJob job = pendingJobs.remove();
-			job.scheduleTo(currentTime);
-			currentTime = job.getEST();
-			job.forEachPredecessor(new TObjectProcedure<TJobAdapter>() {
-
-				@Override
-				public boolean execute(TJobAdapter object) {
-					if( object.target.decHook() == 0) {
-						pendingJobs.add(object.target);
-					}
-					return true;
-				}
-			});
-		}
+		return sumCi;
 	}
 	
 

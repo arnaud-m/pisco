@@ -39,6 +39,12 @@ public class AirlandParser extends Abstract1MachineParser {
 
 	public boolean hasRealPenalties;
 
+	
+	@Override
+	public boolean hasSetupTimes() {
+		return true;
+	}
+
 	@Override
 	public void parse(boolean displayInstance)
 			throws UnsupportedConstraintException {

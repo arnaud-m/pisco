@@ -6,6 +6,8 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import choco.kernel.common.DottyBean;
+import choco.kernel.visu.VisuFactory;
 import choco.visu.components.chart.ChocoChartFactory;
 
 public class TestCommon {
@@ -55,7 +57,7 @@ public class TestCommon {
 	public void testPreemptiveSchedule() {
 		PJob[] jobs = buildInstance();
 		System.out.println(Arrays.toString(jobs));
-		Pmtn1Scheduler.schedule(jobs);
+		Pmtn1Scheduler.schedule1Lmax(jobs);
 		ChocoChartFactory.createAndShowGUI("Test", ChocoChartFactory.createGanttChart("Test", jobs));
 		
 		//PDRPmtnSchedule.schedule2(jobs);
@@ -66,9 +68,10 @@ public class TestCommon {
 	public static void main(String[] args) {
 		PJob[] jobs = buildInstance();
 		System.out.println(Arrays.toString(jobs));
-		Pmtn1Scheduler.schedule(jobs);
+		Pmtn1Scheduler.schedule1Lmax(jobs);
 		System.out.println(Arrays.toString(jobs));
-		ChocoChartFactory.createAndShowGUI("Test", ChocoChartFactory.createGanttChart("Test", jobs));
+		VisuFactory.getDotManager().show(new DottyBean(jobs));
+		//ChocoChartFactory.createAndShowGUI("Test", ChocoChartFactory.createGanttChart("Test", jobs));
 		
 	}
 }

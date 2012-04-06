@@ -27,6 +27,7 @@ import choco.kernel.model.variables.integer.IntegerVariable;
 
 public class AirLandProblem extends Abstract1MachineProblem {
 
+	public int[][] setupTimes;
 	public int[] earlinessPenalties;
 	public int[] tardinessPenalties;
 
@@ -34,6 +35,7 @@ public class AirLandProblem extends Abstract1MachineProblem {
 		super(settings, new AirlandParser());
 	}
 
+	
 	@Override
 	public void initialize() {
 		super.initialize();

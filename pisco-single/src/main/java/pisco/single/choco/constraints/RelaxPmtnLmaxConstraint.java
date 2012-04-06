@@ -4,49 +4,52 @@ import gnu.trove.TIntArrayList;
 
 import java.util.Arrays;
 
+import pisco.common.ITJob;
+import pisco.common.JobUtils;
+import pisco.common.PJob;
+import pisco.common.Pmtn1Scheduler;
 import pisco.single.Abstract1MachineProblem;
-
-import choco.cp.common.util.preprocessor.detector.scheduling.DisjunctiveSModel;
 import choco.cp.solver.variables.integer.IntVarEvent;
-import choco.kernel.common.util.comparator.IPermutation;
-import choco.kernel.common.util.comparator.TaskComparators;
+import choco.kernel.common.DottyBean;
+import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.common.util.iterators.DisposableIntIterator;
-import choco.kernel.common.util.tools.MathUtils;
-import choco.kernel.common.util.tools.PermutationUtils;
-import choco.kernel.memory.IStateInt;
-import choco.kernel.model.variables.integer.IntegerVariable;
+import choco.kernel.memory.IStateBool;
+import choco.kernel.memory.structure.StoredIntBipartiteList;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.constraints.global.scheduling.AbstractTaskSConstraint;
 import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.kernel.solver.variables.scheduling.TaskVar;
+import choco.kernel.visu.VisuFactory;
 
 public class RelaxPmtnLmaxConstraint extends AbstractTaskSConstraint {
 
 	protected final TaskVar[] tasks;
 
 	protected final int[][] disjuncts;
+	protected StoredIntBipartiteList remDisjunctList;
+	private IStateBool fireDisjunctList;
 
-	protected final IStateInt[] predecessorCount;
-	protected final IStateInt[] successorCount;
 
-	protected final int[] _predecessorCount;
-	protected final int[] _successorCount;
-	protected final int[] modifiedDueDates;
-
-	//protected final TIntArrayList topologicalOrder;
 	protected final TIntArrayList currentIndices;
 
 	protected final Abstract1MachineProblem problem;
 
+	protected final ITJob[] jobs;
+
+	protected final ITJob[] schedule;
+
+	
 	public RelaxPmtnLmaxConstraint(Abstract1MachineProblem problem, TaskVar[] taskvars, IntDomainVar[] disjuncts, IntDomainVar lmax) {
 		super(taskvars, disjuncts, lmax);
 		this.problem = problem;
 		tasks = Arrays.copyOf(taskvars, taskvars.length);
-		predecessorCount = new IStateInt[taskvars.length];
-		successorCount = new IStateInt[taskvars.length];
-		_successorCount= new int[taskvars.length];
-		_predecessorCount= new int[taskvars.length];
-		modifiedDueDates = new int[taskvars.length];
+		jobs = new ITJob[taskvars.length];
+		for (int i = 0; i < jobs.length; i++) {
+			jobs[i] = new PJob(taskvars[i].getID());
+			jobs[i].setDuration(problem.jobs[i].getDuration());
+			assert(taskvars[i].getID() == problem.jobs[i].getID());
+		}
+		schedule = Arrays.copyOf(jobs, jobs.length);
 		//topologicalOrder = new TIntArrayList(taskvars.length);
 		currentIndices = new TIntArrayList(taskvars.length);
 		this.disjuncts = new int[disjuncts.length][2];
@@ -82,15 +85,7 @@ public class RelaxPmtnLmaxConstraint extends AbstractTaskSConstraint {
 	@Override
 	public void awakeOnInst(int idx) throws ContradictionException {
 		if(idx >= taskIntVarOffset && idx < vars.length - 1) {
-			idx -= taskIntVarOffset;
-			if(vars[idx].isInstantiatedTo(1)) {
-				predecessorCount[disjuncts[idx][1]].increment();
-				successorCount[disjuncts[idx][0]].increment();
-			} else {
-				predecessorCount[disjuncts[idx][0]].increment();
-				successorCount[disjuncts[idx][1]].increment();
-			}
-
+			fireDisjunctList.set(true);
 		}
 	}
 
@@ -125,74 +120,72 @@ public class RelaxPmtnLmaxConstraint extends AbstractTaskSConstraint {
 	}
 
 
+
 	@Override
 	public void awake() throws ContradictionException {
-		for (int i = 0; i < taskvars.length; i++) {
-			assert(i == taskvars[i].getID());
-			predecessorCount[i] = problem.getSolver().getEnvironment().makeInt(0);
-			successorCount[i] = problem.getSolver().getEnvironment().makeInt(0);
+		final TIntArrayList remDisjuncts = new TIntArrayList(disjuncts.length);
+		for (int i = taskIntVarOffset; i < vars.length -1; i++) {
+			if(! vars[i].isInstantiated()) {
+				remDisjuncts.add(i);
+			}
 		}
+		remDisjunctList = (StoredIntBipartiteList) problem.getSolver().getEnvironment().makeBipartiteIntList(remDisjuncts.toNativeArray());
+		fireDisjunctList = problem.getSolver().getEnvironment().makeBool(false);
 		super.awake();
 	}
 
+	private void updateDisjunctList() {
+		final DisposableIntIterator it = remDisjunctList.getIterator();
+		while(it.hasNext()) {
+			final int idx = it.next();
+			if(vars[idx].isInstantiated()) {
+				it.remove();
+			} 
+			it.dispose();
 
-	
-	private void handlePrecedence(int i, int j) {
-		final int mdd = modifiedDueDates[j] - problem.jobs[i].getDuration();
-		if(mdd < modifiedDueDates[i]) {
-			modifiedDueDates[i] = mdd;
-		}
-		
-		_successorCount[i]--;
-		if(_successorCount[i] == 0) {
-			currentIndices.add(j);
 		}
 	}
-	
+
 	@Override
 	public void propagate() throws ContradictionException {
-		//init data structures
-		currentIndices.resetQuick();
 		for (int i = 0; i < taskvars.length; i++) {
-			_predecessorCount[i] = predecessorCount[i].get();
-			_successorCount[i] = successorCount[i].get();
-			if(_successorCount[i] == 0) {
-				currentIndices.add(i);
-			}
-			modifiedDueDates[i] = problem.jobs[i].getDueDate();
+			jobs[i].resetSchedule();
+			jobs[i].resetPrecedences();
+			jobs[i].setReleaseDate(taskvars[i].getEST());
+			jobs[i].setDueDate(problem.jobs[i].getDueDate());
+			jobs[i].setDeadline(taskvars[i].getLCT());
 		}
-		// compute modified due dates
-		assert( ! currentIndices.isEmpty());
-		while( ! currentIndices.isEmpty()) {
-			final int i = currentIndices.remove(currentIndices.size() - 1);
-			for (int j = 0; j < i; j++) {
-				final int idx = taskIntVarOffset + Abstract1MachineProblem.getDisjunct(j, i, taskvars.length);
-				if(vars[idx].isInstantiatedTo(1)) {
-					handlePrecedence(j, i);
-				} else if(vars[idx].isInstantiatedTo(0)) {
-					handlePrecedence(i, j);
-				}
-			}
-			for (int j = i+1; j < taskvars.length; j++) {
-				final int idx = taskIntVarOffset + Abstract1MachineProblem.getDisjunct(i, j, taskvars.length);
-				if(vars[idx].isInstantiatedTo(1)) {
-					handlePrecedence(i, j);
-				} else if(vars[idx].isInstantiatedTo(0)) {
-					handlePrecedence(j, i);
-				}
-			}
+		//Update instantiated disjuncts
+		if(fireDisjunctList.get()) {
+			updateDisjunctList();
 		}
-		// schedule tasks
-		IPermutation permutation = PermutationUtils.getSortingPermuation(modifiedDueDates);
-		Arrays.sort(tasks, TaskComparators.makeEarliestStartingTimeCmp());
-		int time = tasks[0].getEST();
-		for (int i = 0; i < taskvars.length; i++) {
-			if(_predecessorCount[i] == 0) {
-				currentIndices.add(i);
+		//Add Precedence to jobs
+		final DisposableIntIterator it = remDisjunctList.getRemIterator();
+		while(it.hasNext()) {
+			final int varIdx = it.next();
+			final int idx = varIdx - taskIntVarOffset;
+			int o = 0, d = 0;
+			if(vars[varIdx].isInstantiatedTo(1)) {
+				d = 1;
+			} else {
+				assert (vars[varIdx].isInstantiatedTo(0));
+				o = 1;
 			}
+			jobs[disjuncts[idx][o]].addSuccessor(jobs[disjuncts[idx][d]]);
 		}
-		
-		
+		it.dispose();
+		//Modify Due Dates 
+		// TODO - Remove this step in further version by stating dedicated constraints  - created 6 avr. 2012 by A. Malapert
+	//	VisuFactory.getDotManager().show(new DottyBean(schedule));
+		//System.out.println(Arrays.toString(schedule));
+		JobUtils.modifyDueDates(schedule);
+		final int lb = Pmtn1Scheduler.schedule1Lmax(schedule);
+		//System.out.println(Arrays.toString(schedule));
+//		if(lb > vars[vars.length - 1].getSup()) {
+//			ChocoLogging.getMainLogger().info(lb+ " > " + vars[vars.length-1].pretty());	
+//		}
+		//System.out.println("lb "+lb);
+		vars[vars.length-1].updateInf(lb, this, false);
 	}
 
 

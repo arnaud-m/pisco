@@ -45,7 +45,7 @@ final class Lateness implements ICostFunction {
 
 	@Override
 	public int getCost(ITJob j) {
-		return j.getECT() - j.getDueDate();
+		return j.getLateness();
 	}
 	
 	@Override
@@ -85,7 +85,7 @@ final class WeightedCompletionTime implements ICostFunction {
 
 	@Override
 	public int getCost(ITJob j) {
-		return j.getWeight() * j.getECT();
+		return j.getWeightedCompletionTime();
 	}
 
 	@Override
