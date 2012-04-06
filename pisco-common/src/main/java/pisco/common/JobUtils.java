@@ -1,10 +1,15 @@
 package pisco.common;
 
+import static pisco.common.TJobAdapter.*;
+import gnu.trove.TLinkedList;
+import gnu.trove.TObjectProcedure;
+import choco.kernel.solver.variables.scheduling.ITask;
+
 public final class JobUtils {
 
 	private JobUtils() {}
 	
-	public final boolean shiftLeftReleaseDates(IJob... jobs) {
+	public final static boolean shiftLeftReleaseDates(IJob... jobs) {
 		final int delta = minReleaseDate(jobs);
 		if(delta > 0) {
 			for (IJob job : jobs) {
@@ -17,7 +22,47 @@ public final class JobUtils {
 		return false;
 	}
 	
-	public final int minDuration(IJob... jobs) {
+
+	public final void modifyDueDates(final ITJob[] jobs) {
+		final TLinkedList<TJobAdapter> pendingJobs = new TLinkedList<TJobAdapter>();
+		//initialize
+		for (int i = 0; i < jobs.length; i++) {
+			jobs[i].setHook(jobs[i].getSuccessorCount());
+			if(jobs[i].getHook() == 0) {
+				add(pendingJobs, jobs[i]);
+			}
+		}
+		assert( ! pendingJobs.isEmpty());
+		//compute topological order and modify due dates
+		while( ! pendingJobs.isEmpty()) {
+			final ITJob current = pendingJobs.getFirst().getTarget();
+			AbstractJob.free(pendingJobs.removeFirst());
+			current.forEachPredecessor( new TObjectProcedure<TJobAdapter>() {
+
+				@Override
+				public boolean execute(TJobAdapter object) {
+					final int modifiedDueDate = current.getDueDate() - current.getDuration();
+					if(modifiedDueDate < object.target.getDueDate() ) {
+						object.target.setDueDate(modifiedDueDate);
+					}
+					if(object.target.decHook() == 0) {
+						add(pendingJobs, object.target);
+					}
+					return true;
+				}
+			});
+
+		}
+	}
+	
+	public final static boolean isScheduled(ITask... jobs) {
+		for (ITask j : jobs) {
+			if( ! j.isScheduled() ) return false;
+		}
+		return true;
+	}
+	
+	public final static int minDuration(IJob... jobs) {
 		int min = Integer.MAX_VALUE;
 		for (IJob job : jobs) {
 			if(job.getDuration() < min) {
@@ -27,7 +72,7 @@ public final class JobUtils {
 		return min;
 	}
 	
-	public final int maxDuration(IJob... jobs) {
+	public final static int maxDuration(IJob... jobs) {
 		int max = Integer.MIN_VALUE;
 		for (IJob job : jobs) {
 			if(job.getDuration() > max) {
@@ -38,7 +83,7 @@ public final class JobUtils {
 	}
 	
 
-	public final int sumDurations(IJob... jobs) {
+	public final static int sumDurations(IJob... jobs) {
 		int sum = 0;
 		for (IJob job : jobs) {
 			sum += job.getDuration();
@@ -46,7 +91,7 @@ public final class JobUtils {
 		return sum;
 	}
 	
-	public final int[] durations(IJob... jobs) {
+	public final static int[] durations(IJob... jobs) {
 		int[] tab = new int[jobs.length];
 		for (int i = 0; i < tab.length; i++) {
 			tab[i] = jobs[i].getDuration();
@@ -54,7 +99,7 @@ public final class JobUtils {
 		return tab;
 	}
 	
-	public final int minSize(IJob... jobs) {
+	public final static int minSize(IJob... jobs) {
 		int min = Integer.MAX_VALUE;
 		for (IJob job : jobs) {
 			if(job.getSize() < min) {
@@ -64,7 +109,7 @@ public final class JobUtils {
 		return min;
 	}
 	
-	public final int maxSize(IJob... jobs) {
+	public final static int maxSize(IJob... jobs) {
 		int max = Integer.MIN_VALUE;
 		for (IJob job : jobs) {
 			if(job.getSize() > max) {
@@ -75,7 +120,7 @@ public final class JobUtils {
 	}
 	
 
-	public final int sumSizes(IJob... jobs) {
+	public final static int sumSizes(IJob... jobs) {
 		int sum = 0;
 		for (IJob job : jobs) {
 			sum += job.getReleaseDate();
@@ -83,7 +128,7 @@ public final class JobUtils {
 		return sum;
 	}
 	
-	public final int[] sizes(IJob... jobs) {
+	public final static int[] sizes(IJob... jobs) {
 		int[] tab = new int[jobs.length];
 		for (int i = 0; i < tab.length; i++) {
 			tab[i] = jobs[i].getSize();
@@ -91,7 +136,7 @@ public final class JobUtils {
 		return tab;
 	}
 	
-	public final int minReleaseDate(IJob... jobs) {
+	public final static int minReleaseDate(IJob... jobs) {
 		int min = Integer.MAX_VALUE;
 		for (IJob job : jobs) {
 			if(job.getReleaseDate() < min) {
@@ -101,7 +146,7 @@ public final class JobUtils {
 		return min;
 	}
 	
-	public final int maxReleaseDate(IJob... jobs) {
+	public final static int maxReleaseDate(IJob... jobs) {
 		int max = Integer.MIN_VALUE;
 		for (IJob job : jobs) {
 			if(job.getReleaseDate() > max) {
@@ -111,7 +156,7 @@ public final class JobUtils {
 		return max;
 	}
 	
-	public final int[] releaseDates(IJob... jobs) {
+	public final static int[] releaseDates(IJob... jobs) {
 		int[] tab = new int[jobs.length];
 		for (int i = 0; i < tab.length; i++) {
 			tab[i] = jobs[i].getReleaseDate();
@@ -119,7 +164,7 @@ public final class JobUtils {
 		return tab;
 	}
 	
-	public final int minDeadline(IJob... jobs) {
+	public final static int minDeadline(IJob... jobs) {
 		int min = Integer.MAX_VALUE;
 		for (IJob job : jobs) {
 			if(job.getDeadline() < min) {
@@ -129,7 +174,7 @@ public final class JobUtils {
 		return min;
 	}
 	
-	public final int maxDeadline(IJob... jobs) {
+	public final static int maxDeadline(IJob... jobs) {
 		int max = Integer.MIN_VALUE;
 		for (IJob job : jobs) {
 			if(job.getDeadline() > max) {
@@ -139,14 +184,14 @@ public final class JobUtils {
 		return max;
 	}
 	
-	public final int[] deadlines(IJob... jobs) {
+	public final static int[] deadlines(IJob... jobs) {
 		int[] tab = new int[jobs.length];
 		for (int i = 0; i < tab.length; i++) {
 			tab[i] = jobs[i].getDeadline();
 		}
 		return tab;
 	}
-	public final int minWeight(IJob... jobs) {
+	public final static int minWeight(IJob... jobs) {
 		int min = Integer.MAX_VALUE;
 		for (IJob job : jobs) {
 			if(job.getWeight() < min) {
@@ -156,7 +201,7 @@ public final class JobUtils {
 		return min;
 	}
 	
-	public final int maxWeight(IJob... jobs) {
+	public final static int maxWeight(IJob... jobs) {
 		int max = Integer.MIN_VALUE;
 		for (IJob job : jobs) {
 			if(job.getWeight() > max) {
@@ -167,7 +212,7 @@ public final class JobUtils {
 	}
 	
 
-	public final int sumWeights(IJob... jobs) {
+	public final static int sumWeights(IJob... jobs) {
 		int sum = 0;
 		for (IJob job : jobs) {
 			sum += job.getWeight();
@@ -175,7 +220,7 @@ public final class JobUtils {
 		return sum;
 	}
 	
-	public final int[] weights(IJob... jobs) {
+	public final static int[] weights(IJob... jobs) {
 		int[] tab = new int[jobs.length];
 		for (int i = 0; i < tab.length; i++) {
 			tab[i] = jobs[i].getWeight();
@@ -183,7 +228,7 @@ public final class JobUtils {
 		return tab;
 	}
 	
-	public final int minDueDate(IJob... jobs) {
+	public final static int minDueDate(IJob... jobs) {
 		int min = Integer.MAX_VALUE;
 		for (IJob job : jobs) {
 			if(job.getDueDate() < min) {
@@ -193,7 +238,7 @@ public final class JobUtils {
 		return min;
 	}
 	
-	public final int maxDueDate(IJob... jobs) {
+	public final static int maxDueDate(IJob... jobs) {
 		int max = Integer.MIN_VALUE;
 		for (IJob job : jobs) {
 			if(job.getDueDate() > max) {
@@ -203,7 +248,7 @@ public final class JobUtils {
 		return max;
 	}
 	
-	public final int[] dueDates(IJob... jobs) {
+	public final static int[] dueDates(IJob... jobs) {
 		int[] tab = new int[jobs.length];
 		for (int i = 0; i < tab.length; i++) {
 			tab[i] = jobs[i].getDueDate();

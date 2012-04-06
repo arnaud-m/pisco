@@ -29,8 +29,7 @@ package pisco.batch.data;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import pisco.batch.SortUtils;
-
+import pisco.common.IJob;
 import choco.kernel.common.util.comparator.IPermutation;
 import choco.kernel.common.util.tools.ArrayUtils;
 import choco.kernel.common.util.tools.PermutationUtils;
@@ -42,12 +41,12 @@ public class BatchProcessingData {
 	/**
 	 * jobs in orignal order
 	 */
-	public final Job[] ojobs;
+	public final BJob[] ojobs;
 
 	/**
 	 * jobs sorted according decreasing size. Ties are broken with decreasing lateness minimal (p_i -d_i).
 	 */
-	public final Job[] sjobs;
+	public final BJob[] sjobs;
 	
 	
 	private final static int MIN=0; 
@@ -68,7 +67,7 @@ public class BatchProcessingData {
 
 	private int[] indicesSortedByDueDate;
 
-	public BatchProcessingData(Job[] jobs, int capacity) {
+	public BatchProcessingData(BJob[] jobs, int capacity) {
 		super();
 		//store original array
 		this.nbJobs = jobs.length;
@@ -96,7 +95,7 @@ public class BatchProcessingData {
 		return true;
 	}
 	
-	public void preprocess(Comparator<Job> priorityRule) {
+	public void preprocess(Comparator<IJob> priorityRule) {
 		if(priorityRule != null) {Arrays.sort(sjobs, priorityRule);}
 		for (int i = 0; i < sjobs.length; i++) {
 			data[P][i] = sjobs[i].getDuration();
@@ -128,11 +127,11 @@ public class BatchProcessingData {
 	}
 
 	
-	public final Job getJob(int i) {
+	public final BJob getJob(int i) {
 		return sjobs[i];
 	}
 
-	public final Job[] getJobs() {
+	public final BJob[] getJobs() {
 		return sjobs;
 	}
 		

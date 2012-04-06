@@ -33,33 +33,33 @@ public final class JobComparators {
 
 	private JobComparators() {}
 
-	public static Comparator<AbstractJob> getShortestProcessingTime() {return ShortestProcessingTime.SINGLOTON;}
+	public static Comparator<IJob> getShortestProcessingTime() {return ShortestProcessingTime.SINGLOTON;}
 
-	public static Comparator<AbstractJob> getLongestProcessingTime() {return LongestProcessingTime.SINGLOTON;}
+	public static Comparator<IJob> getLongestProcessingTime() {return LongestProcessingTime.SINGLOTON;}
 
 	public static Comparator<AbstractJob> getShortestRemainingProcessingTime() {return ShortestRemainingProcessingTime.SINGLOTON;}
 	
 	public static Comparator<AbstractJob> getLongestRemainingProcessingTime() {return LongestRemainingProcessingTime.SINGLOTON;}
 
-	public static Comparator<AbstractJob> getWeightedShortestProcessingTime() {return WeightedShortestProcessingTime.SINGLOTON;}
+	public static Comparator<IJob> getWeightedShortestProcessingTime() {return WeightedShortestProcessingTime.SINGLOTON;}
 
-	public static Comparator<AbstractJob> getEarliestReleaseDate() {return EarliestReleaseDate.SINGLOTON;}
+	public static Comparator<IJob> getEarliestReleaseDate() {return EarliestReleaseDate.SINGLOTON;}
 	
-	public static Comparator<AbstractJob> getEarliestDueDate() {return EarliestDueDate.SINGLOTON;}
+	public static Comparator<IJob> getEarliestDueDate() {return EarliestDueDate.SINGLOTON;}
 
-	public static Comparator<AbstractJob> getLatestDueDate() {return LatestDueDate.SINGLOTON;}
+	public static Comparator<IJob> getLatestDueDate() {return LatestDueDate.SINGLOTON;}
 
-	public static Comparator<AbstractJob> getMinimalSlackTime() {return MinimalSlackTime.SINGLOTON;}
+	public static Comparator<IJob> getMinimalSlackTime() {return MinimalSlackTime.SINGLOTON;}
 
-	public static Comparator<AbstractJob> getDecreasingSize() {return DecreasingSize.SINGLOTON;}
+	public static Comparator<IJob> getDecreasingSize() {return DecreasingSize.SINGLOTON;}
 
-	public static Comparator<AbstractJob> getDecreasingParallelUnitWeight() {return DecreasingParallelUnitWeight.SINGLOTON;}
+	public static Comparator<IJob> getDecreasingParallelUnitWeight() {return DecreasingParallelUnitWeight.SINGLOTON;}
 
-	public static Comparator<AbstractJob> getCompositeComparator(final Comparator<AbstractJob> comp1, final Comparator<AbstractJob> comp2) {
-		return new Comparator<AbstractJob>() {
+	public static Comparator<IJob> getCompositeComparator(final Comparator<IJob> comp1, final Comparator<IJob> comp2) {
+		return new Comparator<IJob>() {
 
 			@Override
-			public int compare(AbstractJob o1, AbstractJob o2) {
+			public int compare(IJob o1, IJob o2) {
 				final int val = comp1.compare(o1, o2);
 				return val == 0 ? comp2.compare(o1, o2) : val;
 			}
@@ -69,14 +69,14 @@ public final class JobComparators {
 	}
 
 }
-final class ShortestProcessingTime implements Comparator<AbstractJob> {
+final class ShortestProcessingTime implements Comparator<IJob> {
 
 	public final static ShortestProcessingTime SINGLOTON = new ShortestProcessingTime();
 
 	private ShortestProcessingTime() {}
 
 	@Override
-	public int compare(AbstractJob o1, AbstractJob o2) {
+	public int compare(IJob o1, IJob o2) {
 		final int v1 = 	o1.getDuration();
 		final int v2 = 	o2.getDuration();
 		return (v1 < v2 ? -1 : (v1 == v2) ? 0 : 1);
@@ -84,14 +84,14 @@ final class ShortestProcessingTime implements Comparator<AbstractJob> {
 }
 
 
-final class LongestProcessingTime implements Comparator<AbstractJob> {
+final class LongestProcessingTime implements Comparator<IJob> {
 
 	public final static LongestProcessingTime SINGLOTON = new LongestProcessingTime();
 
 	private LongestProcessingTime() {}
 
 	@Override
-	public int compare(AbstractJob o1, AbstractJob o2) {
+	public int compare(IJob o1, IJob o2) {
 		final int v1 = 	o1.getDuration();
 		final int v2 = 	o2.getDuration();
 		return (v1 > v2 ? -1 : (v1 == v2) ? 0 : 1);
@@ -131,14 +131,14 @@ final class LongestRemainingProcessingTime implements Comparator<AbstractJob> {
 }
 
 
-final class WeightedShortestProcessingTime implements Comparator<AbstractJob> {
+final class WeightedShortestProcessingTime implements Comparator<IJob> {
 
 	public final static WeightedShortestProcessingTime SINGLOTON = new WeightedShortestProcessingTime();
 
 	private WeightedShortestProcessingTime() {}
 
 	@Override
-	public int compare(AbstractJob o1, AbstractJob o2) {
+	public int compare(IJob o1, IJob o2) {
 		final int v1 = 	o2.getWeight()* o1.getDuration();
 		final int v2 = 	o1.getWeight() * o2.getDuration();
 		return (v1 < v2 ? -1 : (v1 == v2 ? 0 : 1));
@@ -146,14 +146,14 @@ final class WeightedShortestProcessingTime implements Comparator<AbstractJob> {
 
 }
 
-final class EarliestReleaseDate implements Comparator<AbstractJob> {
+final class EarliestReleaseDate implements Comparator<IJob> {
 
 	public final static EarliestReleaseDate SINGLOTON = new EarliestReleaseDate();
 
 	private EarliestReleaseDate() {}
 
 	@Override
-	public int compare(AbstractJob o1, AbstractJob o2) {
+	public int compare(IJob o1, IJob o2) {
 		final int v1 = 	o1.getReleaseDate();
 		final int v2 = 	o2.getReleaseDate();
 		return (v1 < v2 ? -1 : (v1 == v2) ? 0 : 1);
@@ -161,14 +161,14 @@ final class EarliestReleaseDate implements Comparator<AbstractJob> {
 
 }
 
-final class EarliestDueDate implements Comparator<AbstractJob> {
+final class EarliestDueDate implements Comparator<IJob> {
 
 	public final static EarliestDueDate SINGLOTON = new EarliestDueDate();
 
 	private EarliestDueDate() {}
 
 	@Override
-	public int compare(AbstractJob o1, AbstractJob o2) {
+	public int compare(IJob o1, IJob o2) {
 		final int v1 = 	o1.getDueDate();
 		final int v2 = 	o2.getDueDate();
 		return (v1 < v2 ? -1 : (v1 == v2) ? 0 : 1);
@@ -177,14 +177,14 @@ final class EarliestDueDate implements Comparator<AbstractJob> {
 }
 
 
-final class LatestDueDate implements Comparator<AbstractJob> {
+final class LatestDueDate implements Comparator<IJob> {
 
 	public final static LatestDueDate SINGLOTON = new LatestDueDate();
 
 	private LatestDueDate() {}
 
 	@Override
-	public int compare(AbstractJob o1, AbstractJob o2) {
+	public int compare(IJob o1, IJob o2) {
 		final int v1 = 	o1.getDueDate();
 		final int v2 = 	o2.getDueDate();
 		return (v1 > v2 ? -1 : (v1 == v2) ? 0 : 1);
@@ -192,14 +192,14 @@ final class LatestDueDate implements Comparator<AbstractJob> {
 
 }
 
-final class MinimalSlackTime implements Comparator<AbstractJob> {
+final class MinimalSlackTime implements Comparator<IJob> {
 
 	public final static MinimalSlackTime SINGLOTON = new MinimalSlackTime();
 
 	private MinimalSlackTime() {}
 
 	@Override
-	public int compare(AbstractJob o1, AbstractJob o2) {
+	public int compare(IJob o1, IJob o2) {
 		final int v1 = 	o1.getDueDate() - o1.getDuration();
 		final int v2 = 	o2.getDueDate() - o2.getDuration();
 		return (v1 > v2? 1 : (v1 == v2 ? 0 : -1));
@@ -207,14 +207,14 @@ final class MinimalSlackTime implements Comparator<AbstractJob> {
 
 }
 
-final class DecreasingSize implements Comparator<AbstractJob> {
+final class DecreasingSize implements Comparator<IJob> {
 
 	public final static DecreasingSize SINGLOTON = new DecreasingSize();
 
 	private DecreasingSize() {}
 
 	@Override
-	public int compare(AbstractJob o1, AbstractJob o2) {
+	public int compare(IJob o1, IJob o2) {
 		final int v1 = 	o1.getSize();
 		final int v2 = 	o2.getSize();
 		return (v1 > v2 ? -1 : (v1 == v2) ? 0 : 1);
@@ -222,14 +222,14 @@ final class DecreasingSize implements Comparator<AbstractJob> {
 }
 
 
-final class DecreasingParallelUnitWeight implements Comparator<AbstractJob> {
+final class DecreasingParallelUnitWeight implements Comparator<IJob> {
 
 	public final static DecreasingParallelUnitWeight SINGLOTON = new DecreasingParallelUnitWeight();
 
 	private DecreasingParallelUnitWeight() {}
 
 	@Override
-	public int compare(AbstractJob o1, AbstractJob o2) {
+	public int compare(IJob o1, IJob o2) {
 		final int v1 = 	o1.getSize() * o1.getDuration() * o2.getWeight();
 		final int v2 = 	o2.getSize() * o2.getDuration() * o1.getWeight();
 		return (v1 < v2? -1 : (v1 == v2 ? 0 : 1));

@@ -26,15 +26,14 @@
  */
 package pisco.batch.heuristics;
 
+import static pisco.common.JobComparators.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
 
 import pisco.batch.AbstractBatchingProblem;
+import pisco.batch.data.BJob;
 import pisco.batch.data.Batch;
-import pisco.batch.data.Job;
-import static pisco.batch.data.JobComparatorFactory.*;
-
 import choco.kernel.common.opres.heuristics.AbstractRandomizedHeuristic;
 
 
@@ -42,7 +41,7 @@ public class BatchProcessingRHeuristics extends AbstractRandomizedHeuristic {
 
 	private final AbstractBatchingProblem bpb;
 
-	private Job[] jobs;
+	private BJob[] jobs;
 
 	protected Batch[] batches;
 
@@ -70,7 +69,7 @@ public class BatchProcessingRHeuristics extends AbstractRandomizedHeuristic {
 		super.reset();
 		bpb.getPriorityDispatchingRule().globalCostFunction.reset();
 		final int n = bpb.getN();
-		jobs = new Job[n];
+		jobs = new BJob[n];
 		if(batches != null  && batches.length == n) {
 			resetBatches(0);
 		} else {
@@ -82,7 +81,7 @@ public class BatchProcessingRHeuristics extends AbstractRandomizedHeuristic {
 	}
 
 	// DONE 21 sept. 2011 - Improve by packing and then OPTIMALLY Scheduling batches ! - created 21 sept. 2011 by Arnaud Malapert
-	public final int apply(Job[] jobs, int bestsol) {
+	public final int apply(BJob[] jobs, int bestsol) {
 		final int n = bpb.getN();
 		int nbB = 0;
 		if( n > 0) {
@@ -91,7 +90,7 @@ public class BatchProcessingRHeuristics extends AbstractRandomizedHeuristic {
 			do {
 				batches[nbB].clear();
 				do {
-					batches[nbB].pack(jobs[j++]);
+					batches[nbB].parallelMerge(jobs[j++]);
 				} while( j < n && batches[nbB].canPack(jobs[j], c));
 				nbB++;
 			}while(j < n);

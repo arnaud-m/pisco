@@ -28,24 +28,19 @@ package pisco.batch;
 
 import static choco.Choco.MAX_UPPER_BOUND;
 import static choco.Choco.constant;
-import static pisco.batch.data.JobComparatorFactory.getCompositeComparator;
-import static pisco.batch.data.JobComparatorFactory.getDecreasingSize;
-import static pisco.batch.data.JobComparatorFactory.getWeightedShortestProcessingTime;
+import static pisco.common.JobComparators.getCompositeComparator;
+import static pisco.common.JobComparators.getDecreasingSize;
+import static pisco.common.JobComparators.getWeightedShortestProcessingTime;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.ResolutionStatus;
-import pisco.batch.data.Job;
-import pisco.batch.heuristics.CostFactory;
-import pisco.batch.heuristics.ICostAggregator;
-import pisco.batch.heuristics.ICostFunction;
-import pisco.batch.heuristics.PDRScheduler;
-import pisco.batch.heuristics.PriorityDispatchingRule;
 import pisco.batch.visu.BatchingChartFactory;
+import pisco.common.PDR1Scheduler;
+import pisco.common.PriorityDispatchingRule;
 import choco.kernel.model.Model;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.solver.Configuration;
@@ -59,7 +54,7 @@ public class PBatchWFlow extends AbstractBatchingProblem {
 	}
 	@Override
 	public PriorityDispatchingRule getPriorityDispatchingRule() {
-		return PDRScheduler.WSPT;
+		return PDR1Scheduler.WSPT;
 	}
 	
 	

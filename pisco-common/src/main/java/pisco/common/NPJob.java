@@ -2,16 +2,23 @@ package pisco.common;
 
 import choco.Choco;
 
-public class Job extends AbstractJob {
+public class NPJob extends AbstractJob {
+
+
 
 	//schedule
 	private int est = Choco.MIN_LOWER_BOUND;
 	private int lct = Choco.MIN_LOWER_BOUND;
 
-	public Job(int id) {
+	public NPJob(int id) {
 		super(id);
 	}
 
+	public NPJob(int id, int duration) {
+		super(id);
+		setDuration(duration);
+	}
+	
 	
 	@Override
 	public boolean isPreemptionAllowed() {

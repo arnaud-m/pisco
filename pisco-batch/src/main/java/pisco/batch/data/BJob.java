@@ -26,81 +26,40 @@
  */
 package pisco.batch.data;
 
-import static choco.Choco.MAX_UPPER_BOUND;
+import pisco.common.NPJob;
 
-public class Job {
+// TODO - Remove class - created 5 avr. 2012 by A. Malapert
+public class BJob extends NPJob {
 
-	// TODO - reset the schedule when the duration of the job has changed to reset . - created 4 nov. 2011 by Arnaud Malapert
-	public final int id;
-	protected int duration;
-	protected int size;
-	protected int weight;
-	protected int dueDate;
-	protected int startingTime;
-	protected int completionTime;
+	
 
-	public Job(int id) {
-		this(id,0,0,0, MAX_UPPER_BOUND);
+	public BJob(int id) {
+		super(id);
 	}
 	
-	public Job(int id, int duration, int dueDate) {
+	public BJob(int id, int duration, int dueDate) {
 		this(id, duration, 1, 1, dueDate);
 	}
 	
-	public Job(int id, int duration, int weight, int dueDate) {
+	public BJob(int id, int duration, int weight, int dueDate) {
 		this(id, duration, 1, weight, dueDate);
 	}
 	
-	public Job(int id, int duration, int size, int weight, int dueDate)
+	public BJob(int id, int duration, int size, int weight, int dueDate)
 	{
-		this.id = id;
-		this.duration = duration;
-		this.size = size;
-		this.weight = weight;
-		this.dueDate = dueDate;
+		super(id, duration);
+		setSize(size);
+		setWeight(weight);
+		setDueDate(dueDate);
 	}
 
 	public void clear()
 	{
-		this.startingTime = (this.completionTime = 0);
+		resetSchedule();
 	}
 	
 	public final int getId() {
 		return this.id;
-	}
-
-	public final int getDuration()
-	{
-		return this.duration;
-	}
-
-	public final void setDuration(int duration) {
-		this.duration = duration;
-	}
-
-	public final int getSize() {
-		return this.size;
-	}
-
-	public final void setSize(int size) {
-		this.size = size;
-	}
-
-	public final int getWeight() {
-		return this.weight;
-	}
-
-	public final void setWeight(int weight) {
-		this.weight = weight;
-	}
-
-	public final int getDueDate()
-	{
-		return this.dueDate;
-	}
-
-	public final void setDueDate(int dueDate) {
-		this.dueDate = dueDate;
 	}
 	
 	public int getCardinality() {
@@ -109,22 +68,20 @@ public class Job {
 	
 
 	public final int getCompletionTime() {
-		return this.completionTime;
+		return this.getLCT();
 	}
 
 	public final int getStartingTime()
 	{
-		return this.startingTime;
+		return this.getEST();
 	}
 
 	public final void setStartingTime(int startingTime) {
-		this.startingTime = startingTime;
-		this.completionTime = (startingTime + this.duration);
+		scheduleFrom(startingTime);
 	}
 
 	protected final void setCompletionTime(int completionTime) {
-		this.completionTime = completionTime;
-		this.startingTime = (this.completionTime - this.duration);
+		scheduleTo(completionTime);
 	}
 
 	public final int getLateness() {
@@ -143,25 +100,5 @@ public class Job {
 
 	
 	
-	public void combine(Job j1, Job j2) {
-		duration = Math.max(j1.getDuration(), j2.getDuration());
-		size = j1.getSize() + j2.getSize();
-		weight = j1.getWeight() + j2.getWeight();
-		dueDate = Math.min(j1.getDueDate(), j2.getDueDate());
-	}
 	
-	public void pack(Job job) {
-		if (duration < job.duration) duration = job.duration;
-		if (dueDate > job.dueDate) dueDate = job.dueDate;
-		weight += job.weight;
-		size += job.size;
-	}
-	
-	@Override
-	public String toString()
-	{
-		String descr = this.id + "( p=" + this.duration + ", w=" + this.weight + ", d=" + this.dueDate + (this.size == 0 ? ")" : new StringBuilder(")[").append(this.size).append("]").toString());
-		return this.completionTime > 0 ? "{TW=[" + this.startingTime + ", " + this.completionTime + "] ," + descr + "}" : descr;
-	}
-
 }

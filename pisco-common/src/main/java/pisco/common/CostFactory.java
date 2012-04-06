@@ -24,37 +24,33 @@
 *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package pisco.batch.heuristics;
+package pisco.common;
 
-import java.util.Comparator;
-import pisco.batch.data.Job;
 
-public class PriorityDispatchingRule {
-	
-	public final Comparator<Job> priorityRule;
-	public final ICostFunction costFunction;
-	public final ICostAggregator globalCostFunction;
-	
-	public PriorityDispatchingRule(Comparator<Job> priorityRule,
-			ICostFunction costFunction, ICostAggregator globalCostFunction) {
+public final class CostFactory {
+
+	private CostFactory() {
 		super();
-		this.priorityRule = priorityRule;
-		this.costFunction = costFunction;
-		this.globalCostFunction = globalCostFunction;
 	}
 
-	public final Comparator<Job> getPriorityRule() {
-		return priorityRule;
+	public static ICostFunction getLateness() {
+		return Lateness.SINGLOTON;
 	}
 
-	public final ICostFunction getCostFunction() {
-		return costFunction;
+	public static ICostFunction getCTime() {
+		return CompletionTime.SINGLOTON;
 	}
 
-	public final ICostAggregator getGlobalCostFunction() {
-		return globalCostFunction;
+	public static ICostFunction getWeightedCTime() {
+		return WeightedCompletionTime.SINGLOTON;
 	}
 	
-	
-	
+	public static ICostAggregator makeMaxCosts() {
+		return new MaxCosts();
+	}
+
+	public static ICostAggregator makeSumCosts() {
+		return new SumCosts();
+	}
 }
+

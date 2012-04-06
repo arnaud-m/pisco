@@ -41,14 +41,14 @@ import choco.kernel.common.logging.ChocoLogging;
 
 public class BatchParser extends AbstractTextParser {
 
-	private Job[] jobs;
+	private BJob[] jobs;
 	private int capacity;
 
 	public final int getCapacity() {
 		return capacity;
 	}
 
-	public final Job[] getJobs() {
+	public final BJob[] getJobs() {
 		return jobs;
 	}
 
@@ -67,9 +67,9 @@ public class BatchParser extends AbstractTextParser {
 			throws UnsupportedConstraintException {
 		final int nbJobs = nextInt();
 		capacity = nextInt();
-		jobs = new Job[nbJobs];
+		jobs = new BJob[nbJobs];
 		for (int i = 0; i < nbJobs; i++) {
-			jobs[i] = new Job(i+1, nextInt(), nextInt(), nextInt(), nextInt());
+			jobs[i] = new BJob(i+1, nextInt(), nextInt(), nextInt(), nextInt());
 		}
 		close();
 		if(displayInstance) {

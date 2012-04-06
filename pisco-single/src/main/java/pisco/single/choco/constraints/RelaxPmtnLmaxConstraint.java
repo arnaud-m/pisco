@@ -138,7 +138,7 @@ public class RelaxPmtnLmaxConstraint extends AbstractTaskSConstraint {
 
 	
 	private void handlePrecedence(int i, int j) {
-		final int mdd = modifiedDueDates[j] - problem.processingTimes[j];
+		final int mdd = modifiedDueDates[j] - problem.jobs[i].getDuration();
 		if(mdd < modifiedDueDates[i]) {
 			modifiedDueDates[i] = mdd;
 		}
@@ -159,7 +159,7 @@ public class RelaxPmtnLmaxConstraint extends AbstractTaskSConstraint {
 			if(_successorCount[i] == 0) {
 				currentIndices.add(i);
 			}
-			modifiedDueDates[i] = problem.dueDates[i];
+			modifiedDueDates[i] = problem.jobs[i].getDueDate();
 		}
 		// compute modified due dates
 		assert( ! currentIndices.isEmpty());

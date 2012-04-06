@@ -31,6 +31,7 @@ package pisco.single;
 
 
 import static choco.Choco.MAX_UPPER_BOUND;
+import static choco.Choco.clause;
 import static choco.Choco.constantArray;
 import static choco.Choco.disjunctive;
 import static choco.Choco.makeBooleanVar;
@@ -43,7 +44,9 @@ import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.BasicSettings;
 import pisco.common.AbstractDisjunctiveProblem;
 import pisco.common.DisjunctiveSettings;
-import pisco.single.parsers.AirlandParser;
+import pisco.common.ITJob;
+import pisco.common.JobUtils;
+import pisco.single.parsers.Abstract1MachineParser;
 import choco.Choco;
 import choco.Options;
 import choco.cp.model.CPModel;
@@ -51,7 +54,6 @@ import choco.cp.solver.preprocessor.PreProcessCPSolver;
 import choco.cp.solver.preprocessor.PreProcessConfiguration;
 import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.common.util.comparator.TaskComparators;
-import choco.kernel.common.util.tools.MathUtils;
 import choco.kernel.common.util.tools.TaskUtils;
 import choco.kernel.model.Model;
 import choco.kernel.model.constraints.Constraint;
@@ -70,14 +72,7 @@ import choco.visu.components.chart.ChocoChartFactory;
 public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem {
 
 
-	public int[] processingTimes;
-
-	// TODO - Shift smallest release date to 0 - created 4 avr. 2012 by A. Malapert
-	public int[] releaseDates;
-
-	public int[] dueDates;
-
-	public int[] deadlines;
+	public ITJob[] jobs;
 
 	public int[][] setupTimes;
 
@@ -87,8 +82,8 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 
 	public Constraint machine;
 
-	public Abstract1MachineProblem(BasicSettings settings) {
-		super(new AirlandParser(), settings);
+	public Abstract1MachineProblem(BasicSettings settings, Abstract1MachineParser parser) {
+		super(parser, settings);
 		setChartManager(ChocoChartFactory.getJFreeChartManager());
 		//	settings.putBoolean(BasicSettings.PREPROCESSING_HEURISTICS, false);
 		//settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);
@@ -106,7 +101,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 	public final int getDisjunctCount() {
 		return (nbJobs * (nbJobs -1)) /2;
 	}
-	
+
 	public final TaskVariable getTask(int job) {
 		return tasks[job];
 	}
@@ -115,7 +110,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 	@Override
 	public void initialize() {
 		super.initialize();
-		processingTimes = releaseDates = dueDates = deadlines = null;
+		jobs = null;
 		setupTimes = null;
 		tasks = null;
 		disjuncts = null;
@@ -128,55 +123,17 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 	@Override
 	public void load(File fichier) throws UnsupportedConstraintException {
 		super.load(fichier);
-		AirlandParser parser = (AirlandParser) this.parser;
+		Abstract1MachineParser parser = (Abstract1MachineParser) this.parser;
 		nbJobs = parser.nbJobs;
-//		releaseDates = parser.releaseDates;
-//		dueDates = parser.dueDates;
-//		deadlines = parser.deadlines;
+		jobs = parser.jobs;
 		setupTimes = parser.setupTimes;
 		/////////////////
-		// Preprocess Data
-		processingTimes = new int[nbJobs];
-		// Initialize processing times
-		for (int i = 0; i < nbJobs; i++) {
-
-			processingTimes[i] = MathUtils.min(setupTimes[i]);
-			//Update due dates, dealines, and setups
-			dueDates[i] += processingTimes[i];
-			deadlines[i] += processingTimes[i];
-			for (int j = 0; j < nbJobs; j++) {
-				setupTimes[i][j] -= processingTimes[i];
-			}
-		}
+		JobUtils.shiftLeftReleaseDates(jobs);
 	}
 
 
-
-
-
-
-
-	//	@Override
-	//	public Boolean preprocess() {
-	//		super.preprocess();
-	//		setComputedLowerBound(computeLoadLowerBound());
-	//		if( defaultConf.readBoolean(BasicSettings.PREPROCESSING_HEURISTICS) ) {
-	//			final CrashHeuristics heur = getCrashHeuristics();
-	//			if( defaultConf.readBoolean(ChocoshopSettings.HEURISTICS_LEARNING) ) {
-	//				initCrashLearning();
-	//				if( crashLearning != null) {
-	//					heur.setTimeLimit(crashLearning.getLearnedTimeLimit(this));
-	//					heur.setIterationLimit(crashLearning.getLearnedIterationLimit(this));
-	//				} else ChocoshopSettings.setLimits(defaultConf, heur);
-	//			}else ChocoshopSettings.setLimits(defaultConf, heur);
-	//			return super.preprocess();
-	//		} else return null;
-	//	}
-
-
-
 	//****************************************************************//
-	//********* Modeling *******************************************//
+	//********* Modelling *******************************************//
 	//****************************************************************//
 
 
@@ -202,9 +159,9 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 				Options.V_MAKESPAN,Options.V_BOUND, Options.V_NO_DECISION);
 		model.addVariables(makespan);
 
-		tasks = Choco.makeTaskVarArray("T", releaseDates, deadlines, constantArray(processingTimes), Options.V_BOUND);
+		tasks = Choco.makeTaskVarArray("T", JobUtils.releaseDates(jobs), JobUtils.deadlines(jobs), constantArray(JobUtils.durations(jobs)), Options.V_BOUND);
 		for (int i = 0; i < tasks.length; i++) {
-			if( processingTimes[i] == 0) model.addConstraint(Choco.eq(tasks[i].start(), releaseDates[i]));
+			if( jobs[i].getDuration() == 0) model.addConstraint(Choco.eq(tasks[i].start(), jobs[i].getReleaseDate()));
 			tasks[i].end().addOption(Options.V_NO_DECISION);
 
 		}
@@ -218,19 +175,18 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 			}
 		}
 
-		// TODO - Validate transitive clauses - created 11 mars 2012 by A. Malapert
 		for (int i = 0; i < tasks.length; i++) {
 			for (int j = i+1; j < tasks.length; j++) {
-				System.out.println(i+ "," + j + " -> "+ getDisjunct(i, j, nbJobs));
+				//System.out.println(i+ "," + j + " -> "+ getDisjunct(i, j, nbJobs));
 				IntegerVariable bij = disjuncts[getDisjunct(i, j, nbJobs)];
-				//				for (int k = j+1; k < tasks.length; k++) {
-				//					IntegerVariable bjk = disjuncts[getDisjunct(j, k, nbJobs)];
-				//					IntegerVariable bik = disjuncts[getDisjunct(i, k, nbJobs)];
-				//					model.addConstraints( 
-				//							clause(new IntegerVariable[]{bij, bjk}, new IntegerVariable[]{bik}), 
-				//							clause(new IntegerVariable[]{bik}, new IntegerVariable[]{bij,bjk})
-				//							);
-				//				}
+				for (int k = j+1; k < tasks.length; k++) {
+					IntegerVariable bjk = disjuncts[getDisjunct(j, k, nbJobs)];
+					IntegerVariable bik = disjuncts[getDisjunct(i, k, nbJobs)];
+					model.addConstraints( 
+							clause(new IntegerVariable[]{bij, bjk}, new IntegerVariable[]{bik}), 
+							clause(new IntegerVariable[]{bik}, new IntegerVariable[]{bij,bjk})
+							);
+				}
 			}
 		}
 		machine = disjunctive(tasks, Options.C_DISJ_NFNL, Options.C_DISJ_EF, Options.C_NO_DETECTION);
@@ -289,7 +245,12 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 	protected void logOnConfiguration() {
 		super.logOnConfiguration();
 		logMsg.storeConfiguration(DisjunctiveSettings.getBranchingMsg(defaultConf));
+		if (parser instanceof Abstract1MachineParser) {
+			logMsg.storeConfiguration(((Abstract1MachineParser) parser).getParserMsg());
+		}
 	}
+
+
 
 
 
@@ -319,7 +280,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		for (int i = 0; i < tvars.length - 1; i++) {
 			final int j = tvars[i].getID();
 			final int k = tvars[i+1].getID();
-			if( tvars[i].getLCT() + setupTimes[j][k] > releaseDates[k]) {
+			if( tvars[i].getLCT() + setupTimes[j][k] > jobs[k].getReleaseDate()) {
 				//the next task is postponed because of the setup time 
 				setups[j] = setupTimes[j][k]; 
 			}
@@ -338,7 +299,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 	@Override
 	protected Object makeSolutionChart() {
 		return solver != null && solver.existsSolution() ?
-				ChocoChartFactory.createGanttChart("", solver.getVar(tasks), releaseDates, computeSolutionSetups()) : null;
+				ChocoChartFactory.createGanttChart("", solver.getVar(tasks)) : null;
 	}
 
 }

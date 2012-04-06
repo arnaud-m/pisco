@@ -24,15 +24,14 @@
 *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package pisco.batch.heuristics;
+package pisco.common;
 
-import pisco.batch.data.Job;
 
 public interface ICostFunction {
 
-	int getCost(Job job);
+	int getCost(ITJob job);
 	
-	int getCost(Job job, int completionTime);
+	int getCost(ITJob job, int completionTime);
 }
 
 
@@ -45,12 +44,12 @@ final class Lateness implements ICostFunction {
 	}
 
 	@Override
-	public int getCost(Job j) {
-		return j.getCompletionTime() - j.getDueDate();
+	public int getCost(ITJob j) {
+		return j.getECT() - j.getDueDate();
 	}
 	
 	@Override
-	public int getCost(Job j, int completionTime) {
+	public int getCost(ITJob j, int completionTime) {
 		return completionTime - j.getDueDate();
 	}
 
@@ -65,12 +64,12 @@ final class CompletionTime implements ICostFunction {
 	}
 
 	@Override
-	public int getCost(Job j) {
-		return j.getCompletionTime();
+	public int getCost(ITJob j) {
+		return j.getECT();
 	}
 
 	@Override
-	public int getCost(Job j, int completionTime) {
+	public int getCost(ITJob j, int completionTime) {
 		return completionTime;
 	}
 }
@@ -85,12 +84,12 @@ final class WeightedCompletionTime implements ICostFunction {
 	}
 
 	@Override
-	public int getCost(Job j) {
-		return j.getWeight() * j.getCompletionTime();
+	public int getCost(ITJob j) {
+		return j.getWeight() * j.getECT();
 	}
 
 	@Override
-	public int getCost(Job j, int completionTime) {
+	public int getCost(ITJob j, int completionTime) {
 		return j.getWeight() * completionTime;
 	}
 }

@@ -26,7 +26,7 @@
  */
 package pisco.batch.choco.constraints;
 
-import pisco.batch.data.Job;
+import pisco.batch.data.BJob;
 import pisco.batch.heuristics.PDRScheduler;
 import choco.cp.solver.constraints.global.pack.IPackSConstraint;
 import choco.kernel.common.logging.ChocoLogging;
@@ -59,13 +59,13 @@ public abstract class AbstractTaskPList extends TaskSList {
 
 	public int psize;
 
-	public final Job[] taskPList;
+	public final BJob[] taskPList;
 
 	private final IFilteringWrapper filteringWrapper;
 
 	public AbstractTaskPList(PBatchRelaxSConstraint cstr, boolean singleAndParallel) {
 		super(cstr);
-		taskPList = new Job[cstr.problem.getM() + cstr.problem.getN()];
+		taskPList = new BJob[cstr.problem.getM() + cstr.problem.getN()];
 		filteringWrapper = singleAndParallel ? MIXED : PARALLEL;
 	}
 

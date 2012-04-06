@@ -26,9 +26,7 @@
  */
 package pisco.batch;
 
-import static pisco.batch.data.JobComparatorFactory.getCompositeComparator;
-import static pisco.batch.data.JobComparatorFactory.getDecreasingSize;
-import static pisco.batch.data.JobComparatorFactory.getShortestProcessingTime;
+import static pisco.common.JobComparators.*;
 
 import java.util.Collections;
 

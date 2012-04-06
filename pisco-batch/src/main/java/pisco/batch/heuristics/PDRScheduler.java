@@ -26,19 +26,15 @@
  */
 package pisco.batch.heuristics;
 
-import static pisco.batch.heuristics.CostFactory.makeMaxCosts;
-
-import gnu.trove.TIntArrayList;
+import static pisco.common.CostFactory.*;
+import static pisco.common.JobComparators.getDecreasingParallelUnitWeight;
 
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Queue;
 
-import choco.kernel.common.util.objects.IPrioritizable;
+import pisco.batch.data.BJob;
+import pisco.common.PDR1Scheduler;
+import pisco.common.PriorityDispatchingRule;
 
-import pisco.batch.AbstractBatchingProblem;
-import pisco.batch.data.Job;
-import pisco.batch.data.JobComparatorFactory;
 
 
 public final class PDRScheduler {
@@ -47,39 +43,6 @@ public final class PDRScheduler {
 		super();
 	}
 
-	//*****************************************************************//
-	//*******************  Priority dispatching rules ****************//
-	//***************************************************************//
-
-	public final static PriorityDispatchingRule EDD = new PriorityDispatchingRule(
-				JobComparatorFactory.getEarliestDueDate(), 
-				CostFactory.getLateness(), 
-				CostFactory.makeMaxCosts()
-				);
-	
-	public final static PriorityDispatchingRule SPT = new PriorityDispatchingRule(
-			JobComparatorFactory.getShortestProcessingTime(), 
-			CostFactory.getCTime(), 
-			CostFactory.makeSumCosts()
-			);
-	
-	public final static PriorityDispatchingRule WSPT = new PriorityDispatchingRule(
-			JobComparatorFactory.getWeightedShortestProcessingTime(), 
-			CostFactory.getWeightedCTime(), 
-			CostFactory.makeSumCosts()
-			);
-	
-	public static PriorityDispatchingRule getRuleEDD() {
-		return EDD;
-	}
-	
-	public static final PriorityDispatchingRule getRuleSPT() {
-		return SPT;
-	}
-
-	public static final PriorityDispatchingRule getRuleWSPT() {
-		return WSPT;
-	}
 
 	
 	//*****************************************************************//
@@ -87,30 +50,11 @@ public final class PDRScheduler {
 	//***************************************************************//
 
 
-	public static int sequence(Job[] jobs, int n, PriorityDispatchingRule rule) {
-		assert n<= jobs.length;
-		jobs[0].setStartingTime(0);
-		rule.globalCostFunction.setCost(rule.costFunction.getCost(jobs[0]));
-		for (int i = 1; i < n; i++) {
-			jobs[i].setStartingTime(jobs[i-1].getCompletionTime());
-			rule.globalCostFunction.addCost(rule.costFunction.getCost(jobs[i]));	
-		}
-		return rule.globalCostFunction.getTotalCost();		
-	}
-
-
-
-	public static int schedule(Job[] jobs, int n, PriorityDispatchingRule rule) {
-		Arrays.sort(jobs, 0, n, rule.priorityRule);
-		return sequence(jobs, n, rule);		
-	}
-
-
 	/**
 	 * the algorithm fails as soon as the objective value of the schedule exceeds the upper bound.
 	 * @return a potentially incomplete schedule.
 	 */
-	public static boolean lazySequence(Job[] jobs, int n, PriorityDispatchingRule rule, int uppBound) {
+	public static boolean lazySequence(BJob[] jobs, int n, PriorityDispatchingRule rule, int uppBound) {
 		assert n<= jobs.length;
 		jobs[0].setStartingTime(0);
 		rule.globalCostFunction.setCost(rule.costFunction.getCost(jobs[0]));
@@ -122,17 +66,18 @@ public final class PDRScheduler {
 		return true;		
 	}
 
-	public static boolean lazySchedule(Job[] jobs, int n, PriorityDispatchingRule rule, int uppBound) {
+	public static boolean lazySchedule(BJob[] jobs, int n, PriorityDispatchingRule rule, int uppBound) {
 		Arrays.sort(jobs, 0, n, rule.priorityRule);
 		return lazySequence(jobs, n, rule, uppBound);		
 	}
 
 
-	public static int replace(Job[] schedule,  int n, PriorityDispatchingRule rule, Job job) {
+	public static int replace(BJob[] schedule,  int n, PriorityDispatchingRule rule, BJob job) {
 		int cpos = 0;
 		final int id = job.getId();
 		//find current position of the job
 		while(schedule[cpos].getId() != id) {cpos++;}
+		assert( cpos < schedule.length);
 		//find its new position
 		int npos = cpos;
 		while(npos -1 >= 0 && rule.priorityRule.compare(schedule[npos-1], job) > 0) {
@@ -175,11 +120,11 @@ public final class PDRScheduler {
 		return rule.globalCostFunction.getTotalCost();
 	}
 
-	public static int insert(Job[] schedule,  int n, PriorityDispatchingRule rule, Job... jobs) {
+	public static int insert(BJob[] schedule,  int n, PriorityDispatchingRule rule, BJob... jobs) {
 		return insert(schedule, n, rule, jobs, jobs.length);
 	}
 	
-	public static int insert(Job[] schedule,  int n, PriorityDispatchingRule rule, Job[] jobs, int p) {
+	public static int insert(BJob[] schedule,  int n, PriorityDispatchingRule rule, BJob[] jobs, int p) {
 		assert n<= schedule.length;
 		int i = 0;
 		int j = 0;
@@ -211,27 +156,14 @@ public final class PDRScheduler {
 		return rule.globalCostFunction.getTotalCost();
 	}
 
-	//*****************************************************************//
-	//*******************  Classical PDR *****************************//
-	//***************************************************************//
 
-	public static int schedule1Lmax(Job[] jobs) {
-		return schedule(jobs,jobs.length, EDD);
-	}
-
-	public static int schedule1Flow(Job[] jobs) {
-		return schedule(jobs, jobs.length, SPT);
-	}
-
-	public static int schedule1WFlow(Job[] jobs) {
-		return schedule(jobs, jobs.length, WSPT);
-	}
+	
 
 	//*****************************************************************//
 	//*******************  parallel machine scheduling ***************//
 	//***************************************************************//
 
-	public static int parallelSequence(Job[] jobs,int n, int m, PriorityDispatchingRule rule) {
+	public static int parallelSequence(BJob[] jobs,int n, int m, PriorityDispatchingRule rule) {
 		assert n<= jobs.length;
 		int j = 0;
 		int[] machines = new int[m];
@@ -249,47 +181,50 @@ public final class PDRScheduler {
 
 
 
-	public static int parallelSchedule(Job[] jobs, int n, int m, PriorityDispatchingRule rule) {
+	public static int parallelSchedule(BJob[] jobs, int n, int m, PriorityDispatchingRule rule) {
 		Arrays.sort(jobs, 0, n, rule.priorityRule);
 		return parallelSequence(jobs, n, m, rule);		
 	}
 
-	public static int parallelUnitSizedLmaxSchedule(Job[] jobs, int n, int m) {
-		Arrays.sort(jobs, 0, n, EDD.priorityRule);
+	public static int parallelUnitSizedLmaxSchedule(BJob[] jobs, int n, int m) {
+		Arrays.sort(jobs, 0, n, PDR1Scheduler.EDD.priorityRule);
 		return parallelUnitSizedLmaxSequence(jobs, n, m);
 	}
 	
-	public static int parallelUnitSizedLmaxSequence(Job[] jobs, int n, int m) {
+	public static int parallelUnitSizedLmaxSequence(BJob[] jobs, int n, int m) {
 		assert n<= jobs.length;
-		EDD.globalCostFunction.reset();	
+		PDR1Scheduler.EDD.globalCostFunction.reset();	
 		int[] machines = new int[m];
 		int k = 0;
 		for (int j = 0; j < n; j++) {
+			//TODO on peut calculer directement le décalage
 			for (int p = 0; p < jobs[j].getDuration(); p++) {
 				for (int s = 0; s < jobs[j].getSize(); s++) {
 					machines[k]++; 
 					k = k < m - 1 ? k+1 : 0;
 				}
 			}
-			EDD.globalCostFunction.addCost( EDD.costFunction.getCost(jobs[j], machines[k == 0 ? m-1 : k - 1]));
+			PDR1Scheduler.EDD.globalCostFunction.addCost( PDR1Scheduler.EDD.costFunction.getCost(jobs[j], machines[k == 0 ? m-1 : k - 1]));
 		}
-		return EDD.globalCostFunction.getTotalCost();		
+		return PDR1Scheduler.EDD.globalCostFunction.getTotalCost();		
 	}
 	
-	public static boolean testParallelpmtnSizedLmax(Job[] jobs, int n, int m) {
+	public static boolean testParallelpmtnSizedLmax(BJob[] jobs, int n, int m) {
 		return false;
 		//return schedule(jobs, getEarliestDueDate(), getLateness(), makeMaxCosts());
 	}
 
 	
-	public static int parallelUnitSizedWFlowSchedule(Job[] jobs, int n, int m) {
+	public static int parallelUnitSizedWFlowSchedule(BJob[] jobs, int n, int m) {
+		
 		assert n<= jobs.length;
-		Arrays.sort(jobs, 0, n, JobComparatorFactory.getDecreasingParallelUnitWeight());
+		Arrays.sort(jobs, 0, n, getDecreasingParallelUnitWeight());
 		double totalCost = 0;	
 		int[] machines = new int[m];
 		int k = 0;
 		for (int j = 0; j < n; j++) {
 			final double w = ( (double) jobs[j].getWeight() ) / ( jobs[j].getDuration() * jobs[j].getSize());
+			//TODO on peut calculer directement le décalage 
 			for (int p = 0; p < jobs[j].getDuration(); p++) {
 				for (int s = 0; s < jobs[j].getSize(); s++) {
 					machines[k]++; 

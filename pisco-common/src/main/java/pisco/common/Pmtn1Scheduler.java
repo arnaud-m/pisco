@@ -1,49 +1,18 @@
 package pisco.common;
 
 import static choco.Choco.MAX_UPPER_BOUND;
-import gnu.trove.TLinkedList;
+import static pisco.common.JobUtils.isScheduled;
 import gnu.trove.TObjectProcedure;
 
 import java.util.Arrays;
 import java.util.PriorityQueue;
 
-public final class PDRPmtnSchedule {
+public final class Pmtn1Scheduler {
 
-	private PDRPmtnSchedule() {
+	private Pmtn1Scheduler() {
 		super();
 	}
 
-	public final void modifyDueDates(final AbstractJob[] jobs) {
-		final TLinkedList<TJobAdapter> pendingJobs = new TLinkedList<TJobAdapter>();
-		//initialize
-		for (int i = 0; i < jobs.length; i++) {
-			jobs[i].setHook(jobs[i].getSuccessorCount());
-			if(jobs[i].getHook() == 0) {
-				AbstractJob.addJob(pendingJobs, jobs[i]);
-			}
-		}
-		assert( ! pendingJobs.isEmpty());
-		//compute topological order and modify due dates
-		while( ! pendingJobs.isEmpty()) {
-			final AbstractJob current = pendingJobs.getFirst().getTarget();
-			AbstractJob.free(pendingJobs.removeFirst());
-			current.forEachPredecessor( new TObjectProcedure<TJobAdapter>() {
-
-				@Override
-				public boolean execute(TJobAdapter object) {
-					final int modifiedDueDate = current.getDueDate() - current.getDuration();
-					if(modifiedDueDate < object.target.getDueDate() ) {
-						object.target.setDueDate(modifiedDueDate);
-					}
-					if(object.target.decHook() == 0) {
-						AbstractJob.addJob(pendingJobs, object.target);
-					}
-					return true;
-				}
-			});
-
-		}
-	}
 
 	public final static void schedule(AbstractJob[] jobs) {
 		//initialize
@@ -52,7 +21,7 @@ public final class PDRPmtnSchedule {
 		}
 		AbstractJob[] tjobs = Arrays.copyOf(jobs, jobs.length);
 		Arrays.sort(tjobs, JobComparators.getEarliestReleaseDate());
-		final PriorityQueue<AbstractJob> pendingJobs= new PriorityQueue<AbstractJob>(10, JobComparators.getEarliestDueDate());
+		final PriorityQueue<ITJob> pendingJobs= new PriorityQueue<ITJob>(10, JobComparators.getEarliestDueDate());
 		int nextTime = tjobs[0].getReleaseDate();
 		int i = 0;
 		do {
@@ -122,7 +91,7 @@ public final class PDRPmtnSchedule {
 	public final static void ScheduleLawlerLmax(AbstractJob[] jobs) {
 		//initialize
 		int currentTime = 0;
-		final PriorityQueue<AbstractJob> pendingJobs= new PriorityQueue<AbstractJob>(10, JobComparators.getLatestDueDate());
+		final PriorityQueue<ITJob> pendingJobs= new PriorityQueue<ITJob>(10, JobComparators.getLatestDueDate());
 		for (int i = 0; i < jobs.length; i++) {
 			currentTime += jobs[i].getDuration();
 			jobs[i].setHook(jobs[i].getSuccessorCount());
@@ -131,7 +100,7 @@ public final class PDRPmtnSchedule {
 			}
 		}
 		while( ! pendingJobs.isEmpty()) {
-			final AbstractJob job = pendingJobs.remove();
+			final ITJob job = pendingJobs.remove();
 			job.scheduleTo(currentTime);
 			currentTime = job.getEST();
 			job.forEachPredecessor(new TObjectProcedure<TJobAdapter>() {
@@ -147,14 +116,7 @@ public final class PDRPmtnSchedule {
 		}
 	}
 	
-	public final static boolean isScheduled(AbstractJob[] jobs) {
-		for (int i = 0; i < jobs.length; i++) {
-			if( ! jobs[i].isScheduled() ) {
-				return false;
-			}
-		}
-		return true;
-	}
+
 
 }
 

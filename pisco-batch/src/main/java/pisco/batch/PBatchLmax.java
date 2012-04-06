@@ -28,24 +28,18 @@ package pisco.batch;
 
 import static choco.Choco.MAX_UPPER_BOUND;
 import static choco.Choco.ONE;
-import static pisco.batch.data.JobComparatorFactory.getCompositeComparator;
-import static pisco.batch.data.JobComparatorFactory.getDecreasingSize;
-import static pisco.batch.data.JobComparatorFactory.getEarliestDueDate;
-import static pisco.batch.data.JobComparatorFactory.getMinimalSlackTime;
+import static pisco.common.JobComparators.getCompositeComparator;
+import static pisco.common.JobComparators.getDecreasingSize;
+import static pisco.common.JobComparators.getMinimalSlackTime;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Comparator;
 
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.ResolutionStatus;
-import pisco.batch.data.Job;
-import pisco.batch.heuristics.CostFactory;
-import pisco.batch.heuristics.ICostAggregator;
-import pisco.batch.heuristics.ICostFunction;
-import pisco.batch.heuristics.PDRScheduler;
-import pisco.batch.heuristics.PriorityDispatchingRule;
 import pisco.batch.visu.BatchingChartFactory;
+import pisco.common.PDR1Scheduler;
+import pisco.common.PriorityDispatchingRule;
 import choco.kernel.model.Model;
 import choco.kernel.model.constraints.Constraint;
 import choco.kernel.model.variables.integer.IntegerVariable;
@@ -82,7 +76,7 @@ public final class PBatchLmax extends AbstractBatchingProblem {
 	
 	@Override
 	public PriorityDispatchingRule getPriorityDispatchingRule() {
-		return PDRScheduler.EDD;
+		return PDR1Scheduler.EDD;
 	}
 
 	@Override

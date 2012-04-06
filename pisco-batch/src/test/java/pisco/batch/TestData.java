@@ -35,20 +35,20 @@ import org.junit.Test;
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import pisco.batch.data.BatchParser;
 import pisco.batch.data.BatchProcessingData;
-import pisco.batch.data.Job;
-import pisco.batch.data.JobComparatorFactory;
+import pisco.batch.data.BJob;
+import static pisco.common.JobComparators.*;
 
 public class TestData {
 
 	BatchParser parser = new BatchParser();
 	
-	Job[] jobs = {new Job(1,5,5,1,10),  new Job(2,3,2,2,3), 
-			new Job(3,4,7,3,5), new Job(4,6,6,4,10)};
+	BJob[] jobs = {new BJob(1,5,5,1,10),  new BJob(2,3,2,2,3), 
+			new BJob(3,4,7,3,5), new BJob(4,6,6,4,10)};
 
 	@Test
 	public void testData() {
 		BatchProcessingData data = new BatchProcessingData(jobs, 10);
-		data.preprocess(JobComparatorFactory.getDecreasingSize());
+		data.preprocess(getDecreasingSize());
 		assertEquals(3, data.getMinDuration());
 		assertEquals(6, data.getMaxDuration());
 		assertEquals(18, data.getTotalDuration());

@@ -26,12 +26,12 @@
  */
 package pisco.batch.choco.constraints;
 
-import pisco.batch.data.Job;
+import pisco.batch.data.BJob;
 import pisco.batch.heuristics.PDRScheduler;
 
 public final class TaskPackingLmaxCF extends AbstractLmaxPackingCF {
 	
-	private final Job taskPool[];
+	private final BJob taskPool[];
 	
 	private TaskSList taskL;
 	
@@ -40,9 +40,9 @@ public final class TaskPackingLmaxCF extends AbstractLmaxPackingCF {
 		this.taskL = (TaskSList) cstr.relaxF;
 		final int n = cstr.problem.getN();
 		final int m = cstr.problem.getM();
-		taskPool = new Job[n];
+		taskPool = new BJob[n];
 		for (int i = 0; i < n; i++) {
-			taskPool[i]= new Job(m+i);
+			taskPool[i]= new BJob(m+i);
 		}
 	}
 

@@ -36,6 +36,9 @@ import parser.instances.AbstractMinimizeModel;
 import parser.instances.BasicSettings;
 import pisco.common.DisjunctiveSettings;
 import pisco.common.SchedulingBranchingFactory;
+import pisco.single.parsers.AirlandParser;
+import pisco.single.parsers.D1MachineParser;
+import pisco.single.parsers.W1MachineParser;
 import choco.kernel.solver.Configuration;
 import cli.AbstractBenchmarkCmd;
 
@@ -43,7 +46,7 @@ public class SingleMachineCmd extends AbstractBenchmarkCmd {
 
 	public enum SingleType {
 		FP("Flowtime Problem"),
-		WFP("Weighted Flowtime Problem"),
+		WP("Weighted Flowtime Problem"),
 		LP("Lmax Problem"),
 		AP("Airland Problem");
 
@@ -59,8 +62,11 @@ public class SingleMachineCmd extends AbstractBenchmarkCmd {
 	}
 
 
-	@Option(name="-t",aliases={"--type"},usage="type of shop problems", required=true)
+	@Option(name="-t",aliases={"--type"},usage="type of single machine problem", required=true)
 	protected SingleType type;
+
+	@Option(name="-air",aliases={"--airland"},usage="always use airland instance format")
+	protected boolean useAirlandParser;;
 
 	/**
 	 * the branching strategy
@@ -110,15 +116,15 @@ public class SingleMachineCmd extends AbstractBenchmarkCmd {
 		//		}
 	}
 
-
+	
 
 	@Override
 	public AbstractMinimizeModel createInstance() {
 		final BasicSettings cs =getSingleMachineSettings();
 				switch (type) {
-				case LP: return new SingleMachineLmax(cs);
-				case FP: return new SingleMachineFlow(cs);
-				case WFP: return new SingleMachineWFlow(cs);
+				case LP: return new SingleMachineLmax( cs, useAirlandParser ? new AirlandParser() : new D1MachineParser());
+				case FP: return new SingleMachineFlow(cs, useAirlandParser ? new AirlandParser() : new W1MachineParser());
+				case WP: return new SingleMachineWFlow(cs, useAirlandParser ? new AirlandParser() : new W1MachineParser());
 				case AP: return new AirLandProblem(cs);
 				default : 	LOGGER.severe("unknown shop problem.");return null;
 				}

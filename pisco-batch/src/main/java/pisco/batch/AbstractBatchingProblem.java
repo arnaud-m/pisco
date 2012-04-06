@@ -58,13 +58,13 @@ import pisco.batch.choco.constraints.set.SetIntCombManager;
 import pisco.batch.data.Batch;
 import pisco.batch.data.BatchParser;
 import pisco.batch.data.BatchProcessingData;
-import pisco.batch.data.Job;
+import pisco.batch.data.BJob;
 import pisco.batch.heuristics.BatchProcessingRHeuristics;
-import pisco.batch.heuristics.ICostAggregator;
-import pisco.batch.heuristics.ICostFunction;
-import pisco.batch.heuristics.PDRScheduler;
-import pisco.batch.heuristics.PriorityDispatchingRule;
 import pisco.batch.visu.BatchingChartFactory;
+import pisco.common.ICostAggregator;
+import pisco.common.ICostFunction;
+import pisco.common.PDR1Scheduler;
+import pisco.common.PriorityDispatchingRule;
 import choco.Choco;
 import choco.cp.model.CPModel;
 import choco.cp.solver.constraints.global.pack.PackSConstraint;
@@ -299,9 +299,9 @@ public abstract class AbstractBatchingProblem extends AbstractMinimizeModel {
 			for (int k = 0; k < bestSolution.length; k++) { bestSolution[k] = new Batch(k);}
 			for (int j = 0; j < data.nbJobs; j++) {
 				final int batch = solver.getVar( jobInB[j]).getVal();
-				bestSolution[batch].pack( data.sjobs[j]);
+				bestSolution[batch].parallelMerge(data.sjobs[j]);
 			}
-			PDRScheduler.schedule(bestSolution, nbB, getPriorityDispatchingRule());
+			PDR1Scheduler.schedule(bestSolution, nbB, getPriorityDispatchingRule());
 		}else if(getHeuristic().existsSolution() ){
 			// DONE 21 sept. 2011 - what happens when there is no heuristics - created 21 sept. 2011 by Arnaud Malapert
 			bestSolution = ( (BatchProcessingRHeuristics) getHeuristic()).getSolution();

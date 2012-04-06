@@ -26,7 +26,7 @@
  */
 package pisco.batch.choco.constraints;
 
-import pisco.batch.data.Job;
+import pisco.batch.data.BJob;
 import pisco.batch.heuristics.PDRScheduler;
 import choco.kernel.common.util.iterators.DisposableIntIterator;
 import choco.kernel.solver.ContradictionException;
@@ -37,15 +37,15 @@ public class TaskAssignCF implements IBatchFilteringRule {
 
 	private final TaskSList taskL;
 
-	private final Job[] taskPool;
+	private final BJob[] taskPool;
 
 	public TaskAssignCF(PBatchRelaxSConstraint cstr) {
 		super();
 		this.cstr = cstr;
 		taskL= (TaskSList) cstr.relaxF;
-		taskPool = new Job[cstr.problem.getM()];
+		taskPool = new BJob[cstr.problem.getM()];
 		for (int i = 0; i < taskPool.length; i++) {
-			taskPool[i] = new Job(i);
+			taskPool[i] = new BJob(i);
 		}
 	}
 
@@ -79,7 +79,7 @@ public class TaskAssignCF implements IBatchFilteringRule {
 							final int batch = iterb.next();
 							// DONE 14 nov. 2011 - Problem with non empty batches - created 4 nov. 2011 by Arnaud Malapert
 							if(cstr.getBDuration(batch).getInf() > 0) {
-								taskPool[batch].combine(taskL.taskPool[batch], cstr.data.sjobs[job]);
+								taskPool[batch].parallelCombinaison(taskL.taskPool[batch], cstr.data.sjobs[job]);
 								final int lb = PDRScheduler.replace(taskL.taskList, taskL.size, cstr.problem.getPriorityDispatchingRule(), 
 										taskPool[batch]);
 								// DONE 4 nov. 2011 - Compute the lower bound - created 4 nov. 2011 by Arnaud Malapert

@@ -26,17 +26,17 @@
  */
 package pisco.batch.choco.constraints;
 
-import pisco.batch.data.Job;
-import pisco.batch.heuristics.PDRScheduler;
+import pisco.batch.data.BJob;
+import pisco.common.PDR1Scheduler;
 import choco.kernel.solver.ContradictionException;
 
 public class TaskSList implements IBatchFilteringRule {
 
 	protected final PBatchRelaxSConstraint cstr;
 
-	public final Job[] taskPool;
+	public final BJob[] taskPool;
 
-	public final Job[] taskList;
+	public final BJob[] taskList;
 
 	public int size;
 
@@ -44,10 +44,10 @@ public class TaskSList implements IBatchFilteringRule {
 		super();
 		this.cstr=cstr;
 		final int m = cstr.problem.getM();
-		taskList = new Job[m];
-		taskPool = new Job[m];
+		taskList = new BJob[m];
+		taskPool = new BJob[m];
 		for (int i = 0; i < m; i++) {
-			taskPool[i] = new Job(i);
+			taskPool[i] = new BJob(i);
 		}
 	}
 
@@ -77,7 +77,7 @@ public class TaskSList implements IBatchFilteringRule {
 	
 	protected final void filterSingleMachine() throws ContradictionException {
 		if(size() > 0 ) {
-			final int lb = PDRScheduler.schedule(
+			final int lb = PDR1Scheduler.schedule(
 					taskList, size, 
 					cstr.problem.getPriorityDispatchingRule()
 					);

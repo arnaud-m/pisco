@@ -30,9 +30,9 @@ import static choco.Choco.MAX_UPPER_BOUND;
 import pisco.batch.AbstractBatchingProblem;
 import pisco.batch.BatchSettings.PropagagationLevel;
 import pisco.batch.data.BatchProcessingData;
-import pisco.batch.data.Job;
-import pisco.batch.heuristics.ICostAggregator;
-import pisco.batch.heuristics.PDRScheduler;
+import pisco.batch.data.BJob;
+import pisco.common.ICostAggregator;
+import pisco.common.PDR1Scheduler;
 import choco.cp.solver.variables.integer.IntVarEvent;
 import choco.kernel.common.util.iterators.DisposableIntIterator;
 import choco.kernel.memory.IEnvironment;
@@ -199,29 +199,29 @@ public class PBatchSConstraint extends AbstractLargeIntSConstraint{
 	}
 	
 	// TODO - store the array for child constraints - created 3 nov. 2011 by Arnaud Malapert
-	protected final Job[] makeBatches() {
+	protected final BJob[] makeBatches() {
 		// FIXME - Number of batches is not always instantiated - created 23 sept. 2011 by Arnaud Malapert
-		Job[] batches = new Job[getNbBatches().getSup()];
+		BJob[] batches = new BJob[getNbBatches().getSup()];
 		int idx = 0;
 		for (int i = 0; i < nbBatches; i++) {
 			if( this.getBDuration(i).getVal() > 0) {
 				assert idx < batches.length;
-				batches[idx++] = new Job(i+1, getBDuration(i).getVal(),getBWeight(i).getVal(), getBDueDate(i).getVal());
+				batches[idx++] = new BJob(i+1, getBDuration(i).getVal(),getBWeight(i).getVal(), getBDueDate(i).getVal());
 			}
 		}
 		for (int i = idx; i < batches.length; i++) {
-			batches[idx++] = new Job(i, 0, MAX_UPPER_BOUND);
+			batches[idx++] = new BJob(i, 0, MAX_UPPER_BOUND);
 		}
 		return batches;
 	}
 
-	protected final Job[] makeBatches(int[] tuple) {
+	protected final BJob[] makeBatches(int[] tuple) {
 		final int m = tuple[nbBIndex];
-		final Job[] batches = new Job[m];
+		final BJob[] batches = new BJob[m];
 		int idx=0;
 		for (int i = 0; i < nbBatches; i++) {
 			if( tuple[i] > 0) {
-				batches[idx++] = new Job(i+1, tuple[i], tuple[nbBatches + i], tuple[nbBatchesX2 + i]);
+				batches[idx++] = new BJob(i+1, tuple[i], tuple[nbBatches + i], tuple[nbBatchesX2 + i]);
 			}
 			if(idx >= nbBIndex) return null;
 		}
@@ -231,15 +231,15 @@ public class PBatchSConstraint extends AbstractLargeIntSConstraint{
 	
 	@Override
 	public final boolean isSatisfied(int[] tuple) {
-		final Job[] jobs = makeBatches(tuple);
-		return jobs != null && tuple[objIndex] == PDRScheduler.schedule(jobs, jobs.length, problem.getPriorityDispatchingRule());
+		final BJob[] jobs = makeBatches(tuple);
+		return jobs != null && tuple[objIndex] == PDR1Scheduler.schedule(jobs, jobs.length, problem.getPriorityDispatchingRule());
 	}
 
 
 	protected final void makeEntailed() throws ContradictionException {
 		//durations and due Dates are instantiated
-		final Job[] batches = makeBatches();
-		instantiateObjTo(PDRScheduler.schedule(batches, batches.length, problem.getPriorityDispatchingRule()));
+		final BJob[] batches = makeBatches();
+		instantiateObjTo(PDR1Scheduler.schedule(batches, batches.length, problem.getPriorityDispatchingRule()));
 		// FIXME - Set the number of batches - created 12 oct. 2011 by Arnaud Malapert
 		//instantiateNbBTo(batches.length);
 		setEntailed();

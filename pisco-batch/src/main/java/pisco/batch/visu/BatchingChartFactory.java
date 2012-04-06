@@ -113,10 +113,10 @@ import org.jfree.ui.RefineryUtilities;
 import org.jfree.ui.TextAnchor;
 
 import pisco.batch.data.Batch;
-import pisco.batch.data.Job;
-import pisco.batch.heuristics.CostFactory;
-import pisco.batch.heuristics.ICostAggregator;
-import pisco.batch.heuristics.PDRScheduler;
+import pisco.batch.data.BJob;
+import pisco.common.CostFactory;
+import pisco.common.ICostAggregator;
+import pisco.common.PDR1Scheduler;
 import choco.visu.components.chart.ChocoChartFactory;
 import choco.visu.components.chart.ChocoColor;
 
@@ -167,8 +167,8 @@ public final class BatchingChartFactory {
 
 	protected static void makeDueDateMarkers(XYPlot plot, Batch[] batches, Paint[] palette) {
 		for (int k = 0; k < batches.length; k++) {
-			final List<Job> jobs = batches[k].getJobs();
-			for (Job job : jobs) {
+			final List<BJob> jobs = batches[k].getJobs();
+			for (BJob job : jobs) {
 				plot.addDomainMarker( createMarker(
 						job.getDueDate(), "d"+job.getId(), (Color) palette[k], 
 						TextAnchor.TOP_CENTER, LengthAdjustmentType.EXPAND)
@@ -274,10 +274,10 @@ public final class BatchingChartFactory {
 	}
 
 	private static void makeDurationToolTip(StringBuilder b, Batch batch) {
-		final List<Job> jobs = batch.getJobs();
+		final List<BJob> jobs = batch.getJobs();
 		final int dur = batch.getDuration();
 		b.append("p=").append(dur);
-		for (Job job : jobs) {
+		for (BJob job : jobs) {
 			if(job.getDuration() ==  dur) b.append("-J").append(job.getId());
 		}
 	}
@@ -305,10 +305,10 @@ public final class BatchingChartFactory {
 			b.append(batches[series].getLateness());
 			b.append(" (");
 			makeDurationToolTip(b, batches[series]);
-			final List<Job> jobs = batches[series].getJobs();
+			final List<BJob> jobs = batches[series].getJobs();
 			final int dd = batches[series].getDueDate();
 			b.append("d=").append(dd);
-			for (Job job : jobs) {
+			for (BJob job : jobs) {
 				if(job.getDueDate() ==  dd) b.append("-J").append(job.getId());
 			}
 			b.setCharAt(b.length()-1,')');
@@ -401,24 +401,24 @@ public final class BatchingChartFactory {
 	 */
 	public static void main(String[] args) {
 		//data
-		final Job[] inst1 = new Job[] {
-				new Job(1, 5, 2, 1, 7),
-				new Job(2, 6, 3, 1, 8),
-				new Job(3, 7,4, 1, 12),
-				new Job(4, 4, 1, 1, 9),
-				new Job(5, 3,2, 1, 15)
+		final BJob[] inst1 = new BJob[] {
+				new BJob(1, 5, 2, 1, 7),
+				new BJob(2, 6, 3, 1, 8),
+				new BJob(3, 7,4, 1, 12),
+				new BJob(4, 4, 1, 1, 9),
+				new BJob(5, 3,2, 1, 15)
 		};
 		Batch[] batches = new Batch[3];
 		batches[0] = new Batch(0);
-		batches[0].pack(inst1[0]);
-		batches[0].pack(inst1[1]);
+		batches[0].parallelMerge(inst1[0]);
+		batches[0].parallelMerge(inst1[1]);
 		batches[1] = new Batch(1);
-		batches[1].pack(inst1[2]);
-		batches[1].pack(inst1[3]);
+		batches[1].parallelMerge(inst1[2]);
+		batches[1].parallelMerge(inst1[3]);
 		batches[2] = new Batch(2);
-		batches[2].pack(inst1[4]);
+		batches[2].parallelMerge(inst1[4]);
 		//PDRScheduler.schedule1Lmax(batches);
-		PDRScheduler.schedule1WFlow(batches);
+		PDR1Scheduler.schedule1WFlow(batches);
 		//frame
 		ApplicationFrame demo = new ApplicationFrame("Batch Processing Demo");
 		//ChartPanel chartPanel = new ChartPanel( createLmaxChart(batches, "test", 10));

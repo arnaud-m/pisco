@@ -1,39 +1,42 @@
 package pisco.common;
 
+
 public interface IJob {
 
-	public void resetDimensions();
+	void resetDimensions();
 
-	public void resetTimeWindow();
+	void resetTimeWindow();
 
-	public void resetCostParameters();
+	void resetCostParameters();
+
+	void reset();
 
 	//Dimensions
-	public int getDuration();
+	int getDuration();
 
-	public void setDuration(int duration);
+	void setDuration(int duration);
 
-	public int getSize();
+	int getSize();
 
-	public void setSize(int size);
+	void setSize(int size);
 
 	//Time window
-	public int getReleaseDate();
+	int getReleaseDate();
 
-	public void setReleaseDate(int releaseDate);
+	void setReleaseDate(int releaseDate);
 
-	public int getDeadline();
+	int getDeadline();
 
-	public void setDeadline(int deadline);
+	void setDeadline(int deadline);
 
 	//Cost parameters
-	public int getWeight();
+	int getWeight();
 
-	public void setWeight(int weight);
+	void setWeight(int weight);
 
-	public int getDueDate();
+	int getDueDate();
 
-	public void setDueDate(int dueDate);
+	void setDueDate(int dueDate);
 
-	
+
 }

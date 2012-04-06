@@ -11,14 +11,14 @@ import choco.visu.components.chart.ChocoChartFactory;
 public class TestCommon {
 
 
-	private static JobPmtn[] buildInstance() {
+	private static PJob[] buildInstance() {
 		final int[] d =  {10, 6, 8, 4, 6};
 		final int[] rd =  {0, 3, 5 , 7, 8};
 		final int[] dd =  {15, 10, 25, 14, 12};
 		final int n = d.length;
-		JobPmtn[] jobs = new JobPmtn[n];
+		PJob[] jobs = new PJob[n];
 		for (int i = 0; i < n; i++) {
-			jobs[i] = new JobPmtn(i);
+			jobs[i] = new PJob(i);
 			jobs[i].setDuration(d[i]);
 			jobs[i].setReleaseDate(rd[i]);
 			jobs[i].setDueDate(dd[i]);
@@ -53,9 +53,9 @@ public class TestCommon {
 
 	@Test
 	public void testPreemptiveSchedule() {
-		JobPmtn[] jobs = buildInstance();
+		PJob[] jobs = buildInstance();
 		System.out.println(Arrays.toString(jobs));
-		PDRPmtnSchedule.schedule(jobs);
+		Pmtn1Scheduler.schedule(jobs);
 		ChocoChartFactory.createAndShowGUI("Test", ChocoChartFactory.createGanttChart("Test", jobs));
 		
 		//PDRPmtnSchedule.schedule2(jobs);
@@ -64,9 +64,9 @@ public class TestCommon {
 	}
 
 	public static void main(String[] args) {
-		JobPmtn[] jobs = buildInstance();
+		PJob[] jobs = buildInstance();
 		System.out.println(Arrays.toString(jobs));
-		PDRPmtnSchedule.schedule(jobs);
+		Pmtn1Scheduler.schedule(jobs);
 		System.out.println(Arrays.toString(jobs));
 		ChocoChartFactory.createAndShowGUI("Test", ChocoChartFactory.createGanttChart("Test", jobs));
 		

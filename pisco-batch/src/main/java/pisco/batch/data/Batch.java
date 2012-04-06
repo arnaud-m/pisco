@@ -33,9 +33,9 @@ import java.util.List;
 import choco.Choco;
 
 
-public class Batch extends Job {
+public class Batch extends BJob {
 
-	protected final LinkedList<Job> jobs = new LinkedList<Job>();
+	protected final LinkedList<BJob> jobs = new LinkedList<BJob>();
 
 	public Batch(int id) {
 		super(id);
@@ -43,10 +43,8 @@ public class Batch extends Job {
 	
 	@Override
 	public void clear() {
-		super.clear();
+		reset();
 		this.jobs.clear();
-		this.duration = (this.size = this.weight = 0);
-		this.dueDate = Choco.MAX_UPPER_BOUND;
 	}
 
 	@Override
@@ -54,11 +52,11 @@ public class Batch extends Job {
 		return this.jobs.size();
 	}
 
-	public final Job getJob(int idx) {
+	public final BJob getJob(int idx) {
 		return this.jobs.get(idx);
 	}
 
-	public final List<Job> getJobs() {
+	public final List<BJob> getJobs() {
 		return Collections.unmodifiableList(this.jobs);
 	}
 
@@ -67,7 +65,7 @@ public class Batch extends Job {
 		StringBuilder b = new StringBuilder();
 		b.append(super.toString());
 		b.append("/jobs{");
-		for (Job j : this.jobs) {
+		for (BJob j : this.jobs) {
 			b.append(j.getId()).append(' ');
 		}
 		b.deleteCharAt(b.length() - 1);
@@ -77,17 +75,11 @@ public class Batch extends Job {
 
 
 
-	public boolean canPack(Job job, int capacity) {
+	public boolean canPack(BJob job, int capacity) {
 		return getSize() + job.getSize() <= capacity;
 	}
 
-	public void pack(Job job) {
-		if (this.duration < job.duration) this.duration = job.duration;
-		if (this.dueDate > job.dueDate) this.dueDate = job.dueDate;
-		this.weight += job.weight;
-		this.size += job.size;
-		this.jobs.add(job);
-	}
+
 
 
 }

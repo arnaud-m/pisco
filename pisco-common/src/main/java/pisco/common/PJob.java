@@ -2,11 +2,11 @@ package pisco.common;
 
 import choco.kernel.solver.variables.scheduling.TimePeriodList;
 
-public class JobPmtn extends AbstractJob {
+public class PJob extends AbstractJob {
 
 	private final TimePeriodList _timePeriodList;
 
-	public JobPmtn(int id) {
+	public PJob(int id) {
 		super(id, new TimePeriodList());
 		_timePeriodList = (TimePeriodList) getTimePeriodList();
 	}

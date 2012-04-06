@@ -32,38 +32,38 @@ import org.jfree.ui.RefineryUtilities;
 import org.junit.Test;
 
 import pisco.batch.data.Batch;
-import pisco.batch.data.Job;
-import pisco.batch.heuristics.PDRScheduler;
+import pisco.batch.data.BJob;
 import pisco.batch.visu.BatchingChartFactory;
+import pisco.common.PDR1Scheduler;
 
 public class TestCharts {
 
 	private final static int SLEEP=500;
 	
-	private final static Job[] JOBS = new Job[] {
-			new Job(1, 5, 2, 1, 7),
-			new Job(2, 6, 3, 1, 8),
-			new Job(3, 7,4, 1, 12),
-			new Job(4, 4, 1, 1, 9),
-			new Job(5, 3,2, 1, 15)
+	private final static BJob[] JOBS = new BJob[] {
+			new BJob(1, 5, 2, 1, 7),
+			new BJob(2, 6, 3, 1, 8),
+			new BJob(3, 7,4, 1, 12),
+			new BJob(4, 4, 1, 1, 9),
+			new BJob(5, 3,2, 1, 15)
 	};
 	
 	private final static Batch[] BATCHES = new Batch[3];
 	
 	static {
 		BATCHES[0] = new Batch(0);
-		BATCHES[0].pack(JOBS[0]);
-		BATCHES[0].pack(JOBS[1]);
+		BATCHES[0].parallelMerge(JOBS[0]);
+		BATCHES[0].parallelMerge(JOBS[1]);
 		BATCHES[1] = new Batch(1);
-		BATCHES[1].pack(JOBS[2]);
-		BATCHES[1].pack(JOBS[3]);
+		BATCHES[1].parallelMerge(JOBS[2]);
+		BATCHES[1].parallelMerge(JOBS[3]);
 		BATCHES[2] = new Batch(2);
-		BATCHES[2].pack(JOBS[4]);
+		BATCHES[2].parallelMerge(JOBS[4]);
 	}
 	
 	@Test
 	public void testWFlow() throws InterruptedException{
-		PDRScheduler.schedule1WFlow(BATCHES);
+		PDR1Scheduler.schedule1WFlow(BATCHES);
 		//frame
 		ApplicationFrame demo = new ApplicationFrame("Batch Processing Demo");
 		ChartPanel chartPanel = new ChartPanel( BatchingChartFactory.createWFlowChart(BATCHES, "W. Flowtime", -1));
@@ -78,7 +78,7 @@ public class TestCharts {
 
 	@Test
 	public void testLmaxFlow() throws InterruptedException{
-		PDRScheduler.schedule1Lmax(BATCHES);
+		PDR1Scheduler.schedule1Lmax(BATCHES);
 		ApplicationFrame demo = new ApplicationFrame("Batch Processing Demo");
 		ChartPanel chartPanel = new ChartPanel( BatchingChartFactory.createLmaxChart(BATCHES, "Lmax", 10));
 		chartPanel.setPreferredSize(new java.awt.Dimension(500, 300));

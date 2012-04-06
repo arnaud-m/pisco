@@ -35,7 +35,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import pisco.batch.data.Job;
+import pisco.batch.data.BJob;
 import choco.kernel.common.IDotty;
 import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.visu.VisuFactory;
@@ -130,7 +130,7 @@ public class ParallelLmaxFlowGraph implements IDotty {
 		} else capacities[OFFSET][SINK]= capacity * timeLengths[0];
 	}
 
-	public void addJob(Job job) {
+	public void addJob(BJob job) {
 		final int dd = job.getDueDate();
 		final int s = currentTask + job.getSize();
 		final int p = job.getDuration();
@@ -230,9 +230,9 @@ public class ParallelLmaxFlowGraph implements IDotty {
 		int[] dueDates = new int[] { 10, 15, 20, 12, 35};
 		ParallelLmaxFlowGraph graph = new ParallelLmaxFlowGraph(dueDates, 10);
 		graph.setMaximalLateness(20);
-		graph.addJob(new Job(1, 10, dueDates[2]));
-		graph.addJob(new Job(2, 5, dueDates[1]));
-		graph.addJob(new Job(3, 15, 3, 1, dueDates[4]));
+		graph.addJob(new BJob(1, 10, dueDates[2]));
+		graph.addJob(new BJob(2, 5, dueDates[1]));
+		graph.addJob(new BJob(3, 15, 3, 1, dueDates[4]));
 		VisuFactory.getDotManager().show(graph);
 		System.out.println(graph.edmondsKarp());
 	}
