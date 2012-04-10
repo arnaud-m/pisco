@@ -6,6 +6,8 @@ import static choco.Choco.scalar;
 import java.util.Arrays;
 
 import parser.instances.BasicSettings;
+import pisco.common.CostFactory;
+import pisco.common.ICostFunction;
 import pisco.common.JobUtils;
 import pisco.common.PDR1Scheduler;
 import pisco.single.parsers.Abstract1MachineParser;
@@ -18,8 +20,16 @@ public class SingleMachineWFlow extends Abstract1MachineProblem {
 
 	public SingleMachineWFlow(BasicSettings settings,
 			Abstract1MachineParser parser) {
-		super(settings, parser);
+		super(settings, parser, CostFactory.makeSumCosts());
 	}
+
+
+	
+	@Override
+	public ICostFunction getCostFunction() {
+		return CostFactory.getWeightedCTime();
+	}
+
 
 
 	@Override

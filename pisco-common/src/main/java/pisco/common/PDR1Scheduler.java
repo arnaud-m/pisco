@@ -1,5 +1,6 @@
 package pisco.common;
 
+import static choco.Choco.MAX_UPPER_BOUND;
 import static choco.Choco.MIN_LOWER_BOUND;
 import static pisco.common.CostFactory.getCTime;
 import static pisco.common.CostFactory.getLateness;
@@ -15,6 +16,7 @@ import gnu.trove.TObjectProcedure;
 
 import java.util.Arrays;
 import java.util.PriorityQueue;
+import java.util.Random;
 
 public final class PDR1Scheduler {
 
@@ -54,25 +56,25 @@ public final class PDR1Scheduler {
 		return WSPT;
 	}
 
-	public static int sequence(final ITJob[] jobs, final PriorityDispatchingRule rule) {
-		return sequence(jobs, jobs.length, rule);
+	public static int sequence(final ITJob[] jobs, final int n, final PriorityDispatchingRule rule) {
+		return sequence(jobs, n, rule.costFunction, rule.globalCostFunction);
 	}
 
-	public static int sequence(final ITJob[] jobs, final int n, final PriorityDispatchingRule rule) {
+	public static int sequence(final ITJob[] jobs, final int n, final ICostFunction costFunction, final ICostAggregator globalCostFunction) {
 		assert n<= jobs.length;
 		jobs[0].scheduleFrom(0);
-		rule.globalCostFunction.setCost(rule.costFunction.getCost(jobs[0]));
+		globalCostFunction.setCost(costFunction.getCost(jobs[0]));
 		for (int i = 1; i < n; i++) {
 			jobs[i].scheduleFrom(jobs[i-1].getLCT());
-			rule.globalCostFunction.addCost(rule.costFunction.getCost(jobs[i]));	
+			globalCostFunction.addCost(costFunction.getCost(jobs[i]));	
 		}
-		return rule.globalCostFunction.getTotalCost();		
+		return globalCostFunction.getTotalCost();		
 	}
 
 
 	public static int schedule(final ITJob[] jobs, final PriorityDispatchingRule rule) {
 		Arrays.sort(jobs, rule.priorityRule);
-		return sequence(jobs, rule);
+		return sequence(jobs, jobs.length, rule);
 	}
 
 	public static int schedule(final ITJob[] jobs, final int n, final PriorityDispatchingRule rule) {
@@ -142,4 +144,55 @@ public final class PDR1Scheduler {
 	}
 
 
+	////////////////////////////////////////////////////////////////////
+	///////////////////// Sequence algorithm : 1|rj|gamma //////////////
+	////////////////////////////////////////////////////////////////////
+
+
+	public static void shuffle(final ITJob[] jobs, final int maxShift, final Random rnd) {
+		for (int i = 0; i < jobs.length; i++) {
+			final int position = i + rnd.nextInt( jobs.length - i < maxShift ? jobs.length - i : maxShift);
+			final ITJob temp = jobs[i];
+			jobs[i] = jobs[position];
+			jobs[position] = temp;
+		}
+	}
+
+	public static int sequenceWithReleaseDates(final ITJob[] jobs, final ICostFunction costFunction, final ICostAggregator globalCostFunction) {
+		jobs[0].scheduleFrom(jobs[0].getReleaseDate());
+		globalCostFunction.setCost(costFunction.getCost(jobs[0]));
+		for (int i = 1; i < jobs.length; i++) {
+			jobs[i].scheduleFrom(Math.max(jobs[i-1].getLCT(), jobs[i].getReleaseDate()));
+			globalCostFunction.addCost(costFunction.getCost(jobs[i]));	
+		}
+		return globalCostFunction.getTotalCost();
+	}
+
+	public static int lazySequenceWithReleaseDates(final ITJob[] jobs, final ICostFunction costFunction, final ICostAggregator globalCostFunction, final int ub) {
+		jobs[0].scheduleFrom(jobs[0].getReleaseDate());
+		globalCostFunction.setCost(costFunction.getCost(jobs[0]));
+		for (int i = 1; i < jobs.length; i++) {
+			jobs[i].scheduleFrom(Math.max(jobs[i-1].getLCT(), jobs[i].getReleaseDate()));
+			globalCostFunction.addCost(costFunction.getCost(jobs[i]));	
+			if(globalCostFunction.getTotalCost() >= ub) {
+				return MAX_UPPER_BOUND;
+			}
+		}
+		return globalCostFunction.getTotalCost();
+	}
+
+
+
+	////////////////////////////////////////////////////////////////////
+	/////////// upper bound of gamma given by the deadlines ////////////
+	////////////////////////////////////////////////////////////////////
+
+	public static int deadlineUpperBound(final ITJob[] jobs, final ICostFunction costFunction, final ICostAggregator globalCostFunction) {
+		globalCostFunction.reset();
+		for (int i = 1; i < jobs.length; i++) {
+			jobs[i].scheduleFrom(Math.max(jobs[i-1].getLCT(), jobs[i].getReleaseDate()));
+			globalCostFunction.addCost(costFunction.getCost(jobs[i], jobs[i].getDeadline()));	
+		}
+		return globalCostFunction.getTotalCost();
+	}
 }

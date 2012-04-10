@@ -45,6 +45,13 @@ public class AirlandParser extends Abstract1MachineParser {
 		return true;
 	}
 
+	
+	@Override
+	public boolean hasDeadlines() {
+		return true;
+	}
+
+
 	@Override
 	public void parse(boolean displayInstance)
 			throws UnsupportedConstraintException {

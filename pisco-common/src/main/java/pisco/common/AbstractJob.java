@@ -310,42 +310,22 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	///////////////////// Scheduling  //////////////////////////////////
 	////////////////////////////////////////////////////////////////////
 
-	/* (non-Javadoc)
-	 * @see pisco.common.ITemp#scheduleFrom(int)
-	 */
-	@Override
-	public abstract void scheduleFrom(int startingTime);
-
-	/* (non-Javadoc)
-	 * @see pisco.common.ITemp#scheduleTo(int)
-	 */
-	@Override
-	public abstract void scheduleTo(int endingTime);
-
-	/* (non-Javadoc)
-	 * @see pisco.common.ITemp#scheduleFromTo(int, int)
-	 */
-	@Override
-	public abstract void scheduleFromTo(int start, int end);
-
-	/* (non-Javadoc)
-	 * @see pisco.common.ITemp#scheduleIn(int, int)
-	 */
-	@Override
-	public abstract int scheduleIn(int start, int end);
-
-	/* (non-Javadoc)
-	 * @see pisco.common.ITemp#getRemainingDuration()
-	 */
 	@Override
 	public final int getRemainingDuration() {
 		return getMinDuration() - Math.max(0, getTimePeriodList().getExpendedDuration());
 	}
 
 
+	@Override
+	public boolean isScheduledInTimeWindow() {
+		return getReleaseDate() <= getEST() && getLCT() <= getDeadline();
+	}
+	
 	////////////////////////////////////////////////////////////////////
 	///////////////////// ITask  ///////////////////////////////////////
 	////////////////////////////////////////////////////////////////////
+
+
 
 	@Override
 	public final int getID() {

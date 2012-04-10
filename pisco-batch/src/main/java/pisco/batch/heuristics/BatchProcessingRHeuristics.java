@@ -125,7 +125,7 @@ public class BatchProcessingRHeuristics extends AbstractRandomizedHeuristic {
 
 	@Override
 	public int getLowerBound() {
-		return Integer.MIN_VALUE;
+		return bpb.getComputedLowerBound();
 	}
 
 	@Override

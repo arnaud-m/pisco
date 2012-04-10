@@ -14,9 +14,14 @@ import net.sf.cglib.transform.impl.AddPropertyTransformer;
 
 import parser.instances.BasicSettings;
 import static pisco.common.JobUtils.*;
+import pisco.common.CostFactory;
+import pisco.common.ICostFunction;
 import pisco.common.ITJob;
+import pisco.common.JobUtils;
+import pisco.common.Pmtn1Scheduler;
 import static pisco.common.JobComparators.*;
 import pisco.common.PDR1Scheduler;
+import pisco.single.choco.constraints.ModifyDueDateManager;
 import pisco.single.choco.constraints.RelaxPmtnLmaxManager;
 import pisco.single.parsers.Abstract1MachineParser;
 import choco.Options;
@@ -32,12 +37,29 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 
 	public SingleMachineLmax(BasicSettings settings,
 			Abstract1MachineParser parser) {
-		super(settings, parser);
+		super(settings, parser, CostFactory.makeMaxCosts());
 	}
+
+
+	@Override
+	public ICostFunction getCostFunction() {
+		return CostFactory.getLateness();
+	}
+
 
 	@Override
 	public Boolean preprocess() {
-		//setComputedLowerBound( PDR1Scheduler.schedule1Lmax(Arrays.copyOf(jobs, jobs.length)));
+		ITJob[] lbjobs = Arrays.copyOf(jobs, jobs.length);
+		setComputedLowerBound(PDR1Scheduler.schedule1Lmax(lbjobs));
+		if(JobUtils.isScheduledInTimeWindows(lbjobs)) {
+
+		} else {
+			setComputedLowerBound(Pmtn1Scheduler.schedule1Lmax(lbjobs));
+			if(JobUtils.isInterrupted(lbjobs)) {
+				
+			}
+		}
+
 		return super.preprocess();
 	}
 
@@ -59,13 +81,14 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 		int idx=0;
 		for (int i = 0; i < tasks.length; i++) {
 			for (int j = i+1; j < tasks.length; j++) {
-				//Faux : 
-				//Si i precede j (i -> j) => Di <= Dj - Pj Mais on ne veut pas mettre à jour Min(Dj) seulement Max(Di) !
-				//Créer une contrainte spéciale
-				//model.addConstraint( precedenceDisjoint(dueDates[i], jobs[j].getDuration(), dueDates[j], jobs[i].getDuration(), disjuncts[idx]));
+				//				model.addConstraint( new ComponentConstraint( ModifyDueDateManager.class, null, 
+				//						new IntegerVariable[]{dueDates[i], constant(jobs[j].getDuration()), 
+				//					dueDates[j], constant(jobs[i].getDuration()), disjuncts[idx]})
+				//						);
 				idx++;
 			}
 		}
+
 		///////////
 		//state lateness constraints
 		IntegerVariable[] lateness = makeIntVarArray("L", nbJobs, 
@@ -73,7 +96,6 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 				Options.V_BOUND, Options.V_NO_DECISION);
 		for (int i = 0; i < nbJobs; i++) {
 			model.addConstraint(eq(lateness[i], minus(tasks[i].end(), jobs[i].getDueDate())));
-			//model.addConstraint(eq(lateness[i], minus(tasks[i].end(), dueDates[i])));
 		}
 		///////////
 		//create objective constraints
@@ -81,32 +103,36 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 				max(lateness, obj),
 				geq( obj, minus(makespan,maxDueDate(jobs)))
 				);
+
 		////////////
 		//Add relaxation constraint
 		// TODO - Set parameters to jobs - created 6 avr. 2012 by A. Malapert
-		model.addConstraints(
-				new ComponentConstraint(RelaxPmtnLmaxManager.class, 
-						this, 
-						ArrayUtils.append(tasks, disjuncts, new IntegerVariable[]{obj}))				
-				);
+		//		model.addConstraints(
+		//				new ComponentConstraint(RelaxPmtnLmaxManager.class, 
+		//						this, 
+		//						ArrayUtils.append(tasks, disjuncts, new IntegerVariable[]{obj}))				
+		//				);
 
-		////////////
-		//Add pre-ordering constraints from dominance conditions
-//		final ITJob[] sjobs = Arrays.copyOf(jobs, nbJobs);
-//		Arrays.sort(sjobs, getCompositeComparator(getShortestProcessingTime(), getEarliestDueDate()));
-//		for (int i = 0; i < nbJobs - 1; i++) {
-//			final int d = sjobs[i].getDuration();
-//			int j = i +1;
-//			while(sjobs[j].getDuration() == d) {
-//				if(sjobs[i].getDeadline() <= sjobs[j].getDeadline() && 
-//						sjobs[i].getDueDate() <= sjobs[j].getDueDate()) {
-//					// i precedes j
-//					final int ti = sjobs[i].getID();
-//					final int tj = sjobs[j].getID();
-//					precedence(tasks[ti], tasks[tj], setupTimes[ti][tj]);
-//				}
-//			}
-//		}
+		if( ! hasSetupTimes() ) {
+			////////////
+			//Add pre-ordering constraints from dominance conditions
+			final ITJob[] sjobs = Arrays.copyOf(jobs, nbJobs);
+			Arrays.sort(sjobs, getCompositeComparator(getShortestProcessingTime(), getEarliestDueDate()));
+			for (int i = 0; i < nbJobs - 1; i++) {
+				final int d = sjobs[i].getDuration();
+				int j = i +1;
+				while(j < nbJobs && sjobs[j].getDuration() == d) {
+					if(sjobs[i].getDeadline() <= sjobs[j].getDeadline() && 
+							sjobs[i].getDueDate() <= sjobs[j].getDueDate()) {
+						// i precedes j
+						final int ti = sjobs[i].getID();
+						final int tj = sjobs[j].getID();
+						//model.addConstraint(precedence(tasks[ti], tasks[tj], setupTimes[ti][tj]));
+					}
+					j++;
+				}
+			}
+		}
 		return model;
 	}
 

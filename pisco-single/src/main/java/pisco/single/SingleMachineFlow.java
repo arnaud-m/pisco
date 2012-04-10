@@ -20,6 +20,9 @@ import choco.kernel.model.Model;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.visu.components.chart.ChocoChartFactory;
 import parser.instances.BasicSettings;
+import pisco.common.CostFactory;
+import pisco.common.ICostAggregator;
+import pisco.common.ICostFunction;
 import pisco.common.JobUtils;
 import pisco.common.PDR1Scheduler;
 import pisco.single.parsers.Abstract1MachineParser;
@@ -30,8 +33,22 @@ public class SingleMachineFlow extends Abstract1MachineProblem {
 	
 	public SingleMachineFlow(BasicSettings settings,
 			Abstract1MachineParser parser) {
-		super(settings, parser);
+		super(settings, parser, CostFactory.makeSumCosts());
 	}
+
+	
+	@Override
+	public ICostFunction getCostFunction() {
+		return CostFactory.getCTime();
+	}
+
+
+	@Override
+	public ICostAggregator getGlobalCostFunction() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 
 	@Override
 	public Boolean preprocess() {

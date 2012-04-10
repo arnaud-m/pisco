@@ -17,6 +17,8 @@ import java.util.List;
 
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.BasicSettings;
+import pisco.common.CostFactory;
+import pisco.common.ICostFunction;
 import pisco.single.parsers.AirlandParser;
 import choco.Options;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
@@ -32,10 +34,16 @@ public class AirLandProblem extends Abstract1MachineProblem {
 	public int[] tardinessPenalties;
 
 	public AirLandProblem(BasicSettings settings) {
-		super(settings, new AirlandParser());
+		super(settings, new AirlandParser(), CostFactory.makeSumCosts());
 	}
 
 	
+	@Override
+	public ICostFunction getCostFunction() {
+		return null;
+	}
+
+
 	@Override
 	public void initialize() {
 		super.initialize();

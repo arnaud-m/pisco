@@ -63,6 +63,19 @@ public final class JobUtils {
 		return true;
 	}
 	
+	public final static boolean isInterrupted(ITask... jobs) {
+		for (ITask j : jobs) {
+			if( j.isInterrupted() ) return true;
+		}
+		return true;
+	}
+	
+	public final static boolean isScheduledInTimeWindows(ITJob... jobs) {
+		for (ITJob j : jobs) {
+			if( ! j.isScheduledInTimeWindow() ) return false;
+		}
+		return true;
+	}
 	
 	
 	public final static int minDuration(IJob... jobs) {

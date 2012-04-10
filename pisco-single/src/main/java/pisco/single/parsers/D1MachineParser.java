@@ -41,6 +41,11 @@ public class D1MachineParser extends Abstract1MachineParser {
 	}
 	
 	@Override
+	public boolean hasDeadlines() {
+		return true;
+	}
+	
+	@Override
 	public void parse(boolean displayInstance)
 			throws UnsupportedConstraintException {
 		nbJobs = nextInt();
