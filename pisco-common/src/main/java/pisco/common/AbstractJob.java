@@ -446,7 +446,8 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 		return "p=" + duration +
 				", s=" + this.size+ 
 				", w=" + this.weight + 
-				", d=" + this.dueDate;
+				", d=" + this.dueDate +
+				", tw=[" + this.releaseDate + ","+this.deadline+"]";	
 	}
 
 

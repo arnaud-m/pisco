@@ -23,7 +23,6 @@ public final class JobUtils {
 		return false;
 	}
 	
-
 	public final static void modifyDueDates(final ITJob[] jobs) {
 		final TLinkedList<TJobAdapter> pendingJobs = new TLinkedList<TJobAdapter>();
 		//initialize
@@ -56,6 +55,19 @@ public final class JobUtils {
 		}
 	}
 	
+	public final static void modifyDeadlines(int horizon, ITJob... jobs) {
+		for (ITJob j : jobs) {
+			if(j.getDeadline() > horizon) j.setDeadline(horizon);
+		}
+	}
+	
+	public final static void resetSchedule(ITJob... jobs) {
+		for (ITJob j : jobs) {
+			j.resetSchedule();
+		}
+		
+	}
+	
 	public final static boolean isScheduled(ITask... jobs) {
 		for (ITask j : jobs) {
 			if( ! j.isScheduled() ) return false;
@@ -67,7 +79,7 @@ public final class JobUtils {
 		for (ITask j : jobs) {
 			if( j.isInterrupted() ) return true;
 		}
-		return true;
+		return false;
 	}
 	
 	public final static boolean isScheduledInTimeWindows(ITJob... jobs) {

@@ -105,7 +105,7 @@ public final class FinishBranchingGraph extends AbstractShopFakeBranching {
 	 * The advantage is to schedule all tasks in linear time and to need a single propagation phase.
 	 */
 	@Override
-	protected void schedule() throws ContradictionException {
+	protected void doFakeBranching() throws ContradictionException {
 		buildGraph();
 		topOrder.initialize();
 		topOrder.compute();

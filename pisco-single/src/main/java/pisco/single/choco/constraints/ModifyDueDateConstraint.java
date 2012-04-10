@@ -92,6 +92,11 @@ public final class ModifyDueDateConstraint extends AbstractPrecedenceSConstraint
 	}
 
 	@Override
+	public boolean isSatisfied(int[] tuple) {
+		return tuple[0] == 1 ? tuple[1] + k1 <= tuple[2] : tuple[2] + k2 <= tuple[1];
+	}
+	
+	@Override
 	public String pretty() {
 		return pretty( "Modify Due Date", pretty(1, k1, 2), pretty(2, k2, 1) );
 	}

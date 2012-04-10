@@ -60,7 +60,7 @@ public final class FinishBranchingNaive extends AbstractShopFakeBranching {
 	 * This approach has the following drawbacks: many iterations over the set of tasks and propagation phases.
 	 */
 	@Override
-	protected void schedule() throws ContradictionException {
+	protected void doFakeBranching() throws ContradictionException {
 		//<hca> weird it seems that some lower bound are not up to date
 		//and each one needs to be propagated because instantiating the next one
 		// maybe because of some symetry !!!

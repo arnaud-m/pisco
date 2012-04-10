@@ -38,6 +38,11 @@ public class AirLandProblem extends Abstract1MachineProblem {
 	}
 
 	
+	
+	
+
+
+
 	@Override
 	public ICostFunction getCostFunction() {
 		return null;

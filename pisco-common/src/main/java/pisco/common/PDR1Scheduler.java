@@ -150,8 +150,14 @@ public final class PDR1Scheduler {
 
 
 	public static void shuffle(final ITJob[] jobs, final int maxShift, final Random rnd) {
-		for (int i = 0; i < jobs.length; i++) {
-			final int position = i + rnd.nextInt( jobs.length - i < maxShift ? jobs.length - i : maxShift);
+		for (int i = 0; i < jobs.length-maxShift; i++) {
+			final int position = i + rnd.nextInt(maxShift);
+			final ITJob temp = jobs[i];
+			jobs[i] = jobs[position];
+			jobs[position] = temp;
+		}
+		for (int i = jobs.length-maxShift; i < jobs.length; i++) {
+			final int position = i + rnd.nextInt(jobs.length - i);
 			final ITJob temp = jobs[i];
 			jobs[i] = jobs[position];
 			jobs[position] = temp;

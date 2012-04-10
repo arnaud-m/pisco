@@ -31,7 +31,7 @@ import java.util.Arrays;
 
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import pisco.common.ITJob;
-import pisco.common.NPJob;
+import pisco.common.PJob;
 import choco.kernel.common.util.tools.MathUtils;
 
 public class AirlandParser extends Abstract1MachineParser {
@@ -65,7 +65,7 @@ public class AirlandParser extends Abstract1MachineParser {
 		final int[] minSetupTimes = new int[nbJobs];
 		for (int i = 0; i < nbJobs; i++) {
 			appearanceDates[i] = nextInt();  
-			jobs[i] = new NPJob(i);
+			jobs[i] = new PJob(i);
 			jobs[i].setReleaseDate(nextInt());
 			jobs[i].setDueDate(nextInt());
 			jobs[i].setDeadline(nextInt());

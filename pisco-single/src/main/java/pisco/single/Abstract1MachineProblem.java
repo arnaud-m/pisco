@@ -63,6 +63,7 @@ import choco.kernel.model.variables.scheduling.TaskVariable;
 import choco.kernel.solver.Solver;
 import choco.kernel.solver.constraints.global.scheduling.IResource;
 import choco.kernel.solver.variables.scheduling.TaskVar;
+import choco.kernel.visu.VisuFactory;
 import choco.visu.components.chart.ChocoChartFactory;
 
 
@@ -74,13 +75,13 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 
 
 	public ITJob[] jobs;
-	
+
 	protected TaskVariable[] tasks;
 
 	protected IntegerVariable[] disjuncts;
-	
+
 	public int[][] setupTimes;
-	
+
 	protected Constraint machine;
 
 	private final ICostAggregator globalCostFunction;
@@ -88,7 +89,8 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		super(parser, settings);
 		this.globalCostFunction = globalCostFunction;
 		setChartManager(ChocoChartFactory.getJFreeChartManager());
-		//	settings.putBoolean(BasicSettings.PREPROCESSING_HEURISTICS, false);
+		settings.putBoolean(BasicSettings.PREPROCESSING_HEURISTICS, false);
+		settings.putBoolean(PreProcessConfiguration.DMD_GENERATE_CLAUSES, false);
 		//settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);
 		//		settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
 		//		settings.putBoolean(BasicSettings.LIGHT_MODEL, true);
@@ -101,20 +103,24 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 	//********* Getters/Setters *******************************************//
 	//****************************************************************//
 
-	public abstract ICostFunction getCostFunction();
+	protected int getHorizon() {
+		return JobUtils.maxDeadline(jobs);
+	}
 	
+	public abstract ICostFunction getCostFunction();
+
 	public ICostAggregator getGlobalCostFunction() {
 		return globalCostFunction;
 	}
-	
+
 	public final boolean hasSetupTimes() {
 		return ( (Abstract1MachineParser) getParser()).hasSetupTimes();
 	}
-	
+
 	public final boolean hasDeadlines() {
 		return ( (Abstract1MachineParser) getParser()).hasDeadlines();
 	}
-	
+
 	public final int getDisjunctCount() {
 		return (nbJobs * (nbJobs -1)) /2;
 	}
@@ -144,6 +150,8 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		nbJobs = parser.nbJobs;
 		jobs = parser.jobs;
 		setupTimes = parser.setupTimes;
+		setHeuristic(new SingleMachineRHeuristic(this));
+
 		/////////////////
 		JobUtils.shiftLeftReleaseDates(jobs);
 	}
@@ -165,14 +173,16 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 
 	}
 
+	
 	@Override
 	public Model buildModel() {
 		CPModel model =new CPModel( nbJobs * nbJobs, 6 * nbJobs, 10, 10, 2 * nbJobs, 10, nbJobs );
 		model.setDefaultExpressionDecomposition(true);
-		makespan = Choco.makeIntVar("makespan",0 , MAX_UPPER_BOUND,
+		final int horizon = getHorizon();
+		makespan = Choco.makeIntVar("makespan",0 , horizon,
 				Options.V_MAKESPAN,Options.V_BOUND, Options.V_NO_DECISION);
 		model.addVariables(makespan);
-
+		JobUtils.modifyDeadlines(horizon, jobs);
 		tasks = Choco.makeTaskVarArray("T", JobUtils.releaseDates(jobs), JobUtils.deadlines(jobs), constantArray(JobUtils.durations(jobs)), Options.V_BOUND);
 		for (int i = 0; i < tasks.length; i++) {
 			if( jobs[i].getDuration() == 0) model.addConstraint(Choco.eq(tasks[i].start(), jobs[i].getReleaseDate()));
@@ -188,7 +198,6 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 				idx++;
 			}
 		}
-
 
 		machine = disjunctive(tasks, Options.C_DISJ_NFNL, Options.C_DISJ_EF, Options.C_NO_DETECTION);
 		if( ! defaultConf.readBoolean(BasicSettings.LIGHT_MODEL) ) {
@@ -213,15 +222,15 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		PreProcessCPSolver solver = new PreProcessCPSolver(this.defaultConf);
 		BasicSettings.updateTimeLimit(solver.getConfiguration(),  - getPreProcTime());
 		PreProcessConfiguration.cancelPreProcess(defaultConf);
-		//defaultConf.putTrue(PreProcessConfiguration.DISJUNCTIVE_MODEL_DETECTION);
-		//defaultConf.putTrue(PreProcessConfiguration.DMD_USE_TIME_WINDOWS);
+		defaultConf.putTrue(PreProcessConfiguration.DISJUNCTIVE_MODEL_DETECTION);
+		defaultConf.putTrue(PreProcessConfiguration.DMD_USE_TIME_WINDOWS);
 		//defaultConf.putFalse(PreProcessConfiguration.DMD_REMOVE_DISJUNCTIVE);
 		solver.read(model);
-		//VisuFactory.getDotManager().show(solver.getDisjModel());
 		//VisuFactory.getDotManager().show(solver.getDisjModel());
 		//		solver.setLubyRestart(nbJobs/10+1, 3);
 		//		solver.setRecordNogoodFromRestart(true);
 		//		solver.setRestartLimit(5);
+		//VisuFactory.getDotManager().show(solver.getDisjModel());
 		setGoals(solver);
 		solver.generateSearchStrategy();
 		return solver;
@@ -238,10 +247,8 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		//		if( defaultConf.readBoolean(BasicSettings.SOLUTION_REPORT) ) {
 		//			displayChart(disjSModel, VisuFactory.getDotManager());
 		//		}
-		ChocoLogging.flushLogs();
 		return super.solve();
 	}
-
 
 
 	@Override

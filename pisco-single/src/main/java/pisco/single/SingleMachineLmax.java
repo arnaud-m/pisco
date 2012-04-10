@@ -21,19 +21,29 @@ import pisco.common.JobUtils;
 import pisco.common.Pmtn1Scheduler;
 import static pisco.common.JobComparators.*;
 import pisco.common.PDR1Scheduler;
+import pisco.common.choco.branching.MaxFakeBranching;
 import pisco.single.choco.constraints.ModifyDueDateManager;
-import pisco.single.choco.constraints.RelaxPmtnLmaxManager;
+import pisco.single.choco.constraints.RelaxLmaxManager;
 import pisco.single.parsers.Abstract1MachineParser;
 import choco.Options;
+import choco.cp.solver.CPSolver;
+import choco.cp.solver.preprocessor.PreProcessCPSolver;
+import choco.cp.solver.search.task.SetTimes;
 import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.common.util.tools.ArrayUtils;
 import choco.kernel.common.util.tools.MathUtils;
 import choco.kernel.model.Model;
 import choco.kernel.model.constraints.ComponentConstraint;
 import choco.kernel.model.variables.integer.IntegerVariable;
+import choco.kernel.solver.Solver;
+import choco.kernel.visu.VisuFactory;
 import choco.visu.components.chart.ChocoChartFactory;
 
 public class SingleMachineLmax extends Abstract1MachineProblem {
+
+	private IntegerVariable objVar;
+
+	private IntegerVariable[] dueDates;
 
 	public SingleMachineLmax(BasicSettings settings,
 			Abstract1MachineParser parser) {
@@ -46,49 +56,80 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 		return CostFactory.getLateness();
 	}
 
-
 	@Override
 	public Boolean preprocess() {
-		ITJob[] lbjobs = Arrays.copyOf(jobs, jobs.length);
-		setComputedLowerBound(PDR1Scheduler.schedule1Lmax(lbjobs));
-		if(JobUtils.isScheduledInTimeWindows(lbjobs)) {
+		final ITJob[] lbjobs = Arrays.copyOf(jobs, jobs.length);
+		if(defaultConf.readBoolean(SingleMachineSettings.INITIAL_LOWER_BOUND)) {
+			setComputedLowerBound(PDR1Scheduler.schedule1Lmax(lbjobs));
+			SingleMachineRHeuristic heuristic = (SingleMachineRHeuristic) getHeuristic();
+			if(JobUtils.isScheduledInTimeWindows(lbjobs)) {
+				heuristic.storeSolution(lbjobs, getComputedLowerBound());
+			} else {
+				JobUtils.resetSchedule(lbjobs);
+				final int lb = Pmtn1Scheduler.schedule1Lmax(lbjobs);
 
-		} else {
-			setComputedLowerBound(Pmtn1Scheduler.schedule1Lmax(lbjobs));
-			if(JobUtils.isInterrupted(lbjobs)) {
-				
+				if(JobUtils.isScheduledInTimeWindows(lbjobs) && 
+						! JobUtils.isInterrupted(lbjobs)) {
+
+					setComputedLowerBound(lb);
+
+					heuristic.storeSolution(lbjobs, getComputedLowerBound());	
+				} else if(lb > getComputedLowerBound()) {
+					setComputedLowerBound(lb);
+				}
 			}
 		}
-
 		return super.preprocess();
 	}
 
 
+
+	@Override
+	public void initialize() {
+		super.initialize();
+		objVar = null;
+		dueDates = null;
+	}
+
+
+	@Override
+	protected int getHorizon() {
+		return isFeasible() == Boolean.TRUE ? JobUtils.maxDueDate(jobs)  + objective.intValue(): maxReleaseDate(jobs) + sumDurations(jobs);
+	}
+
+
+
+
+
+
+
 	@Override
 	public Model buildModel() {
-		Model model = super.buildModel();
-		IntegerVariable obj = buildObjective("Lmax",MAX_UPPER_BOUND);
-		///////////
-		//Create Due date Variables 
-		IntegerVariable[] dueDates = new IntegerVariable[nbJobs];
-		final int minDueDate = minDueDate(jobs) - maxDuration(jobs);
-		for (int i = 0; i < tasks.length; i++) {
-			dueDates[i] = makeIntVar("D"+i, minDueDate, jobs[i].getDueDate(), 
-					Options.V_BOUND, Options.V_NO_DECISION);
-		}
-		///////////
-		//Add constraints which modify Due Dates on the fly
-		int idx=0;
-		for (int i = 0; i < tasks.length; i++) {
-			for (int j = i+1; j < tasks.length; j++) {
-				//				model.addConstraint( new ComponentConstraint( ModifyDueDateManager.class, null, 
-				//						new IntegerVariable[]{dueDates[i], constant(jobs[j].getDuration()), 
-				//					dueDates[j], constant(jobs[i].getDuration()), disjuncts[idx]})
-				//						);
-				idx++;
+		final Model model = super.buildModel();
+		objVar = buildObjective("Lmax",MAX_UPPER_BOUND);
+		if(defaultConf.readBoolean(SingleMachineSettings.MODIFY_DUE_DATES)) {
+			///////////
+			//Create Due date Variables 
+			dueDates = new IntegerVariable[nbJobs];
+			final int minDueDate = minDueDate(jobs) - maxDuration(jobs);
+			for (int i = 0; i < tasks.length; i++) {
+				dueDates[i] = makeIntVar("D"+i, minDueDate, jobs[i].getDueDate(), 
+						Options.V_BOUND, Options.V_NO_DECISION);
+			}
+			///////////
+			//Add constraints which modify Due Dates on the fly
+			int idx=0;
+			for (int i = 0; i < tasks.length; i++) {
+				for (int j = i+1; j < tasks.length; j++) {
+					// FIXME - Mistery - created 10 avr. 2012 by A. Malapert
+					model.addConstraint( new ComponentConstraint( ModifyDueDateManager.class, null, 
+							new IntegerVariable[]{dueDates[i], constant(jobs[j].getDuration()), 
+						dueDates[j], constant(jobs[i].getDuration()), disjuncts[idx]})
+							);
+					idx++;
+				}
 			}
 		}
-
 		///////////
 		//state lateness constraints
 		IntegerVariable[] lateness = makeIntVarArray("L", nbJobs, 
@@ -100,20 +141,13 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 		///////////
 		//create objective constraints
 		model.addConstraints(
-				max(lateness, obj),
-				geq( obj, minus(makespan,maxDueDate(jobs)))
+				max(lateness, objVar),
+				geq( objVar, minus(makespan,maxDueDate(jobs)))
 				);
 
-		////////////
-		//Add relaxation constraint
-		// TODO - Set parameters to jobs - created 6 avr. 2012 by A. Malapert
-		//		model.addConstraints(
-		//				new ComponentConstraint(RelaxPmtnLmaxManager.class, 
-		//						this, 
-		//						ArrayUtils.append(tasks, disjuncts, new IntegerVariable[]{obj}))				
-		//				);
 
-		if( ! hasSetupTimes() ) {
+
+		if( defaultConf.readBoolean(SingleMachineSettings.TASK_ORDERING) && ! hasSetupTimes() ) {
 			////////////
 			//Add pre-ordering constraints from dominance conditions
 			final ITJob[] sjobs = Arrays.copyOf(jobs, nbJobs);
@@ -127,13 +161,43 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 						// i precedes j
 						final int ti = sjobs[i].getID();
 						final int tj = sjobs[j].getID();
-						//model.addConstraint(precedence(tasks[ti], tasks[tj], setupTimes[ti][tj]));
+						model.addConstraint(precedence(tasks[ti], tasks[tj], setupTimes[ti][tj]));
 					}
 					j++;
 				}
 			}
 		}
+
+
 		return model;
+	}
+
+
+	
+
+	@Override
+	protected void setGoals(PreProcessCPSolver solver) {
+		super.setGoals(solver);
+		if(dueDates != null) {
+			solver.addGoal(new MaxFakeBranching(solver, solver.getVar(dueDates)));
+		}
+	}
+
+
+	@Override
+	public Solver buildSolver() {
+		CPSolver s = (CPSolver) super.buildSolver();
+		if(SingleMachineSettings.stateRelaxationConstraint(this)) {
+			////////////
+			//Add relaxation constraint
+			// FIXME - Awful : can not really postponed until the disjunctive model is built - created 10 avr. 2012 by A. Malapert
+			s.addConstraint(
+					new ComponentConstraint(RelaxLmaxManager.class, 
+							this, 
+							ArrayUtils.append(tasks, new IntegerVariable[]{objVar})));				
+
+		}
+		return s;
 	}
 
 

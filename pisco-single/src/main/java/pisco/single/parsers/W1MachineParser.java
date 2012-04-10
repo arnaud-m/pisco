@@ -31,7 +31,7 @@ import java.util.Arrays;
 
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import pisco.common.ITJob;
-import pisco.common.NPJob;
+import pisco.common.PJob;
 
 public class W1MachineParser extends Abstract1MachineParser {
 
@@ -42,7 +42,7 @@ public class W1MachineParser extends Abstract1MachineParser {
 	
 	@Override
 	public boolean hasDeadlines() {
-		return true;
+		return false;
 	}
 	
 	@Override
@@ -55,7 +55,7 @@ public class W1MachineParser extends Abstract1MachineParser {
 		tardinessPenalties =null;
 		setupTimes = new int[nbJobs][nbJobs];
 		for (int i = 0; i < nbJobs; i++) {
-			jobs[i] = new NPJob(i);
+			jobs[i] = new PJob(i);
 			jobs[i].setReleaseDate(nextInt());
 			jobs[i].setDuration(nextInt());
 			jobs[i].setWeight(nextInt());
