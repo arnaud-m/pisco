@@ -1,5 +1,8 @@
 package pisco.common;
 
+import gnu.trove.TLinkableAdapter;
+import gnu.trove.TLinkedList;
+
 import java.util.Arrays;
 
 import junit.framework.Assert;
@@ -30,28 +33,28 @@ public class TestCommon {
 		jobs[4].addSuccessor(jobs[1]);
 		return jobs;
 	}
-	
+
 	private static void checkPermutation(int[] permutation, AbstractJob[] jobs) {
 		for (int i = 0; i < jobs.length; i++) {
 			Assert.assertEquals("check perm. index "+i, permutation[i], jobs[i].getID());
 		}
 	}
-	
+
 	@Test
 	public void testSorting() {
 		AbstractJob[] jobs = buildInstance();
 		Arrays.sort(jobs, JobComparators.getShortestProcessingTime());
 		checkPermutation(new int[] {3, 1, 4, 2, 0}, jobs);
-		
+
 		jobs = buildInstance();
 		Arrays.sort(jobs, JobComparators.getEarliestDueDate());
 		checkPermutation(new int[] {1, 4, 3, 0, 2}, jobs);
-		
+
 		jobs = buildInstance();
 		Arrays.sort(jobs, JobComparators.getEarliestReleaseDate());
 		checkPermutation(new int[] {0, 1, 2, 3, 4}, jobs);
 	}
-	
+
 
 	@Test
 	public void testPreemptiveSchedule() {
@@ -59,19 +62,54 @@ public class TestCommon {
 		System.out.println(Arrays.toString(jobs));
 		Pmtn1Scheduler.schedule1Lmax(jobs);
 		ChocoChartFactory.createAndShowGUI("Test", ChocoChartFactory.createGanttChart("Test", jobs));
-		
+
 		//PDRPmtnSchedule.schedule2(jobs);
 		//PDRPmtnSchedule.ScheduleLawlerLmax(jobs);
 		System.out.println(Arrays.toString(jobs));
 	}
 
-	public static void main(String[] args) {
-		PJob[] jobs = buildInstance();
-		System.out.println(Arrays.toString(jobs));
-		Pmtn1Scheduler.schedule1Lmax(jobs);
-		System.out.println(Arrays.toString(jobs));
-		VisuFactory.getDotManager().show(new DottyBean(jobs));
-		//ChocoChartFactory.createAndShowGUI("Test", ChocoChartFactory.createGanttChart("Test", jobs));
+	@Test
+	public void testSortTLinkedList() {
+		TLinkedList<TLinkableInteger> list = new TLinkedList<TestCommon.TLinkableInteger>();
+		list.add( new TLinkableInteger(6));
+		list.add( new TLinkableInteger(5));
+		list.add( new TLinkableInteger(8));
+		list.add( new TLinkableInteger(2));
+		list.add( new TLinkableInteger(1));
+		list.add( new TLinkableInteger(7));
+		list.add( new TLinkableInteger(3));
+		list.add( new TLinkableInteger(5));
+		TCollections.sort(list);
 		
+		TLinkableInteger current = list.getFirst(), next = list.getNext(current);
+		while(next != null) {
+			Assert.assertTrue(current.compareTo(next) <= 0);
+			current = next;
+			next = list.getNext(current);
+		}
+	}
+
+	static class TLinkableInteger extends TLinkableAdapter implements Comparable<TLinkableInteger> {
+
+		private static final long serialVersionUID = 8757623914472905181L;
+		public final int value;
+
+
+		public TLinkableInteger(int value) {
+			super();
+			this.value = value;
+		}
+
+		@Override
+		public int compareTo(TLinkableInteger o) {
+			return value - o.value;
+		}
+
+		@Override
+		public String toString() {
+			return Integer.toString(value);
+		}
+
+
 	}
 }

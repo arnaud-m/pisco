@@ -10,6 +10,8 @@ import static choco.Choco.precedenceDisjoint;
 
 import java.util.Arrays;
 
+import org.jfree.ui.HorizontalAlignment;
+
 import net.sf.cglib.transform.impl.AddPropertyTransformer;
 
 import parser.instances.BasicSettings;
@@ -95,11 +97,6 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 	}
 
 
-
-
-
-
-
 	@Override
 	public Model buildModel() {
 		final Model model = super.buildModel();
@@ -129,8 +126,9 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 		}
 		///////////
 		//state lateness constraints
+		final int maxDueDate = maxDueDate(jobs);
 		IntegerVariable[] lateness = makeIntVarArray("L", nbJobs, 
-				- maxDueDate(jobs), MAX_UPPER_BOUND, 
+				- maxDueDate(jobs), makespan.getUppB() - minDueDate(jobs), 
 				Options.V_BOUND, Options.V_NO_DECISION);
 		for (int i = 0; i < nbJobs; i++) {
 			model.addConstraint(eq(lateness[i], minus(tasks[i].end(), jobs[i].getDueDate())));

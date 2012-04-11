@@ -10,10 +10,10 @@ public class SingleMachineSettings extends DisjunctiveSettings {
 
 
 	public static enum PropagagationLevel{ 
-		DECOMP, OBJ, SWEEP, FULL;
+		NONE, OBJ, SWEEP, FULL;
 
 		public boolean isOn() {
-			return ordinal() > DECOMP.ordinal();
+			return ordinal() > NONE.ordinal();
 		}
 	}
 

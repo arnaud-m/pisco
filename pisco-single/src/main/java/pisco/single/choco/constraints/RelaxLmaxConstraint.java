@@ -15,6 +15,7 @@ import pisco.common.JobUtils;
 import pisco.common.PDR1Scheduler;
 import pisco.common.PJob;
 import pisco.common.Pmtn1Scheduler;
+import pisco.common.TCollections;
 import pisco.single.Abstract1MachineProblem;
 import pisco.single.SingleMachineSettings;
 import pisco.single.SingleMachineSettings.PropagagationLevel;
@@ -192,10 +193,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		}
 	}
 
-	private final boolean tryDisjunct(SweepEvent evt1, SweepEvent evt2) {
-		ChocoLogging.getBranchingLogger().info(jobs[evt1.index] + " -> "+ jobs[evt2.index]);
-		return true;
-	}
+
 
 	@Override
 	public void propagate() throws ContradictionException {
@@ -214,6 +212,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 	private void checkSolutionStamp() {
 		if(solutionStamp > 0 && problem.getSolver().getSolutionCount() <= solutionStamp) {
+			ChocoLogging.flushLogs();
 			throw new SolverException("Failed to record solution "+this.getClass().getSimpleName());
 		} else {
 			solutionStamp = -1;
@@ -227,7 +226,6 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			taskvars[i].end().instantiate(jobs[i].getLCT(), this, false);
 			assert(taskvars[i].isScheduled());
 		}
-		// TODO - Vérifier qu'aucun échec n'est levé suite à ces instanciations - created 11 avr. 2012 by A. Malapert
 	}
 
 	@Override
@@ -274,16 +272,14 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 		@Override
 		public void buildEventLists() {
-			sweepEventList.clear();
-			for (int i = 0; i < jobs.length; i++) {
-				if(jobs[i].isInterrupted()) {
-					sweepEventMap[i][START].setCoordinate(jobs[i].getEST());
+			for (int i = 0; i < schedule.length; i++) {
+				if( ! schedule[i].isScheduledInTimeWindow() ){
+					sweepEventMap[schedule[i].getID()][START].setCoordinate(schedule[i].getEST());
 					sweepEventList.add(sweepEventMap[i][START]);
-					sweepEventMap[i][END].setCoordinate(jobs[i].getLCT());
+					sweepEventMap[schedule[i].getID()][END].setCoordinate(schedule[i].getLCT());
 					sweepEventList.add(sweepEventMap[i][END]);
 				} 
 			}
-			Collections.sort(sweepEventList);			
 		}
 
 		@Override
@@ -309,16 +305,14 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 		@Override
 		public void buildEventLists() {
-			sweepEventList.clear();
-			for (int i = 0; i < jobs.length; i++) {
-				if( ! jobs[i].isScheduledInTimeWindow() ){
-					sweepEventMap[i][START].setCoordinate(jobs[i].getReleaseDate());
+			for (int i = 0; i < schedule.length; i++) {
+				if( ! schedule[i].isScheduledInTimeWindow() ){
+					sweepEventMap[schedule[i].getID()][START].setCoordinate(schedule[i].getReleaseDate());
 					sweepEventList.add(sweepEventMap[i][START]);
-					sweepEventMap[i][END].setCoordinate(jobs[i].getDeadline());
+					sweepEventMap[schedule[i].getID()][END].setCoordinate(schedule[i].getDeadline());
 					sweepEventList.add(sweepEventMap[i][END]);
 				} 
 			}
-			Collections.sort(sweepEventList);			
 		}
 
 		@Override
@@ -415,8 +409,6 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 		@Override
 		public final boolean sweep() throws ContradictionException {
-			sweepCurrentList.clear();
-			sweepEndingList.clear();
 			SweepEvent evt = sweepEventList.removeFirst();
 			assert evt.isStartEvent();
 			sweepCurrentList.add(evt);
@@ -444,28 +436,30 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 		@Override
 		public boolean filter() throws ContradictionException {
-			switch (propLevel) {
-			case OBJ:{
-				//Preemptive Relaxation
+			if(propLevel.isOn()) {
 				filterObjective();
+				sweepCurrentList.clear();
+				sweepEndingList.clear();
+				sweepEventList.clear();
 				buildEventLists();
+				TCollections.sort(sweepEventList);
 				if(sweepEventList.isEmpty()) {
 					recordSolution();
 					return true;
 
 				}
-				//continue ...
-			}
-			case SWEEP : {
-				sweep();
-				break;
-			}			
-			case FULL: { 
-				bruteForce();
-				break;
-			}
-			default:
-				break;
+				switch (propLevel) {
+				case SWEEP : {
+					sweep();
+					break;
+				}			
+				case FULL: { 
+					bruteForce();
+					break;
+				}
+				default:
+					break;
+				}
 			}
 			return false;
 		}
