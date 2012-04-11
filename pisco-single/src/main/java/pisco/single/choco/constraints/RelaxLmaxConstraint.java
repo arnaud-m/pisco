@@ -76,8 +76,8 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		}
 		schedule = Arrays.copyOf(jobs, jobs.length);
 
-		pmtnRelaxation = new PmtnRelaxationFilter(SingleMachineSettings.getPmtnLevel(problem));
-		precRelaxation = new PrecRelaxationFilter(SingleMachineSettings.getPrecLevel(problem));
+		pmtnRelaxation = new PmtnRelaxationFilter(SingleMachineSettings.readPmtnLevel(problem));
+		precRelaxation = new PrecRelaxationFilter(SingleMachineSettings.readPrecLevel(problem));
 
 	}
 

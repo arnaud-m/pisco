@@ -29,6 +29,7 @@ public class DisjunctiveSettings extends BasicSettings {
 	public DisjunctiveSettings() {
 		super();
 	}
+	
 	public static String getBranchingMsg(Configuration conf) {
 		StringBuilder b = new StringBuilder();
 		b.append(getBranching(conf)).append(" BRANCHING    ");

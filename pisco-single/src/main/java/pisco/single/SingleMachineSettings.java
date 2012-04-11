@@ -1,10 +1,8 @@
 package pisco.single;
 
-import java.io.File;
-import java.io.IOException;
-
 import parser.instances.AbstractInstanceModel;
 import pisco.common.DisjunctiveSettings;
+import choco.kernel.solver.Configuration;
 
 public class SingleMachineSettings extends DisjunctiveSettings {
 
@@ -71,16 +69,28 @@ public class SingleMachineSettings extends DisjunctiveSettings {
 	public static final String INITIAL_LOWER_BOUND= "tools.cp.preprocess.lb";
 
 
-	public static final PropagagationLevel getPmtnLevel(AbstractInstanceModel problem) {
+	public static final PropagagationLevel readPmtnLevel(AbstractInstanceModel problem) {
 		return problem.getConfiguration().readEnum(RELAX_PMTN_PROPAGATION, PropagagationLevel.class);
 	}
 
-	public static final PropagagationLevel getPrecLevel(AbstractInstanceModel problem) {
+	public static final PropagagationLevel readPrecLevel(AbstractInstanceModel problem) {
 		return problem.getConfiguration().readEnum(RELAX_PREC_PROPAGATION, PropagagationLevel.class);
 	}
 
 	public static final boolean stateRelaxationConstraint(AbstractInstanceModel problem) {
-		return getPmtnLevel(problem).isOn() || getPrecLevel(problem).isOn();
+		return readPmtnLevel(problem).isOn() || readPrecLevel(problem).isOn();
+	}
+	
+	public static String getInstModelMsg(Configuration conf) {
+		StringBuilder b = new StringBuilder();
+		if(conf.readBoolean(MODIFY_DUE_DATES)) b.append(" MODIFY_DUE_DATES    ");
+		if(conf.readBoolean(TASK_ORDERING)) b.append(" TASK_ORDERING    ");
+		if(conf.readBoolean(TASK_WEAK_ORDERING)) b.append(" TASK_WEAK_ORDERING    ");
+		PropagagationLevel level = conf.readEnum(RELAX_PMTN_PROPAGATION, PropagagationLevel.class);
+		b.append(level).append(" PMTN_RELAX    ");
+		level = conf.readEnum(RELAX_PREC_PROPAGATION, PropagagationLevel.class);
+		b.append(level).append(" PREC_RELAX    ");
+		return b.toString();
 	}
 
 //	public static void main(String[] args) throws IOException {

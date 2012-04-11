@@ -255,6 +255,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 	protected void logOnConfiguration() {
 		super.logOnConfiguration();
 		logMsg.storeConfiguration(DisjunctiveSettings.getBranchingMsg(defaultConf));
+		logMsg.storeConfiguration(SingleMachineSettings.getInstModelMsg(defaultConf));
 		if (parser instanceof Abstract1MachineParser) {
 			logMsg.storeConfiguration(((Abstract1MachineParser) parser).getParserMsg());
 		}
