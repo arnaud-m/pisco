@@ -1,5 +1,6 @@
 package pisco.common;
 
+import static junit.framework.Assert.*;
 import gnu.trove.TLinkableAdapter;
 import gnu.trove.TLinkedList;
 
@@ -7,30 +8,29 @@ import java.util.Arrays;
 
 import junit.framework.Assert;
 
+import org.hamcrest.core.IsSame;
 import org.junit.Test;
 
-import choco.kernel.common.DottyBean;
-import choco.kernel.visu.VisuFactory;
 import choco.visu.components.chart.ChocoChartFactory;
 
 public class TestCommon {
 
 
 	private static PJob[] buildInstance() {
-		final int[] d =  {10, 6, 8, 4, 6};
+		final int[] p =  {10, 6, 8, 4, 6};
 		final int[] rd =  {0, 3, 5 , 7, 8};
 		final int[] dd =  {15, 10, 25, 14, 12};
-		final int n = d.length;
+		final int n = p.length;
 		PJob[] jobs = new PJob[n];
 		for (int i = 0; i < n; i++) {
 			jobs[i] = new PJob(i);
-			jobs[i].setDuration(d[i]);
+			jobs[i].setDuration(p[i]);
 			jobs[i].setReleaseDate(rd[i]);
 			jobs[i].setDueDate(dd[i]);
 			jobs[i].resetSchedule();
 		}
 		jobs[0].addSuccessor(jobs[3]);
-		jobs[4].addSuccessor(jobs[1]);
+		jobs[2].addSuccessor(jobs[1]);
 		return jobs;
 	}
 
@@ -62,10 +62,41 @@ public class TestCommon {
 		System.out.println(Arrays.toString(jobs));
 		Pmtn1Scheduler.schedule1Lmax(jobs);
 		ChocoChartFactory.createAndShowGUI("Test", ChocoChartFactory.createGanttChart("Test", jobs));
-
-		//PDRPmtnSchedule.schedule2(jobs);
-		//PDRPmtnSchedule.ScheduleLawlerLmax(jobs);
 		System.out.println(Arrays.toString(jobs));
+	}
+
+	private final static void testJob(ITJob job, int start, int end) {
+		assertTrue(job.isScheduled());
+		assertTrue(job.isScheduledInTimeWindow());
+		assertEquals(job.getEST(), start);
+		assertEquals(job.getLCT(), end);
+	}
+
+	@Test
+	public void testPreemptiveLmaxBug() {
+		final int n = 3;
+		ITJob[] jobs = new ITJob[n];
+		for (int i = 0; i < n; i++) {
+			jobs[i] = new PJob(i);
+			jobs[i].setDuration(i+1);
+		}
+		jobs[0].setReleaseDate(0);
+		jobs[1].setReleaseDate(1);
+		jobs[2].setReleaseDate(3);
+
+		jobs[0].setDueDate(1);
+		jobs[1].setDueDate(2);
+		jobs[2].setDueDate(2);
+
+		jobs[0].addSuccessor(jobs[2]);
+		jobs[1].addSuccessor(jobs[2]);
+		
+		Pmtn1Scheduler.schedule1Lmax(jobs);
+		
+		testJob(jobs[0], 0, 1);
+		testJob(jobs[1], 1, 3);
+		testJob(jobs[2], 3, 6);
+		
 	}
 
 	@Test
@@ -80,7 +111,7 @@ public class TestCommon {
 		list.add( new TLinkableInteger(3));
 		list.add( new TLinkableInteger(5));
 		TCollections.sort(list);
-		
+
 		TLinkableInteger current = list.getFirst(), next = list.getNext(current);
 		while(next != null) {
 			Assert.assertTrue(current.compareTo(next) <= 0);

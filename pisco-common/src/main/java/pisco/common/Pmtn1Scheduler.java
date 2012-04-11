@@ -23,35 +23,37 @@ public final class Pmtn1Scheduler {
 		}
 		Arrays.sort(jobs, JobComparators.getEarliestReleaseDate());
 		final PriorityQueue<ITJob> pendingJobs= new PriorityQueue<ITJob>(10, JobComparators.getEarliestDueDate());
-		int nextTime = jobs[0].getReleaseDate();
+		int time, nextTime;
 		int i = 0;
 		//Start scheduling jobs
 		do {
-			final int time = nextTime;
+			//System.out.println(Arrays.toString(jobs));
 			// Add new pending jobs with a release date equals to time
 			do { 
+				time =  jobs[i].getReleaseDate();
 				while( 	i < jobs.length && jobs[i].getReleaseDate() == time) {
 					if(jobs[i].getHook() == 0) {
 						pendingJobs.add(jobs[i]);
 					}
 					i++;
 				}
+				assert(!pendingJobs.isEmpty() || i < jobs.length);
 			} while(pendingJobs.isEmpty());
-			int currentTime = time;
 			nextTime =  i < jobs.length ? jobs[i].getReleaseDate() : MAX_UPPER_BOUND;
 			//Schedule pending jobs selected by EDD-rule until the next release date;
-			while(currentTime < nextTime && ! pendingJobs.isEmpty() ) {
-				currentTime = pendingJobs.peek().scheduleIn(currentTime, nextTime);
+			while(time < nextTime && ! pendingJobs.isEmpty() ) {
+				time = pendingJobs.peek().scheduleIn(time, nextTime);
 				if(pendingJobs.peek().isScheduled()) {
 					//Job is entirely scheduled : compute cost
 					final int lateness = pendingJobs.peek().getLateness();
 					if(lmax < lateness) { lmax = lateness;}
 					//Update predecessor's counts and new pending jobs
+					final int ctime = time;
 					pendingJobs.remove().forEachSuccessor(new TObjectProcedure<TJobAdapter>() {
 						@Override
 						public boolean execute(TJobAdapter object) {
 							if( object.target.decHook() == 0) {
-								if(object.target.getReleaseDate() <= time) {
+								if(object.target.getReleaseDate() < ctime) {
 									pendingJobs.add(object.target);
 								}
 							}
@@ -97,7 +99,7 @@ public final class Pmtn1Scheduler {
 		assert(isScheduled(tjobs));
 		return sumCi;
 	}
-	
+
 
 
 }

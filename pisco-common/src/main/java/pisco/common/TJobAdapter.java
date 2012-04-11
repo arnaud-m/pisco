@@ -57,7 +57,7 @@ public final class TJobAdapter extends TLinkableAdapter {
 
 	@Override
 	public String toString() {
-		return target == null ? "null" : toString();
+		return target == null ? "null" : target.toString();
 	} 	
 
 

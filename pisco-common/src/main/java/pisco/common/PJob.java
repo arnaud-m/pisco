@@ -53,7 +53,7 @@ public class PJob extends AbstractJob {
 	@Override
 	public void scheduleFrom(int startingTime) {
 		final int length = getRemainingDuration();
-		assert(startingTime >= getReleaseDate() && length > 0);
+		assert(length > 0);
 		_timePeriodList.addTimeLength(startingTime, length);
 	}
 

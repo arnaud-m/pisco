@@ -60,8 +60,8 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 
 	@Override
 	public Boolean preprocess() {
-		final ITJob[] lbjobs = Arrays.copyOf(jobs, jobs.length);
 		if(defaultConf.readBoolean(SingleMachineSettings.INITIAL_LOWER_BOUND)) {
+			final ITJob[] lbjobs = Arrays.copyOf(jobs, jobs.length);
 			setComputedLowerBound(PDR1Scheduler.schedule1Lmax(lbjobs));
 			SingleMachineRHeuristic heuristic = (SingleMachineRHeuristic) getHeuristic();
 			if(JobUtils.isScheduledInTimeWindows(lbjobs)) {
@@ -77,6 +77,8 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 					setComputedLowerBound(lb);
 				}
 			}
+		} else {
+			setComputedLowerBound( JobUtils.minSlackTime(jobs));
 		}
 		return super.preprocess();
 	}
@@ -177,7 +179,6 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 			solver.addGoal(new MaxFakeBranching(solver, solver.getVar(dueDates)));
 		}
 	}
-
 
 	@Override
 	public Solver buildSolver() {

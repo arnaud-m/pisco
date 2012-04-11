@@ -283,4 +283,26 @@ public final class JobUtils {
 		}
 		return tab;
 	}
+	
+	public final static int minSlackTime(IJob... jobs) {
+		int min = Integer.MAX_VALUE;
+		for (IJob job : jobs) {
+			final int v = job.getDuration() - job.getDueDate();
+			if(v < min) {
+				min = v;
+			}
+		}
+		return min;
+	}
+	
+	public final static int maxSlackTime(IJob... jobs) {
+		int max = Integer.MIN_VALUE;
+		for (IJob job : jobs) {
+			final int v = job.getDuration() - job.getDueDate();
+			if(v > max) {
+				max = v;
+			}
+		}
+		return max;
+	}
 }

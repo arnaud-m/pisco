@@ -50,7 +50,9 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 	private final static int END = 1;
 
 	private int solutionStamp = -1;
-
+	
+	private int backtrackStamp = -1;
+	
 	private final IRelaxationFilter pmtnRelaxation;
 
 	private final IRelaxationFilter precRelaxation;
@@ -119,7 +121,6 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 	@Override
 	public boolean isSatisfied(int[] tuple) {
-		// TODO Auto-generated method stub
 		return true;
 	}
 
@@ -134,10 +135,10 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 	public void awakeOnSup(int varIdx) throws ContradictionException {}
 
 
-	@Override
-	public Boolean isEntailed() {
-		return super.isEntailed();
-	}
+//	@Override
+//	public Boolean isEntailed() {
+//		return super.isEntailed();
+//	}
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -211,15 +212,18 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 
 	private void checkSolutionStamp() {
-		if(solutionStamp > 0 && problem.getSolver().getSolutionCount() <= solutionStamp) {
+		if(backtrackStamp > 0 && 
+				problem.getSolver().getBackTrackCount() > backtrackStamp
+				&& problem.getSolver().getSolutionCount() <= solutionStamp) {
 			ChocoLogging.flushLogs();
 			throw new SolverException("Failed to record solution "+this.getClass().getSimpleName());
 		} else {
-			solutionStamp = -1;
+			backtrackStamp = -1;
 		}
 	}
 
 	private void recordSolution() throws ContradictionException {
+		backtrackStamp = problem.getSolver().getBackTrackCount();
 		solutionStamp = problem.getSolver().getSolutionCount();
 		for (int i = 0; i < jobs.length; i++) {
 			taskvars[i].start().instantiate(jobs[i].getEST(), this, false);
@@ -273,7 +277,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		@Override
 		public void buildEventLists() {
 			for (int i = 0; i < schedule.length; i++) {
-				if( ! schedule[i].isScheduledInTimeWindow() ){
+				if( schedule[i].isInterrupted() ){
 					sweepEventMap[schedule[i].getID()][START].setCoordinate(schedule[i].getEST());
 					sweepEventList.add(sweepEventMap[i][START]);
 					sweepEventMap[schedule[i].getID()][END].setCoordinate(schedule[i].getLCT());
@@ -384,7 +388,8 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 					forwardUpdateList.add(disjSMod.getConstraint(idx2, idx1));
 				}
 
-			} else {
+			} else if(! JobUtils.isInterrupted(schedule) ){
+				System.err.println("Not yet implemented");
 				// TODO - Is a solution ? - created 11 avr. 2012 by A. Malapert
 			}
 			return true;
@@ -396,6 +401,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		public final boolean bruteForce() throws ContradictionException {
 			for (ITemporalSRelation rel : disjunctList) {
 				if( ! rel.isFixed()) {
+					System.out.println(rel);
 					ITJob j1 = jobs[rel.getOrigin().getID()];
 					ITJob j2 = jobs[rel.getDestination().getID()];
 					if ( ! propagatePrecedence(j1, j2) || ! propagatePrecedence(j2, j1)) {
@@ -442,14 +448,14 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 				sweepEndingList.clear();
 				sweepEventList.clear();
 				buildEventLists();
-				TCollections.sort(sweepEventList);
 				if(sweepEventList.isEmpty()) {
 					recordSolution();
 					return true;
 
-				}
+				} 
 				switch (propLevel) {
 				case SWEEP : {
+					TCollections.sort(sweepEventList);
 					sweep();
 					break;
 				}			

@@ -196,33 +196,22 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	////////////////////////////////////////////////////////////////////
 	/////////////////////// Hook  //////////////////////////////////////
 	////////////////////////////////////////////////////////////////////
-	/* (non-Javadoc)
-	 * @see pisco.common.IHook#getHook()
-	 */
+	
 	@Override
 	public final int getHook() {
 		return hook;
 	}
 
-	/* (non-Javadoc)
-	 * @see pisco.common.IHook#setHook(int)
-	 */
 	@Override
 	public final void setHook(int hook) {
 		this.hook = hook;
 	}
 
-	/* (non-Javadoc)
-	 * @see pisco.common.IHook#incHook()
-	 */
 	@Override
 	public final int incHook() {
 		return ++hook;
 	}
 
-	/* (non-Javadoc)
-	 * @see pisco.common.IHook#decHook()
-	 */
 	@Override
 	public final int decHook() {
 		return --hook;

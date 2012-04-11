@@ -8,6 +8,9 @@ public final class TCollections {
 
 	private TCollections() {}
 
+	/**
+	 * Insertion sort
+	 */
 	public final static <T extends TLinkable & Comparable<T>> void sort(TLinkedList<T> list ) {
 		if( list.size() >1) {
 			T current = list.getNext(list.getFirst());
