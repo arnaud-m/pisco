@@ -89,8 +89,8 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		super(parser, settings);
 		this.globalCostFunction = globalCostFunction;
 		setChartManager(ChocoChartFactory.getJFreeChartManager());
-		settings.putBoolean(BasicSettings.PREPROCESSING_HEURISTICS, false);
-		settings.putBoolean(PreProcessConfiguration.DMD_GENERATE_CLAUSES, false);
+		//settings.putBoolean(BasicSettings.PREPROCESSING_HEURISTICS, false);
+		//settings.putBoolean(PreProcessConfiguration.DMD_GENERATE_CLAUSES, false);
 		//settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);
 		//		settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
 		//		settings.putBoolean(BasicSettings.LIGHT_MODEL, true);
