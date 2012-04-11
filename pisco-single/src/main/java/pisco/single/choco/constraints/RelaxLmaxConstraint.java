@@ -225,6 +225,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 	private void recordSolution() throws ContradictionException {
 		backtrackStamp = problem.getSolver().getBackTrackCount();
 		solutionStamp = problem.getSolver().getSolutionCount();
+		
 		for (int i = 0; i < jobs.length; i++) {
 			taskvars[i].start().instantiate(jobs[i].getEST(), this, false);
 			taskvars[i].end().instantiate(jobs[i].getLCT(), this, false);
@@ -353,6 +354,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		public void filterObjective() throws ContradictionException {
 			JobUtils.resetSchedule(schedule);
 			final int lb = doPropagate();
+			//LOGGER.info("LB "+lb + " -> "+vars[vars.length-1].pretty());
 			vars[vars.length-1].updateInf(lb, RelaxLmaxConstraint.this, false);
 		}
 

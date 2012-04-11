@@ -36,6 +36,9 @@ import static choco.cp.solver.search.BranchingFactory.profile;
 import static choco.cp.solver.search.BranchingFactory.randomSearch;
 import static choco.cp.solver.search.BranchingFactory.setTimes;
 import static choco.cp.solver.search.BranchingFactory.slackWDeg;
+
+import java.util.LinkedList;
+
 import parser.instances.BasicSettings;
 import pisco.common.choco.branching.FinishBranchingGraph;
 import pisco.common.choco.branching.FinishBranchingNaive;
@@ -142,6 +145,24 @@ public final class SchedulingBranchingFactory {
 						userValSel;
 	}
 
+	private static IntDomainVar[] getBoolDecisionVars(PreProcessCPSolver solver) {
+		IntDomainVar[] ivs = solver.getIntDecisionVars();
+		int i = 0;
+		while( i < ivs.length && ivs[i].hasBooleanDomain()) {
+			i++;
+		}
+		if(i < ivs.length) {
+			LinkedList<IntDomainVar> bvs = new LinkedList<IntDomainVar>();
+			for (IntDomainVar v : ivs) {
+				if(v.hasBooleanDomain()) {
+					bvs.add(v);
+				}
+			}
+			ivs =  bvs.toArray(new IntDomainVar[bvs.size()]);
+		}
+		return ivs;
+	}
+
 	public static AbstractIntBranchingStrategy generateDisjunctBranching(PreProcessCPSolver solver, OrderingValSelector userValSel, long seed) {
 		final Configuration conf = solver.getConfiguration();
 		final SchedulingBranchingFactory.Branching br = DisjunctiveSettings.getBranching(conf);
@@ -149,22 +170,22 @@ public final class SchedulingBranchingFactory {
 		final boolean breakTie = conf.readBoolean(BasicSettings.RANDOM_TIE_BREAKING);
 		switch (br) {
 		case LEX: {
-			return lexicographic(solver, solver.getBooleanVariables());
+			return lexicographic(solver, getBoolDecisionVars(solver));
 		}
 		case RAND: {
-			return randomSearch(solver, solver.getBooleanVariables(), seed);
+			return randomSearch(solver, getBoolDecisionVars(solver), seed);
 		}
 		case PROFILE: {
 			return profile(solver, solver.getDisjSModel(), makeOrderValSel(userValSel, randVal, breakTie, null, seed));
 		}
 		case DDEG: {
-			return domDDegBin(solver, solver.getBooleanVariables(), makeBoolValSel(randVal, seed));
+			return domDDegBin(solver, getBoolDecisionVars(solver), makeBoolValSel(randVal, seed));
 		}
 		case WDEG: {
-			return domWDegBin(solver, solver.getBooleanVariables(), makeBoolValSel(randVal, seed));
+			return domWDegBin(solver, getBoolDecisionVars(solver), makeBoolValSel(randVal, seed));
 		}
 		case BWDEG: {
-			return incDomWDegBin(solver, solver.getBooleanVariables(), makeBoolValSel(randVal, seed));
+			return incDomWDegBin(solver, getBoolDecisionVars(solver), makeBoolValSel(randVal, seed));
 		}
 		case SWDEG: {
 			return slackWDeg(solver, getDisjuncts(solver), makeOrderValSel(userValSel, randVal, breakTie, null, seed)); 
@@ -183,7 +204,7 @@ public final class SchedulingBranchingFactory {
 		}
 		}
 	}
-	
+
 	public static AbstractIntBranchingStrategy generateDisjunctSubBranching(PreProcessCPSolver solver, Constraint ignoredCut) {
 		if(solver.getConfiguration().readBoolean(DisjunctiveSettings.ASSIGN_BELLMAN)) {
 			final ITemporalSRelation[] disjuncts = getDisjuncts(solver);
@@ -193,7 +214,7 @@ public final class SchedulingBranchingFactory {
 		}
 		return new FinishBranchingNaive(solver, ignoredCut);
 	}
-	
+
 
 	public static  AssignOrForbidIntVarValPair generateProfile(PreProcessCPSolver solver, IResource<?>[] fakeResources, OrderingValSelector userValSel, long seed) {
 		final Configuration conf = solver.getConfiguration();
@@ -201,7 +222,7 @@ public final class SchedulingBranchingFactory {
 		final boolean breakTie = conf.readBoolean(BasicSettings.RANDOM_TIE_BREAKING);
 		return profile(solver, fakeResources, solver.getDisjSModel(), makeOrderValSel(userValSel, randVal, breakTie, null, seed));
 	}
-	
+
 	public static SetTimes generateSetTimes(PreProcessCPSolver solver, long seed) {
 		final Configuration conf = solver.getConfiguration();
 		return  conf.readBoolean(BasicSettings.RANDOM_VALUE) || 
@@ -209,5 +230,5 @@ public final class SchedulingBranchingFactory {
 						setTimes(solver, seed) : setTimes(solver);
 	}
 
-	
+
 }

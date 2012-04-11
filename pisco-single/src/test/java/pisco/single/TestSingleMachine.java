@@ -35,8 +35,8 @@ public class TestSingleMachine {
 		
 	@BeforeClass
 	public final static void setUp() {
-		//ChocoLogging.setVerbosity(Verbosity.QUIET);
-		ChocoLogging.setVerbosity(Verbosity.VERBOSE);
+		ChocoLogging.setVerbosity(Verbosity.QUIET);
+		//ChocoLogging.setVerbosity(Verbosity.SEARCH);
 	}
 	
 	@AfterClass
@@ -85,7 +85,7 @@ public class TestSingleMachine {
 	}
 	
 	@Test
-	public void testRecordSolutionBug() {
+	public void testBoolDecisionVarBug() {
 		String arguments = "-t LP -f src/main/benchmarks/instances/Ti/  p20_233.dat " +
 				"-b RAND -p src/test/resources/pmtn.properties -s -1930858313";
 		cmd.doMain(arguments.split("\\s"));
