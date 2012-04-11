@@ -106,7 +106,7 @@ public final class PDR1Scheduler {
 	/**
 	 * Lawler algorithm : build a sequence in backward order.
 	 */
-	public final static int schedule1PrecLmax(AbstractJob[] jobs) {
+	public final static int schedule1PrecLmax(ITJob[] jobs) {
 		//initialize
 		int currentTime = 0;
 		int lmax = MIN_LOWER_BOUND;

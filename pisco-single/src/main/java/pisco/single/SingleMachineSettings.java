@@ -9,7 +9,7 @@ public class SingleMachineSettings extends DisjunctiveSettings {
 
 
 	public static enum PropagagationLevel{ 
-		DECOMP, OBJ, ORDER, FULL;
+		DECOMP, OBJ, SWEEP, FULL;
 
 		public boolean isOn() {
 			return ordinal() > DECOMP.ordinal();

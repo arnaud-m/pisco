@@ -258,22 +258,49 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 		return successors.size();
 	}
 
+
+	private static void remove(TLinkedList<TJobAdapter> list, ITJob job) {
+		if( ! list.isEmpty()) {
+			TJobAdapter current = list.getFirst();
+			do {
+				if(current.target == job) {
+					list.remove(current);
+					free(current);
+					return;
+				}
+			} while( ( current = list.getNext(current)) != null) ;
+		}
+	}
 	
+	
+
 	@Override
 	public final void setPredecessor(ITJob pred) {
 		add(predecessors, pred);
 		
 	}
 
-	@Override
-	public final void setSuccessor(ITJob succ) {
-		add(successors, succ);		
+	public final void unsetPredecessor(ITJob pred) {
+		remove(predecessors, pred);
 	}
-
+	
 	@Override
 	public final void addPredecessor(ITJob pred) {
 		setPredecessor(pred);
 		pred.setSuccessor(this);
+	}
+
+
+	public final void removePredecessor(ITJob pred) {
+		unsetPredecessor(pred);
+		pred.unsetSuccessor(this);
+	}
+
+	
+
+	@Override
+	public final void setSuccessor(ITJob succ) {
+		add(successors, succ);		
 	}
 
 	@Override
@@ -282,28 +309,13 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 		succ.setPredecessor(this);
 	}
 
-	private static boolean remove(TLinkedList<TJobAdapter> list, AbstractJob job) {
-		if( ! list.isEmpty()) {
-			TJobAdapter current = list.getFirst();
-			do {
-				if(current.target == job) {
-					list.remove(current);
-					free(current);
-					return true;
-				}
-			} while( ( current = list.getNext(current)) != null) ;
-		}
-		return false;
-	}
-
-	public final void removePredecessor(AbstractJob pred) {
-		remove(predecessors, pred);
-		remove(pred.successors, this);
-	}
-
-	public final void removeSuccessor(AbstractJob succ) {
+	public final void unsetSuccessor(ITJob succ) {
 		remove(successors, succ);
-		remove(succ.predecessors, this);
+	}
+	
+	public final void removeSuccessor(ITJob succ) {
+		unsetSuccessor(succ);
+		succ.unsetPredecessor(this);
 	}
 
 	////////////////////////////////////////////////////////////////////

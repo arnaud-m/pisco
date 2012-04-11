@@ -21,11 +21,19 @@ public interface ITJob extends IJob, ITask, ICostFunctions, IHook {
 
 	public void setPredecessor(ITJob pred);
 
+	public void unsetPredecessor(ITJob pred);
+
 	public void addPredecessor(ITJob pred);
 
+	public void removePredecessor(ITJob pred);
+	
 	public void setSuccessor(ITJob succ);
 
+	public void unsetSuccessor(ITJob succ);
+	
 	public void addSuccessor(ITJob succ);
+	
+	public void removeSuccessor(ITJob succ);
 
 
 	////////////////////////////////////////////////////////////////////
