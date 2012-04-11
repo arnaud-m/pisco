@@ -7,9 +7,11 @@ import static pisco.common.SchedulingBranchingFactory.generateSetTimes;
 import parser.instances.AbstractMinimizeModel;
 import parser.instances.BasicSettings;
 import parser.instances.InstanceFileParser;
+import parser.instances.ResolutionStatus;
 import choco.cp.solver.configure.RestartFactory;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
 import choco.kernel.model.constraints.Constraint;
+import choco.kernel.model.constraints.automaton.penalty.IsoPenaltyFunction;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.solver.Configuration;
 import choco.kernel.solver.constraints.global.scheduling.IResource;
@@ -30,7 +32,16 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 	public final int getNbJobs() {
 		return nbJobs;
 	}
-
+	
+	public String getPropertyDiagnostic() {
+		return isFeasible() ?  
+				getInstanceName() + "="+ 
+				(getStatus() == ResolutionStatus.OPTIMUM ? objective : getComputedLowerBound()+":"+objective)
+				+" PROPERTY_FORMAT"
+				: "";
+	}
+	
+	
 	protected abstract IResource<?>[] generateFakeResources();
 
 

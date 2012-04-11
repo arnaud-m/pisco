@@ -181,7 +181,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 		// FIXME - Brute force implementation (not incremental at all) - created 10 avr. 2012 by A. Malapert
 		for (ITemporalSRelation rel : disjunctList) {
-			assert(rel.isFixed());
+			//assert(rel.isFixed());
 			if(rel.isFixed()) {
 				if(rel.getDirVal() == 1) {
 					//forward

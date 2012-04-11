@@ -21,7 +21,7 @@ import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.Solver;
 
-public class TestInstances {
+public class TestSingleMachine {
 
 	private final SingleMachineCmd cmd = new SingleMachineCmd();
 
@@ -29,14 +29,14 @@ public class TestInstances {
 
 	private final static String[] CMD_PREFIX = {"--seed","0","-t", "LP"};
 
-	//private final static String[] CONFS = {"basic", "pmtn", "prec"};
-	private final static String[] CONFS = {"basic"};
+	private final static String[] CONFS = {"basic", "pmtn", "prec"};
+	//private final static String[] CONFS = {"basic"};
 	
 		
 	@BeforeClass
 	public final static void setUp() {
-		ChocoLogging.setVerbosity(Verbosity.QUIET);
-		//ChocoLogging.setVerbosity(Verbosity.VERBOSE);
+		//ChocoLogging.setVerbosity(Verbosity.QUIET);
+		ChocoLogging.setVerbosity(Verbosity.VERBOSE);
 	}
 	
 	@AfterClass
@@ -53,7 +53,7 @@ public class TestInstances {
 				append(CMD_PREFIX, new String[] {
 						"-f",input, 
 						"-b", br.toString(), 
-						"-p" , "./src/main/resources/"+CONFS[prop]+".properties"}, 
+						"-p" , "./src/test/resources/"+CONFS[prop]+".properties"}, 
 						wildcardPatterns
 				)
 		);
@@ -73,29 +73,23 @@ public class TestInstances {
 			SchedulingBranchingFactory.Branching.LEX
 			};
 	
+	
 	@Test
 	public void testN10() {
 		testInstances(PATH, branchings, "p10_1*.dat");
 	}
 
 	@Test
-	public void test20() {
-		testInstances(PATH, branchings, "p20_2*.dat");
+	public void testN20() {
+		testInstances(PATH, branchings, "p20_2.dat", "p20_200.dat", "p20_205.dat", "p20_23*.dat");
 	}
+	
 	@Test
-	public void testModifyDueDate() throws ContradictionException {
-		ChocoLogging.toVerbose();
-		Model m =new CPModel();
-		final IntegerVariable dir = makeBooleanVar("b");
-		m.addConstraint(new ComponentConstraint(ModifyDueDateManager.class, null,
-				new IntegerVariable[]{makeIntVar("D1", 2,20), constant(10), makeIntVar("D2", 3,18), constant(5), dir}
-				));
-		
-		Solver s = new CPSolver();
-		s.read(m);
-		s.propagate();
-		s.getVar(dir).instantiate(1, null, false);	
-		s.propagate();
-		//System.out.println(s.pretty());
+	public void testRecordSolutionBug() {
+		String arguments = "-t LP -f src/main/benchmarks/instances/Ti/  p20_233.dat " +
+				"-b RAND -p src/test/resources/pmtn.properties -s -1930858313";
+		cmd.doMain(arguments.split("\\s"));
 	}
-	}
+	
+}
+	

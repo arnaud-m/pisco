@@ -34,6 +34,7 @@ import org.kohsuke.args4j.Option;
 
 import parser.instances.AbstractMinimizeModel;
 import parser.instances.BasicSettings;
+import parser.instances.checker.SCheckFactory;
 import pisco.common.DisjunctiveSettings;
 import pisco.common.SchedulingBranchingFactory;
 import pisco.single.parsers.AirlandParser;
@@ -102,18 +103,16 @@ public class SingleMachineCmd extends AbstractBenchmarkCmd {
 		if(branching != null) set.putEnum(DisjunctiveSettings.BRANCHING_TYPE, branching);
 		if(lightModel != null) set.putTrue(BasicSettings.LIGHT_MODEL);
 		//load status checkers
-		//		switch (type) {
-		//		case OSP: {
-		//			SCheckFactory.load("/open-shop-tai.properties",
-		//					"/open-shop-gp.properties",
-		//					"/open-shop-j.properties");
-		//			break;
-		//		}
-		//		case FSP: SCheckFactory.load("/flow-shop-tai.properties");break;
-		//		case JSP: SCheckFactory.load("/job-shop-tai.properties");break;
-		//		default:
-		//			break;
-		//		}
+				switch (type) {
+				case LP: {
+					SCheckFactory.load("/single-machine-lmax.properties");
+					break;
+				}
+//				case FSP: SCheckFactory.load("/flow-shop-tai.properties");break;
+//				case JSP: SCheckFactory.load("/job-shop-tai.properties");break;
+				default:
+					break;
+				}
 	}
 
 	

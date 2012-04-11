@@ -60,7 +60,7 @@ public class PJob extends AbstractJob {
 	@Override
 	public void scheduleTo(int endingTime) {
 		final int start = endingTime - getRemainingDuration();
-		assert(start >= getReleaseDate() && start < endingTime);
+		assert(start < endingTime);
 		_timePeriodList.addTimePeriod(start, endingTime);
 	}
 
