@@ -135,10 +135,10 @@ public final class ChocoshopSettings extends DisjunctiveSettings {
 	
 	
 
-	public static void main(String[] args) throws IOException {
-		ChocoshopSettings s = new ChocoshopSettings();
-		s.storeDefault(new File("/tmp/shop1.properties"), null);
-	}
+//	public static void main(String[] args) throws IOException {
+//		ChocoshopSettings s = new ChocoshopSettings();
+//		s.storeDefault(new File("/tmp/shop1.properties"), null);
+//	}
 
 }
 

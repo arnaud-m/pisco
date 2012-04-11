@@ -25,6 +25,7 @@ import choco.cp.solver.variables.integer.IntVarEvent;
 import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.common.util.iterators.DisposableIntIterator;
 import choco.kernel.solver.ContradictionException;
+import choco.kernel.solver.SolverException;
 import choco.kernel.solver.constraints.global.scheduling.AbstractTaskSConstraint;
 import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.kernel.solver.variables.scheduling.TaskVar;
@@ -38,21 +39,21 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 	protected final ITJob[] schedule;
 
-	private TIntArrayList[] precReductionGraph;
+	private DisjunctiveSModel disjSMod;
 
-	//	private StoredBipartiteSet<ITemporalSRelation> disjunctList;
-	//
-	//	private IStateBool fireDisjunctList;
+	private TIntArrayList[] precReductionGraph;
 
 	private ITemporalSRelation[] disjunctList;
 
 	private final static int START = 0;
 	private final static int END = 1;
 
+	private int solutionStamp = -1;
+
 	private final IRelaxationFilter pmtnRelaxation;
-	
+
 	private final IRelaxationFilter precRelaxation;
-	
+
 	private SweepEvent[][] sweepEventMap;
 
 	private final TLinkedList<SweepEvent> sweepEventList = new TLinkedList<SweepEvent>();
@@ -74,10 +75,10 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			sweepEventMap[i][END] = new SweepEvent(i, false);
 		}
 		schedule = Arrays.copyOf(jobs, jobs.length);
-		
+
 		pmtnRelaxation = new PmtnRelaxationFilter(SingleMachineSettings.getPmtnLevel(problem));
 		precRelaxation = new PrecRelaxationFilter(SingleMachineSettings.getPrecLevel(problem));
-		
+
 	}
 
 
@@ -141,8 +142,9 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 	@Override
 	public void awake() throws ContradictionException {
 		PreProcessCPSolver ppsolver = ( (PreProcessCPSolver) problem.getSolver());
+		disjSMod = ppsolver.getDisjSModel();
 		precReductionGraph = ppsolver.getDisjModel().convertPrecGraph();
-		disjunctList = ppsolver.getDisjSModel().getEdges();
+		disjunctList = disjSMod.getEdges();
 		super.awake();
 	}
 
@@ -157,16 +159,16 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 	}
 
 	class TSuccprocedure implements TIntProcedure {
-		
+
 		private int origin;
-		
+
 		@Override
 		public boolean execute(int arg0) {
 			jobs[origin].addSuccessor(jobs[arg0]);
 			return true;
 		}
 	}
-	
+
 	private TSuccprocedure succProc = new TSuccprocedure();
 	private void buildPrecedence() {
 		//Add Reduced Precedence to jobs
@@ -174,7 +176,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			succProc.origin = i;
 			precReductionGraph[i].forEach( succProc);
 		}
-		
+
 		// FIXME - Brute force implementation (not incremental at all) - created 10 avr. 2012 by A. Malapert
 		for (ITemporalSRelation rel : disjunctList) {
 			assert(rel.isFixed());
@@ -197,19 +199,35 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 	@Override
 	public void propagate() throws ContradictionException {
+		checkSolutionStamp();
 		buildJobs();
 		buildPrecedence();
 		//Modify Due Dates 
 		// FIXME - Remove this step in further version by stating dedicated constraints  - created 6 avr. 2012 by A. Malapert
 		JobUtils.modifyDueDates(schedule);
 		////////////////
-		// Preemptive relaxation
-		pmtnRelaxation.filter();
-		precRelaxation.filter();
+		if( ! pmtnRelaxation.filter()) {
+			precRelaxation.filter();
+		}
 	}
 
-	private void recordSolution() {
 
+	private void checkSolutionStamp() {
+		if(solutionStamp > 0 && problem.getSolver().getSolutionCount() <= solutionStamp) {
+			throw new SolverException("Failed to record solution "+this.getClass().getSimpleName());
+		} else {
+			solutionStamp = -1;
+		}
+	}
+
+	private void recordSolution() throws ContradictionException {
+		solutionStamp = problem.getSolver().getSolutionCount();
+		for (int i = 0; i < jobs.length; i++) {
+			taskvars[i].start().instantiate(jobs[i].getEST(), this, false);
+			taskvars[i].end().instantiate(jobs[i].getLCT(), this, false);
+			assert(taskvars[i].isScheduled());
+		}
+		// TODO - Vérifier qu'aucun échec n'est levé suite à ces instanciations - created 11 avr. 2012 by A. Malapert
 	}
 
 	@Override
@@ -241,7 +259,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 
 	}
-	
+
 	final class PmtnRelaxationFilter extends AbstractRelaxationFilter {
 
 		public PmtnRelaxationFilter(PropagagationLevel propLevel) {
@@ -314,21 +332,18 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 	abstract class AbstractRelaxationFilter implements IRelaxationFilter {
 
-		
+
 		protected SweepEvent evt1;
 
 		private final PropagagationLevel propLevel;
-		
-		private final DisjunctiveSModel disjSMod;
-		
+
 		private final ArrayList<ITemporalSRelation> forwardUpdateList = new ArrayList<ITemporalSRelation>();
-		
+
 		private final ArrayList<ITemporalSRelation> backwardUpdateList = new ArrayList<ITemporalSRelation>();
-		
+
 		public AbstractRelaxationFilter(PropagagationLevel level) {
 			super();
 			this.propLevel = level;
-			disjSMod = ( (PreProcessCPSolver) problem.getSolver()).getDisjSModel();
 		}
 
 
@@ -342,24 +357,24 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			final int lb = doPropagate();
 			vars[vars.length-1].updateInf(lb, RelaxLmaxConstraint.this, false);
 		}
-		
+
 		public abstract int doPropagate();
-		
-		
+
+
 		public final void flushUpdateLists() throws ContradictionException {
 			for (ITemporalSRelation rel : forwardUpdateList) {
 				rel.getDirection().instantiate(1, RelaxLmaxConstraint.this, false);
 				jobs[rel.getOrigin().getID()].addSuccessor(jobs[rel.getDestination().getID()]);
 			}
-			
+
 			for (ITemporalSRelation rel : backwardUpdateList) {
 				rel.getDirection().instantiate(0, RelaxLmaxConstraint.this, false);
 				jobs[rel.getOrigin().getID()].addPredecessor(jobs[rel.getDestination().getID()]);
 			}
 		}
-		
-		
-		
+
+
+
 		@Override
 		public final boolean propagatePrecedence(ITJob j1, ITJob j2) {
 			j1.addSuccessor(j2);
@@ -374,12 +389,12 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 				} else {
 					forwardUpdateList.add(disjSMod.getConstraint(idx2, idx1));
 				}
-				
+
 			} else {
 				// TODO - Is a solution ? - created 11 avr. 2012 by A. Malapert
 			}
 			return true;
-			
+
 		}
 
 
@@ -436,6 +451,8 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 				buildEventLists();
 				if(sweepEventList.isEmpty()) {
 					recordSolution();
+					return true;
+
 				}
 				//continue ...
 			}
@@ -450,11 +467,12 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			default:
 				break;
 			}
-			return true;
+			return false;
 		}
+
 	}
 
-	
+
 
 }
 

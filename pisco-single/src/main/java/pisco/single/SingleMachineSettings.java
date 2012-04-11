@@ -1,5 +1,8 @@
 package pisco.single;
 
+import java.io.File;
+import java.io.IOException;
+
 import parser.instances.AbstractInstanceModel;
 import pisco.common.DisjunctiveSettings;
 
@@ -33,7 +36,7 @@ public class SingleMachineSettings extends DisjunctiveSettings {
 	public static final String RELAX_PREC_PROPAGATION = "tools.cp.propagation.relaxation.single.prec";
 
 
-	/**
+	/**false
 	 * <br/><b>Goal</b>: 
 	 * <br/><b>Type</b>: boolean
 	 * <br/><b>Default value</b>: true
@@ -79,5 +82,11 @@ public class SingleMachineSettings extends DisjunctiveSettings {
 	public static final boolean stateRelaxationConstraint(AbstractInstanceModel problem) {
 		return getPmtnLevel(problem).isOn() || getPrecLevel(problem).isOn();
 	}
+
+//	public static void main(String[] args) throws IOException {
+//		SingleMachineSettings s = new SingleMachineSettings();
+//		s.storeDefault(new File("/tmp/single.properties"), null);
+//	}
+
 
 }
