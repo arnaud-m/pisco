@@ -15,15 +15,53 @@ public final class Pmtn1Scheduler {
 	}
 
 
+	static final class Proc1Lmax extends DefaultJobProcedure {
+
+		private int time;
+
+		public Proc1Lmax() {
+			super(new PriorityQueue<ITJob>(DEFAULT_CAPACITY, JobComparators.getEarliestDueDate()));
+		}
+		
+		
+		
+		public final int getTime() {
+			return time;
+		}
+
+
+		public final void setTime(int time) {
+			this.time = time;
+		}
+
+
+
+		@Override
+		public void execute(ITJob arg) {
+			if( arg.decHook() == 0) {
+				if(arg.getReleaseDate() < time) {
+					pendingJobs.add(arg);
+				}
+			}
+		}
+		
+		
+		
+	}
+
 	public final static int schedule1Lmax(ITJob[] jobs) {
+		return schedule1Lmax(jobs, new Proc1Lmax());
+	}
+	
+	public final static int schedule1Lmax(ITJob[] jobs, Proc1Lmax procedure) {
 		//initialize
 		int lmax = MIN_LOWER_BOUND;
 		for (int i = 0; i < jobs.length; i++) {
 			jobs[i].setHook(jobs[i].getPredecessorCount());
 		}
 		Arrays.sort(jobs, JobComparators.getEarliestReleaseDate());
-		// TODO - Set optionally the queue as parameter to save memory - created 12 avr. 2012 by A. Malapert
-		final PriorityQueue<ITJob> pendingJobs= new PriorityQueue<ITJob>(10, JobComparators.getEarliestDueDate());
+		final PriorityQueue<ITJob> pendingJobs= procedure.getPriorityQueue();
+		pendingJobs.clear();
 		int time, nextTime;
 		int i = 0;
 		//Start scheduling jobs
@@ -38,7 +76,7 @@ public final class Pmtn1Scheduler {
 					}
 					i++;
 				}
-				assert(!pendingJobs.isEmpty() || i < jobs.length);
+				assert(! pendingJobs.isEmpty() || i < jobs.length);
 			} while(pendingJobs.isEmpty());
 			nextTime =  i < jobs.length ? jobs[i].getReleaseDate() : MAX_UPPER_BOUND;
 			//Schedule pending jobs selected by EDD-rule until the next release date;
@@ -49,19 +87,8 @@ public final class Pmtn1Scheduler {
 					final int lateness = pendingJobs.peek().getLateness();
 					if(lmax < lateness) { lmax = lateness;}
 					//Update predecessor's counts and new pending jobs
-					final int ctime = time;
-					pendingJobs.remove().forEachSuccessor(new TObjectProcedure<TJobAdapter>() {
-						@Override
-						public boolean execute(TJobAdapter object) {
-							if( object.target.decHook() == 0) {
-								if(object.target.getReleaseDate() < ctime) {
-									pendingJobs.add(object.target);
-								}
-							}
-							return true;
-						}
-					});
-
+					procedure.setTime(time);
+					pendingJobs.remove().forEachSuccessor(procedure);
 				}
 			}
 		} while(i < jobs.length);

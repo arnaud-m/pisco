@@ -11,9 +11,9 @@ public interface ITJob extends IJob, ITask, ICostFunctions, IHook {
 	////////////////////////////////////////////////////////////////////
 	void resetPrecedences();
 
-	public void forEachPredecessor(TObjectProcedure<TJobAdapter> procedure);
+	public void forEachPredecessor(IJobProcedure procedure);
 
-	public void forEachSuccessor(TObjectProcedure<TJobAdapter> procedure);
+	public void forEachSuccessor(IJobProcedure procedure);
 
 	public int getPredecessorCount();
 

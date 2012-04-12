@@ -107,17 +107,28 @@ public final class PDR1Scheduler {
 	 * Lawler algorithm : build a sequence in backward order.
 	 */
 	public final static int schedule1PrecLmax(ITJob[] jobs) {
+		return schedule1PrecLmax(jobs, new Proc1PrecLmax());
+	}
+
+
+	public static final class Proc1PrecLmax extends DefaultJobProcedure {
+
+		public Proc1PrecLmax() {
+			super(new PriorityQueue<ITJob>(DEFAULT_CAPACITY, JobComparators.getLatestDueDate()));
+		}
+	}
+	
+	/**
+	 * Lawler algorithm : build a sequence in backward order.
+	 */
+	public final static int schedule1PrecLmax(ITJob[] jobs, Proc1PrecLmax procedure) {
 		//initialize
 		int currentTime = 0;
 		int lmax = MIN_LOWER_BOUND;
-		final PriorityQueue<ITJob> pendingJobs= new PriorityQueue<ITJob>(10, JobComparators.getLatestDueDate());
-		for (int i = 0; i < jobs.length; i++) {
-			currentTime += jobs[i].getDuration();
-			jobs[i].setHook(jobs[i].getSuccessorCount());
-			if(jobs[i].getHook() == 0) {
-				pendingJobs.add(jobs[i]);
-			}
-		}
+		final PriorityQueue<ITJob> pendingJobs= procedure.getPriorityQueue();
+		pendingJobs.clear();
+		currentTime = JobUtils.sumDurations(jobs);
+		JobUtils.initPredecessorHooks(jobs, procedure);
 		//Lawler algorithm : build sequence in backward order P = sum pj
 		while( ! pendingJobs.isEmpty()) {
 			//schedule job with the latest due date (minimize min fj(P))
@@ -128,21 +139,14 @@ public final class PDR1Scheduler {
 			final int lateness = job.getLateness();
 			if(lmax < lateness) { lmax = lateness;}
 			//Update pending jobs
-			job.forEachPredecessor(new TObjectProcedure<TJobAdapter>() {
-
-				@Override
-				public boolean execute(TJobAdapter object) {
-					if( object.target.decHook() == 0) {
-						pendingJobs.add(object.target);
-					}
-					return true;
-				}
-			});
+			job.forEachPredecessor(procedure);
 		}
 		assert(isScheduled(jobs));
 		return lmax;
 	}
 
+	
+	
 
 	////////////////////////////////////////////////////////////////////
 	///////////////////// Sequence algorithm : 1|rj|gamma //////////////

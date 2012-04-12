@@ -191,16 +191,16 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 
 	
 	@Override
-	public final void forEachPredecessor(TObjectProcedure<TJobAdapter> procedure) {
+	public final void forEachPredecessor(IJobProcedure procedure) {
 		for (int i = 0; i < predecessorCount; i++) {
-			procedure.execute(new TJobAdapter(predecessors[i]));
+			procedure.execute(this);
 		}
 	}
 
 	@Override
-	public final void forEachSuccessor(TObjectProcedure<TJobAdapter> procedure) {
+	public final void forEachSuccessor(IJobProcedure procedure) {
 		for (int i = 0; i < successorCount; i++) {
-			procedure.execute(new TJobAdapter(successors[i]));
+			procedure.execute(this);
 		}
 	}
 
@@ -431,13 +431,13 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	public String toDotty() {
 		final StringBuilder b = new StringBuilder();
 		b.append(super.toDotty());
-		forEachSuccessor(new TObjectProcedure<TJobAdapter>() {
-
+		forEachSuccessor(new IJobProcedure() {
+			
 			@Override
-			public boolean execute(TJobAdapter object) {
+			public void execute(ITJob arg) {
 				b.append(getID()).append("->");
-				b.append(object.target.getID()).append(";\n");
-				return true;
+				b.append(arg.getID()).append(";\n");
+				
 			}
 		});
 		return b.toString();
