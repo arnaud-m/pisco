@@ -11,6 +11,8 @@ import junit.framework.Assert;
 import org.hamcrest.core.IsSame;
 import org.junit.Test;
 
+import choco.kernel.common.DottyBean;
+import choco.kernel.visu.VisuFactory;
 import choco.visu.components.chart.ChocoChartFactory;
 
 public class TestCommon {
@@ -40,6 +42,20 @@ public class TestCommon {
 		}
 	}
 
+	@Test
+	public void testPrecedences() {
+		AbstractJob[] jobs = buildInstance();
+		jobs[4].addPredecessor(jobs[1]);
+		jobs[3].addPredecessor(jobs[1]);
+		jobs[3].addPredecessor(jobs[2]);
+		assertEquals(3, jobs[3].getPredecessorCount());
+		assertEquals(2, jobs[1].getSuccessorCount());
+		jobs[3].removePredecessor(jobs[1]);
+		assertEquals(2, jobs[3].getPredecessorCount());
+		System.out.println(Arrays.toString(jobs));
+		VisuFactory.getDotManager().show(new DottyBean(jobs));
+	}
+	
 	@Test
 	public void testSorting() {
 		AbstractJob[] jobs = buildInstance();

@@ -5,7 +5,8 @@ import gnu.trove.TLinkableAdapter;
 import gnu.trove.TLinkedList;
 
 public final class TJobAdapter extends TLinkableAdapter {
-
+	
+	// FIXME - Memory Leak - created 12 avr. 2012 by A. Malapert
 	// TODO - Add ThreadLocal Pool - created 10 avr. 2012 by A. Malapert
 	private final static TLinkedList<TJobAdapter> OBJPOOL = new TLinkedList<TJobAdapter>();
 
@@ -16,9 +17,11 @@ public final class TJobAdapter extends TLinkableAdapter {
 
 	public final static TJobAdapter make(ITJob job) {
 		if(OBJPOOL.isEmpty() ) {
+			System.out.print("o");
 			return new TJobAdapter(job);
 		}
 		else {
+			System.out.print("-");
 			OBJPOOL.getFirst().setTarget(job);
 			return OBJPOOL.removeFirst(); 
 		}
@@ -31,6 +34,7 @@ public final class TJobAdapter extends TLinkableAdapter {
 	}
 
 	public final static void free(TJobAdapter adapter) {
+		System.out.print("+");
 		OBJPOOL.add(adapter);
 	}
 

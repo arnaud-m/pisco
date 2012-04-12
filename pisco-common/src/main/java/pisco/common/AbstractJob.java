@@ -1,43 +1,16 @@
 package pisco.common;
 
-import static pisco.common.TJobAdapter.*;
-import gnu.trove.TLinkedList;
 import gnu.trove.TObjectProcedure;
+
+import java.util.Arrays;
+
 import choco.Choco;
-import choco.kernel.common.util.tools.MathUtils;
 import choco.kernel.solver.variables.scheduling.AbstractTask;
 import choco.kernel.solver.variables.scheduling.ITimePeriodList;
 
 
 public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 
-
-	private final static TLinkedList<TJobAdapter> ADAPTER_POOL = new TLinkedList<TJobAdapter>();
-
-
-	public final static void addJob(TLinkedList<TJobAdapter> list, ITJob job) {
-		list.add(make(job));
-	}
-
-	public final static TJobAdapter makeTJobAdapter(ITJob job) {
-		if(ADAPTER_POOL.isEmpty() ) {
-			return new TJobAdapter(job);
-		}
-		else {
-			ADAPTER_POOL.getFirst().setTarget(job);
-			return ADAPTER_POOL.removeFirst(); 
-		}
-	}
-
-	public final static void free(TLinkedList<TJobAdapter> list) {
-		while( ! list.isEmpty()) {
-			free(list.removeFirst());
-		}
-	}
-
-	public final static void free(TJobAdapter adapter) {
-		ADAPTER_POOL.add(adapter);
-	}
 
 	public final int id;
 
@@ -53,10 +26,12 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	private int weight = 1;
 	private int dueDate = Choco.MAX_UPPER_BOUND;
 
-	//Precedence Graphs
-	private TLinkedList<TJobAdapter> predecessors = new TLinkedList<TJobAdapter>() ;
-	private TLinkedList<TJobAdapter> successors = new TLinkedList<TJobAdapter>();
+	//Precedence Graph
+	private int predecessorCount;
+	private ITJob[] predecessors = new ITJob[10];
 
+	private int successorCount;
+	private ITJob[] successors = new ITJob[10];
 
 	//algorithm 
 	public int hook;
@@ -66,38 +41,29 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 		this.id = id;
 	}
 
-	
+
 	protected AbstractJob(int id, ITimePeriodList timePeriodList) {
 		super(timePeriodList);
 		this.id = id;
 	}
 
-	
+
 	////////////////////////////////////////////////////////////////////
 	///////////////////// Reset  ///////////////////////////////////////
 	////////////////////////////////////////////////////////////////////
-
-	/* (non-Javadoc)
-	 * @see pisco.common.IJob#resetDimensions()
-	 */
 	@Override
 	public final void resetDimensions() {
 		duration=0;
 		size=0;
 	}
 
-	/* (non-Javadoc)
-	 * @see pisco.common.IJob#resetTimeWindow()
-	 */
 	@Override
 	public final void resetTimeWindow() {
 		releaseDate = 0;
 		deadline = Choco.MAX_UPPER_BOUND;
 	}
 
-	/* (non-Javadoc)
-	 * @see pisco.common.IJob#resetCostParameters()
-	 */
+
 	@Override
 	public final void resetCostParameters() {
 		weight = 0;
@@ -106,8 +72,8 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	}
 
 	public final void resetPrecedences() {
-		free(predecessors);
-		free(successors);
+		predecessorCount = 0;
+		successorCount = 0;
 	}
 
 	public void resetSchedule() {
@@ -196,7 +162,7 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	////////////////////////////////////////////////////////////////////
 	/////////////////////// Hook  //////////////////////////////////////
 	////////////////////////////////////////////////////////////////////
-	
+
 	@Override
 	public final int getHook() {
 		return hook;
@@ -221,58 +187,51 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	////////////////////////////////////////////////////////////////////
 	///////////////////// Precedence Graph  ////////////////////////////
 	////////////////////////////////////////////////////////////////////
-	/* (non-Javadoc)
-	 * @see pisco.common.ITemp#forEachPredecessor(gnu.trove.TObjectProcedure)
-	 */
+
+
+	
 	@Override
 	public final void forEachPredecessor(TObjectProcedure<TJobAdapter> procedure) {
-		predecessors.forEachValue(procedure);
+		for (int i = 0; i < predecessorCount; i++) {
+			procedure.execute(new TJobAdapter(predecessors[i]));
+		}
 	}
 
-	/* (non-Javadoc)
-	 * @see pisco.common.ITemp#forEachSuccessor(gnu.trove.TObjectProcedure)
-	 */
 	@Override
 	public final void forEachSuccessor(TObjectProcedure<TJobAdapter> procedure) {
-		successors.forEachValue(procedure);
+		for (int i = 0; i < successorCount; i++) {
+			procedure.execute(new TJobAdapter(successors[i]));
+		}
 	}
 
 	@Override
 	public final int getPredecessorCount() {
-		return predecessors.size();
+		return predecessorCount;
 	}
 
 	@Override
 	public final int getSuccessorCount() {
-		return successors.size();
+		return successorCount;
 	}
-
-
-	private static void remove(TLinkedList<TJobAdapter> list, ITJob job) {
-		if( ! list.isEmpty()) {
-			TJobAdapter current = list.getFirst();
-			do {
-				if(current.target == job) {
-					list.remove(current);
-					free(current);
-					return;
-				}
-			} while( ( current = list.getNext(current)) != null) ;
-		}
-	}
-	
-	
 
 	@Override
 	public final void setPredecessor(ITJob pred) {
-		add(predecessors, pred);
-		
+		if (predecessorCount >= predecessors.length) {
+			int newCapacity = (predecessors.length * 3)/2 + 1;
+			predecessors = Arrays.copyOf(predecessors, newCapacity);
+		}
+		predecessors[predecessorCount++]=pred;
 	}
 
 	public final void unsetPredecessor(ITJob pred) {
-		remove(predecessors, pred);
+		for (int i = 0; i < predecessorCount; i++) {
+			if(predecessors[i].equals(pred)) {
+				predecessors[i] = predecessors[--predecessorCount];
+				return;
+			}
+		}
 	}
-	
+
 	@Override
 	public final void addPredecessor(ITJob pred) {
 		setPredecessor(pred);
@@ -285,11 +244,16 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 		pred.unsetSuccessor(this);
 	}
 
-	
+
 
 	@Override
 	public final void setSuccessor(ITJob succ) {
-		add(successors, succ);		
+		if (successorCount >= successors.length) {
+			int newCapacity = (successors.length * 3)/2 + 1;
+			successors = Arrays.copyOf(successors, newCapacity);
+		}
+		successors[successorCount++]=succ;
+			
 	}
 
 	@Override
@@ -299,9 +263,14 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	}
 
 	public final void unsetSuccessor(ITJob succ) {
-		remove(successors, succ);
+		for (int i = 0; i < successorCount; i++) {
+			if(successors[i].equals(succ)) {
+				successors[i] = successors[--successorCount];
+				return;
+			}
+		}
 	}
-	
+
 	public final void removeSuccessor(ITJob succ) {
 		unsetSuccessor(succ);
 		succ.unsetPredecessor(this);
@@ -321,7 +290,7 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	public boolean isScheduledInTimeWindow() {
 		return getReleaseDate() <= getEST() && getLCT() <= getDeadline();
 	}
-	
+
 	////////////////////////////////////////////////////////////////////
 	///////////////////// ITask  ///////////////////////////////////////
 	////////////////////////////////////////////////////////////////////
@@ -379,8 +348,8 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	////////////////////////////////////////////////////////////////////
 	///////////////////// Combination and merge  ///////////////////////
 	////////////////////////////////////////////////////////////////////
-	
-	
+
+
 
 	@Override
 	public void setValues(IJob j) {
@@ -390,10 +359,10 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 		deadline = j.getDeadline();
 		weight=j.getWeight();
 		dueDate = j.getDueDate();
-		
+
 	}
 
-	
+
 	private void combinaison(IJob j1, IJob j2) {
 		size = j1.getSize() + j2.getSize();
 		releaseDate= Math.max(j1.getReleaseDate(), j2.getReleaseDate());
@@ -408,15 +377,15 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 		if(deadline > j.getDeadline()) {deadline = j.getDeadline();}
 		weight+=j.getWeight();
 		if(dueDate < j.getDueDate()) {dueDate = j.getDueDate();}
-		
+
 	}
 
-	
+
 	@Override
 	public void parallelCombinaison(IJob j1, IJob j2) {
 		duration = Math.max(j1.getDuration(), j2.getDuration());
 		combinaison(j1, j2);
-		
+
 	}
 
 	@Override
@@ -424,14 +393,14 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 		if(duration < j.getDuration()) {duration = j.getDuration();}
 		merge(j);
 	}
-	
-	
+
+
 
 	@Override
 	public void serialCombinaison(IJob j1, IJob j2) {
 		duration = j1.getDuration() + j2.getDuration();
 		combinaison(j1, j2);
-		
+
 	}
 
 	@Override
@@ -439,7 +408,7 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 		duration += j.getDuration(); 
 		merge(j);		
 	}
-	
+
 	////////////////////////////////////////////////////////////////////
 	///////////////////// toString and toDotty  ////////////////////////
 	////////////////////////////////////////////////////////////////////
@@ -462,7 +431,7 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	public String toDotty() {
 		final StringBuilder b = new StringBuilder();
 		b.append(super.toDotty());
-		successors.forEachValue(new TObjectProcedure<TJobAdapter>() {
+		forEachSuccessor(new TObjectProcedure<TJobAdapter>() {
 
 			@Override
 			public boolean execute(TJobAdapter object) {
@@ -473,6 +442,6 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 		});
 		return b.toString();
 	}
-	
-	
+
+
 }

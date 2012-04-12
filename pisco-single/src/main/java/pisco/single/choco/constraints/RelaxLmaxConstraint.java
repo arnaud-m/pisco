@@ -225,7 +225,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 	private void recordSolution() throws ContradictionException {
 		backtrackStamp = problem.getSolver().getBackTrackCount();
 		solutionStamp = problem.getSolver().getSolutionCount();
-		
+		vars[vars.length - 1].instantiate(vars[vars.length - 1].getInf(), this, false);
 		for (int i = 0; i < jobs.length; i++) {
 			taskvars[i].start().instantiate(jobs[i].getEST(), this, false);
 			taskvars[i].end().instantiate(jobs[i].getLCT(), this, false);

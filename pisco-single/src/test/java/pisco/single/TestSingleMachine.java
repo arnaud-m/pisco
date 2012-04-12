@@ -29,14 +29,14 @@ public class TestSingleMachine {
 
 	private final static String[] CMD_PREFIX = {"--seed","0","-t", "LP"};
 
-	private final static String[] CONFS = {"basic", "pmtn", "prec"};
-	//private final static String[] CONFS = {"basic"};
+	//private final static String[] CONFS = {"basic", "pmtn", "prec"};
+	private final static String[] CONFS = {"prec"};
 	
 		
 	@BeforeClass
 	public final static void setUp() {
 		ChocoLogging.setVerbosity(Verbosity.QUIET);
-		//ChocoLogging.setVerbosity(Verbosity.SEARCH);
+		ChocoLogging.setVerbosity(Verbosity.VERBOSE);
 	}
 	
 	@AfterClass

@@ -22,6 +22,7 @@ public final class Pmtn1Scheduler {
 			jobs[i].setHook(jobs[i].getPredecessorCount());
 		}
 		Arrays.sort(jobs, JobComparators.getEarliestReleaseDate());
+		// TODO - Set optionally the queue as parameter to save memory - created 12 avr. 2012 by A. Malapert
 		final PriorityQueue<ITJob> pendingJobs= new PriorityQueue<ITJob>(10, JobComparators.getEarliestDueDate());
 		int time, nextTime;
 		int i = 0;
@@ -71,8 +72,11 @@ public final class Pmtn1Scheduler {
 	public final static int schedule1rjFlow(AbstractJob[] jobs) {
 		//initialize
 		int sumCi = 0;
+		// TODO - Avoid copying - created 12 avr. 2012 by A. Malapert
 		AbstractJob[] tjobs = Arrays.copyOf(jobs, jobs.length);
 		Arrays.sort(tjobs, JobComparators.getEarliestReleaseDate());
+		// TODO - Set optionally the queue as parameter to save memory - created 12 avr. 2012 by A. Malapert
+		
 		final PriorityQueue<AbstractJob> pendingJobs= new PriorityQueue<AbstractJob>(10, JobComparators.getShortestRemainingProcessingTime());
 		int nextTime = tjobs[0].getReleaseDate();
 		int i = 0;

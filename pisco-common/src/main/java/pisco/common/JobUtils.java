@@ -1,6 +1,9 @@
 package pisco.common;
 
 import static pisco.common.TJobAdapter.*;
+
+import java.util.Stack;
+
 import gnu.trove.TLinkedList;
 import gnu.trove.TObjectProcedure;
 import choco.kernel.common.IDotty;
@@ -23,30 +26,32 @@ public final class JobUtils {
 		return false;
 	}
 	
+	
+	
 	public final static void modifyDueDates(final ITJob[] jobs) {
-		final TLinkedList<TJobAdapter> pendingJobs = new TLinkedList<TJobAdapter>();
+		//final TLinkedList<TJobAdapter> pendingJobs = new TLinkedList<TJobAdapter>();
+		final Stack<ITJob> pendingJobs = new Stack<ITJob>();
 		//initialize
 		for (int i = 0; i < jobs.length; i++) {
 			jobs[i].setHook(jobs[i].getSuccessorCount());
 			if(jobs[i].getHook() == 0) {
-				add(pendingJobs, jobs[i]);
+				pendingJobs.add(jobs[i]);
 			}
 		}
 		assert( ! pendingJobs.isEmpty());
 		//compute topological order and modify due dates
 		while( ! pendingJobs.isEmpty()) {
-			final ITJob current = pendingJobs.getFirst().getTarget();
-			AbstractJob.free(pendingJobs.removeFirst());
+			final ITJob current = pendingJobs.pop();
+			final int modifiedDueDate = current.getDueDate() - current.getDuration();
 			current.forEachPredecessor( new TObjectProcedure<TJobAdapter>() {
-
+				// FIXME - Memory Leak - created 12 avr. 2012 by A. Malapert
 				@Override
 				public boolean execute(TJobAdapter object) {
-					final int modifiedDueDate = current.getDueDate() - current.getDuration();
 					if(modifiedDueDate < object.target.getDueDate() ) {
 						object.target.setDueDate(modifiedDueDate);
 					}
 					if(object.target.decHook() == 0) {
-						add(pendingJobs, object.target);
+						pendingJobs.add(object.target);
 					}
 					return true;
 				}
@@ -55,6 +60,43 @@ public final class JobUtils {
 		}
 	}
 	
+
+
+	
+	public final static void modifyDueDates(final ITJob[] jobs, final ITJob[] pendingJobs) {
+		//final TLinkedList<TJobAdapter> pendingJobs = new TLinkedList<TJobAdapter>();
+		int idx = 0;
+		//initialize
+		for (int i = 0; i < jobs.length; i++) {
+			jobs[i].setHook(jobs[i].getSuccessorCount());
+			if(jobs[i].getHook() == 0) {
+				pendingJobs[idx++]= jobs[i];
+			}
+		}
+		assert(idx > 0);
+		//compute topological order and modify due dates
+		while( idx > 0) {
+			final ITJob current = pendingJobs[--idx];
+			final int modifiedDueDate = current.getDueDate() - current.getDuration();
+			current.forEachPredecessor( new TObjectProcedure<TJobAdapter>() {
+				// FIXME - Memory Leak - created 12 avr. 2012 by A. Malapert
+				
+				@Override
+				public boolean execute(TJobAdapter object) {
+					if(modifiedDueDate < object.target.getDueDate() ) {
+						object.target.setDueDate(modifiedDueDate);
+					}
+					if(object.target.decHook() == 0) {
+						//// FIXME - Access Index - created 12 avr. 2012 by A. Malapert
+						//pendingJobs[idx++]= object.target;
+						System.err.println("Error");
+					}
+					return true;
+				}
+			});
+
+		}
+	}
 	public final static void modifyDeadlines(int horizon, ITJob... jobs) {
 		for (ITJob j : jobs) {
 			if(j.getDeadline() > horizon) j.setDeadline(horizon);
