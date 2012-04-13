@@ -132,7 +132,7 @@ public final class PDR1Scheduler {
 		pendingJobs.clear();
 		currentTime = JobUtils.sumDurations(jobs);
 		//VisuFactory.getDotManager().show(new DottyBean(jobs));
-		JobUtils.initPredecessorHooks(jobs, procedure);
+		JobUtils.initSuccessorHooks(jobs, procedure);
 		//Lawler algorithm : build sequence in backward order P = sum pj
 		while( ! pendingJobs.isEmpty()) {
 			//schedule job with the latest due date (minimize min fj(P))
@@ -143,7 +143,7 @@ public final class PDR1Scheduler {
 			final int lateness = job.getLateness();
 			if(lmax < lateness) { lmax = lateness;}
 			//Update pending jobs
-			job.forEachSuccessor(procedure);
+			job.forEachPredecessor(procedure);
 		}
 		assert(isScheduled(jobs));
 		return lmax;
