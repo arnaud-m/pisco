@@ -1,8 +1,7 @@
 package pisco.common;
 
 import java.util.Iterator;
-import java.util.List;
-import java.util.Stack;
+import java.util.ListIterator;
 
 import choco.kernel.solver.variables.scheduling.ITask;
 
@@ -30,6 +29,16 @@ public final class JobUtils {
 
 		private int modifiedDueDate;
 
+		private ListIterator<ITJob> iterator;
+		
+		public final ListIterator<ITJob> getIterator() {
+			return iterator;
+		}
+
+		public final void initIterator() {
+			this.iterator = getList().listIterator();
+		}
+
 		public final int getModifiedDueDate() {
 			return modifiedDueDate;
 		}
@@ -44,7 +53,10 @@ public final class JobUtils {
 
 		@Override
 		public void execute(ITJob arg) {
-			super.execute(arg);
+			if(arg.decHook() == 0) {
+				iterator.add(arg);
+				iterator.previous();
+			}
 			if(modifiedDueDate < arg.getDueDate() ) {
 				arg.setDueDate(modifiedDueDate);
 			}
@@ -56,11 +68,11 @@ public final class JobUtils {
 	}
 
 	public final static void modifyDueDates(final ITJob[] jobs, final ProcModDueDate procedure) {
-		//final TLinkedList<TJobAdapter> pendingJobs = new TLinkedList<TJobAdapter>();
 		//initialize
 		initSuccessorHooks(jobs, procedure);
 		//compute topological order and modify due dates
-		Iterator<ITJob> iter = procedure.pendingJobs.iterator();
+		procedure.initIterator();
+		ListIterator<ITJob> iter = procedure.getIterator();
 		while(iter.hasNext()) {
 			final ITJob current = iter.next();
 			procedure.setModifiedDueDate(current);
@@ -76,6 +88,7 @@ public final class JobUtils {
 
 	
 	protected final static void initSuccessorHooks(final ITJob[] jobs, final DefaultJobProcedure procedure) {
+		procedure.pendingJobs.clear();
 		for (int i = 0; i < jobs.length; i++) {
 			final int val = jobs[i].getSuccessorCount();
 			jobs[i].setHook(val);
@@ -87,6 +100,7 @@ public final class JobUtils {
 	}
 
 	protected final static void initPredecessorHooks(final ITJob[] jobs, final DefaultJobProcedure procedure) {
+		procedure.pendingJobs.clear();
 		for (int i = 0; i < jobs.length; i++) {
 			final int val = jobs[i].getPredecessorCount();
 			jobs[i].setHook(val);

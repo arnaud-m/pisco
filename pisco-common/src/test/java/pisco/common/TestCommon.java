@@ -1,6 +1,7 @@
 package pisco.common;
 
-import static junit.framework.Assert.*;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 import gnu.trove.TLinkableAdapter;
 import gnu.trove.TLinkedList;
 
@@ -8,12 +9,10 @@ import java.util.Arrays;
 
 import junit.framework.Assert;
 
-import org.hamcrest.core.IsSame;
 import org.junit.Test;
 
 import choco.kernel.common.DottyBean;
 import choco.kernel.visu.VisuFactory;
-import choco.visu.components.chart.ChocoChartFactory;
 
 public class TestCommon {
 
@@ -52,8 +51,8 @@ public class TestCommon {
 		assertEquals(2, jobs[1].getSuccessorCount());
 		jobs[3].removePredecessor(jobs[1]);
 		assertEquals(2, jobs[3].getPredecessorCount());
-		System.out.println(Arrays.toString(jobs));
-		VisuFactory.getDotManager().show(new DottyBean(jobs));
+		//System.out.println(Arrays.toString(jobs));
+		//VisuFactory.getDotManager().show(new DottyBean(jobs));
 	}
 	
 	@Test
@@ -77,7 +76,7 @@ public class TestCommon {
 		PJob[] jobs = buildInstance();
 		System.out.println(Arrays.toString(jobs));
 		Pmtn1Scheduler.schedule1Lmax(jobs);
-		ChocoChartFactory.createAndShowGUI("Test", ChocoChartFactory.createGanttChart("Test", jobs));
+		//ChocoChartFactory.createAndShowGUI("Test", ChocoChartFactory.createGanttChart("Test", jobs));
 		System.out.println(Arrays.toString(jobs));
 	}
 
@@ -88,6 +87,20 @@ public class TestCommon {
 		assertEquals(job.getLCT(), end);
 	}
 
+	@Test
+	public void testModifyDueDates() {
+		final PJob[] jobs = buildInstance();
+		jobs[1].addSuccessor(jobs[4]);
+		jobs[0].addSuccessor(jobs[4]);
+		//VisuFactory.getDotManager().show(new DottyBean(jobs));
+		JobUtils.modifyDueDates(jobs);
+		//System.out.println(Arrays.toString(jobs));
+		final int[] mdd = {6,6,0,14,12};
+		for (int i = 0; i < jobs.length; i++) {
+			assertEquals(mdd[i], jobs[i].getDueDate());
+		}
+	}
+	
 	@Test
 	public void testPreemptiveLmaxBug() {
 		final int n = 3;

@@ -18,6 +18,9 @@ import java.util.Arrays;
 import java.util.PriorityQueue;
 import java.util.Random;
 
+import choco.kernel.common.DottyBean;
+import choco.kernel.visu.VisuFactory;
+
 public final class PDR1Scheduler {
 
 	//*****************************************************************//
@@ -128,6 +131,7 @@ public final class PDR1Scheduler {
 		final PriorityQueue<ITJob> pendingJobs= procedure.getPriorityQueue();
 		pendingJobs.clear();
 		currentTime = JobUtils.sumDurations(jobs);
+		//VisuFactory.getDotManager().show(new DottyBean(jobs));
 		JobUtils.initPredecessorHooks(jobs, procedure);
 		//Lawler algorithm : build sequence in backward order P = sum pj
 		while( ! pendingJobs.isEmpty()) {
@@ -139,7 +143,7 @@ public final class PDR1Scheduler {
 			final int lateness = job.getLateness();
 			if(lmax < lateness) { lmax = lateness;}
 			//Update pending jobs
-			job.forEachPredecessor(procedure);
+			job.forEachSuccessor(procedure);
 		}
 		assert(isScheduled(jobs));
 		return lmax;

@@ -193,14 +193,14 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	@Override
 	public final void forEachPredecessor(IJobProcedure procedure) {
 		for (int i = 0; i < predecessorCount; i++) {
-			procedure.execute(this);
+			procedure.execute(predecessors[i]);
 		}
 	}
 
 	@Override
 	public final void forEachSuccessor(IJobProcedure procedure) {
 		for (int i = 0; i < successorCount; i++) {
-			procedure.execute(this);
+			procedure.execute(successors[i]);
 		}
 	}
 
