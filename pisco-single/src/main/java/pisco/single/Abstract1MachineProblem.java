@@ -90,7 +90,6 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		super(parser, settings);
 		this.globalCostFunction = globalCostFunction;
 		setChartManager(ChocoChartFactory.getJFreeChartManager());
-		settings.putEnum(SingleMachineSettings.RELAX_PMTN_PROPAGATION, PropagagationLevel.SWEEP);
 		//settings.putTrue(PreProcessConfiguration.DMD_GENERATE_CLAUSES);
 		//settings.putBoolean(BasicSettings.PREPROCESSING_HEURISTICS, false);
 		//settings.putBoolean(PreProcessConfiguration.DMD_GENERATE_CLAUSES, false);
@@ -262,7 +261,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		if (parser instanceof Abstract1MachineParser) {
 			logMsg.storeConfiguration(((Abstract1MachineParser) parser).getParserMsg());
 		}
-		//logMsg.storeConfiguration(getPropertyDiagnostic());
+		logMsg.storeConfiguration(getPropertyDiagnostic());
 	}
 
 

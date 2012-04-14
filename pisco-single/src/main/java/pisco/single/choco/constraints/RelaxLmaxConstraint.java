@@ -230,7 +230,19 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			assert(taskvars[i].isScheduled());
 		}
 	}
-
+	
+	private void recordUpperBound() {
+		problem.getSolver().worldPushDuringPropagation();
+		try {
+			recordSolution();
+			problem.getSolver().propagate();
+			problem.getSolver().getSearchStrategy().recordSolution();
+		} catch (ContradictionException e) {
+			throw new SolverException("Unable to record new upper found.");
+		}
+		problem.getSolver().worldPopDuringPropagation();
+	}
+	
 	@Override
 	public int getFilteredEventMask(int idx) {
 		if(idx < startOffset) return IntVarEvent.INCINF_MASK;
@@ -412,11 +424,11 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			vars[vars.length-1].updateSup(newUpperBound, RelaxLmaxConstraint.this, false);
 			for (ITemporalSRelation rel : forwardUpdateList) {
 				rel.getDirection().instantiate(1, RelaxLmaxConstraint.this, false);
-				LOGGER.info("u "+rel.toString());
+				//LOGGER.info("u "+rel.toString());
 			}
 			for (ITemporalSRelation rel : backwardUpdateList) {
 				rel.getDirection().instantiate(0, RelaxLmaxConstraint.this, false);
-				LOGGER.info("u "+rel.toString());
+				//LOGGER.info("u "+rel.toString());
 			}
 			clearUpdateLists();
 		}
@@ -445,7 +457,6 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 				} else {
 					forwardUpdateList.add(disjSMod.getConstraint(idx2, idx1));
 				}
-				// FIXME - Time Window check for 1|prec|Lmax ? - created 13 avr. 2012 by A. Malapert
 			} else if(isFeasibleSchedule() ){
 				if(cost == vars[vars.length-1].getInf()) {
 					//an optimal solution has been found
@@ -454,9 +465,9 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 					//else a new upper bound has been found
 					if(newUpperBound > cost ) {
 						newUpperBound = cost;
+						// FIXME - How to record an upper bound ? - created 14 avr. 2012 by A. Malapert
+						//recordUpperBound();
 					}
-					LOGGER.warning("not yet implemented");
-					// TODO - How to record an upper bound solution ? - created 13 avr. 2012 by A. Malapert
 				} 
 			} //else a unfeasible schedule has been found
 			return null;
