@@ -408,7 +408,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 					forwardUpdateList.add(disjSMod.getConstraint(idx2, idx1));
 				}
 				// FIXME - Time Window check for 1|prec|Lmax ? - created 13 avr. 2012 by A. Malapert
-			} else if(! JobUtils.isInterrupted(tempJobs) ){
+			} else if(! JobUtils.isInterrupted(tempJobs) && JobUtils.isScheduledInTimeWindows(tempJobs) ){
 				if(cost == vars[vars.length-1].getInf()) {
 					//an optimal solution has been found
 					return Boolean.TRUE;
