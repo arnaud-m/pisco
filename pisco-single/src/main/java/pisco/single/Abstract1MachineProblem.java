@@ -47,6 +47,7 @@ import pisco.common.ICostAggregator;
 import pisco.common.ICostFunction;
 import pisco.common.ITJob;
 import pisco.common.JobUtils;
+import pisco.single.SingleMachineSettings.PropagagationLevel;
 import pisco.single.parsers.Abstract1MachineParser;
 import choco.Choco;
 import choco.Options;
@@ -89,6 +90,8 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		super(parser, settings);
 		this.globalCostFunction = globalCostFunction;
 		setChartManager(ChocoChartFactory.getJFreeChartManager());
+		settings.putEnum(SingleMachineSettings.RELAX_PMTN_PROPAGATION, PropagagationLevel.FULL);
+		//settings.putTrue(PreProcessConfiguration.DMD_GENERATE_CLAUSES);
 		//settings.putBoolean(BasicSettings.PREPROCESSING_HEURISTICS, false);
 		//settings.putBoolean(PreProcessConfiguration.DMD_GENERATE_CLAUSES, false);
 		//settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);

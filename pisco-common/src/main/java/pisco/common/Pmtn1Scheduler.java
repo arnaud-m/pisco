@@ -8,6 +8,10 @@ import gnu.trove.TObjectProcedure;
 import java.util.Arrays;
 import java.util.PriorityQueue;
 
+import choco.kernel.common.DottyBean;
+import choco.kernel.common.logging.ChocoLogging;
+import choco.kernel.visu.VisuFactory;
+
 public final class Pmtn1Scheduler {
 
 	private Pmtn1Scheduler() {
@@ -92,6 +96,11 @@ public final class Pmtn1Scheduler {
 				}
 			}
 		} while(i < jobs.length);
+		if(!isScheduled(jobs)) {
+			ChocoLogging.flushLogs();
+			VisuFactory.getDotManager().show(new DottyBean(jobs));
+			System.out.println(Arrays.toString(jobs));
+		}
 		assert(isScheduled(jobs));
 		return lmax;
 	}

@@ -18,14 +18,14 @@ public class TestSingleMachine {
 
 	private final static String[] CMD_PREFIX = {"--seed","0","-t", "LP"};
 
-	private final static String[] CONFS = {"basic", "pmtn", "prec"};
-	//private final static String[] CONFS = {"prec"};
+	//private final static String[] CONFS = {"basic", "pmtn", "prec"};
+	private final static String[] CONFS = {"prec"};
 	
 		
 	@BeforeClass
 	public final static void setUp() {
 		ChocoLogging.setVerbosity(Verbosity.QUIET);
-		//ChocoLogging.setVerbosity(Verbosity.VERBOSE);
+		ChocoLogging.setVerbosity(Verbosity.VERBOSE);
 	}
 	
 	@AfterClass
@@ -59,7 +59,8 @@ public class TestSingleMachine {
 
 	private SchedulingBranchingFactory.Branching[] branchings = new SchedulingBranchingFactory.Branching[]{
 			SchedulingBranchingFactory.Branching.RAND, 
-			SchedulingBranchingFactory.Branching.LEX
+			SchedulingBranchingFactory.Branching.LEX,
+			SchedulingBranchingFactory.Branching.SWDEG
 			};
 	
 	
@@ -76,6 +77,13 @@ public class TestSingleMachine {
 	@Test
 	public void testBoolDecisionVarBug() {
 		String arguments = "-t LP -f src/main/benchmarks/instances/Ti/  p20_233.dat " +
+				"-b RAND -p src/test/resources/pmtn.properties -s -1930858313";
+		cmd.doMain(arguments.split("\\s"));
+	}
+	
+	@Test
+	public void testPrecBug() {
+		String arguments = "-t LP -f src/main/benchmarks/instances/Ti/  p10_106.dat " +
 				"-b RAND -p src/test/resources/pmtn.properties -s -1930858313";
 		cmd.doMain(arguments.split("\\s"));
 	}

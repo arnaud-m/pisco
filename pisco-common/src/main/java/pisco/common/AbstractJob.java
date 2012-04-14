@@ -224,7 +224,7 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	}
 
 	public final void unsetPredecessor(ITJob pred) {
-		for (int i = predecessorCount; i >=0; i--) {
+		for (int i = predecessorCount-1; i >=0; i--) {
 			if(predecessors[i].equals(pred)) {
 				predecessors[i] = predecessors[--predecessorCount];
 				return;
@@ -263,7 +263,7 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 	}
 
 	public final void unsetSuccessor(ITJob succ) {
-		for (int i = successorCount; i >=0; i--) {
+		for (int i = successorCount-1; i >=0; i--) {
 			if(successors[i].equals(succ)) {
 				successors[i] = successors[--successorCount];
 				return;
