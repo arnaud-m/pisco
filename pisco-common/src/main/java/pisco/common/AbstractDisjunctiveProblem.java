@@ -8,6 +8,7 @@ import parser.instances.AbstractMinimizeModel;
 import parser.instances.BasicSettings;
 import parser.instances.InstanceFileParser;
 import parser.instances.ResolutionStatus;
+import choco.cp.solver.CPSolver;
 import choco.cp.solver.configure.RestartFactory;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
 import choco.kernel.model.constraints.Constraint;
@@ -42,7 +43,7 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 	}
 	
 	
-	protected abstract IResource<?>[] generateFakeResources();
+	protected abstract IResource<?>[] generateFakeResources(CPSolver solver);
 
 
 	@Override
@@ -64,7 +65,7 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 			solver.addGoal(generateSetTimes(solver, getSeed()));
 		} else {			
 			if( conf.readBoolean(BasicSettings.LIGHT_MODEL) && br == SchedulingBranchingFactory.Branching.PROFILE) {
-				solver.addGoal(generateProfile(solver, generateFakeResources(), null, getSeed()));
+				solver.addGoal(generateProfile(solver, generateFakeResources(solver), null, getSeed()));
 			} else {
 			solver.addGoal(generateDisjunctBranching(solver, null, getSeed()));
 			}

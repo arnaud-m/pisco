@@ -46,6 +46,7 @@ import choco.Choco;
 import choco.Options;
 import choco.cp.common.util.preprocessor.detector.scheduling.DisjunctiveSModel;
 import choco.cp.model.CPModel;
+import choco.cp.solver.CPSolver;
 import choco.cp.solver.configure.RestartFactory;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
 import choco.cp.solver.preprocessor.PreProcessConfiguration;
@@ -263,7 +264,7 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 	//****************************************************************//
 
 	@Override
-	protected IResource<?>[] generateFakeResources() {
+	protected IResource<?>[] generateFakeResources(CPSolver solver) {
 		// FIXME - uncompatible with job-shop and flow-shop ?  - created 4 juil. 2011 by Arnaud Malapert
 		return TaskUtils.createFakeResources(solver, ArrayUtils.append(jobs, machines));
 	}

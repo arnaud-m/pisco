@@ -19,6 +19,7 @@ import static pisco.common.JobUtils.*;
 import pisco.common.CostFactory;
 import pisco.common.ICostFunction;
 import pisco.common.ITJob;
+import pisco.common.JobComparators;
 import pisco.common.JobUtils;
 import pisco.common.Pmtn1Scheduler;
 import static pisco.common.JobComparators.*;
@@ -148,12 +149,12 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 			////////////
 			//Add pre-ordering constraints from dominance conditions
 			final ITJob[] sjobs = Arrays.copyOf(jobs, nbJobs);
-			Arrays.sort(sjobs, getCompositeComparator(getShortestProcessingTime(), getEarliestDueDate()));
+			Arrays.sort(sjobs, getCompositeComparator(getShortestProcessingTime(), JobComparators.getEarliestReleaseDate()));
 			for (int i = 0; i < nbJobs - 1; i++) {
 				final int d = sjobs[i].getDuration();
 				int j = i +1;
 				while(j < nbJobs && sjobs[j].getDuration() == d) {
-					if(sjobs[i].getDeadline() <= sjobs[j].getDeadline() && 
+					if(	sjobs[i].getDeadline() <= sjobs[j].getDeadline() && 
 							sjobs[i].getDueDate() <= sjobs[j].getDueDate()) {
 						// i precedes j
 						final int ti = sjobs[i].getID();
@@ -170,7 +171,7 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 	}
 
 
-	
+
 
 	@Override
 	protected void setGoals(PreProcessCPSolver solver) {

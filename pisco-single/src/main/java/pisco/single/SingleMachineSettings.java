@@ -83,8 +83,8 @@ public class SingleMachineSettings extends DisjunctiveSettings {
 	
 	public static String getInstModelMsg(Configuration conf) {
 		StringBuilder b = new StringBuilder();
-		if(conf.readBoolean(MODIFY_DUE_DATES)) b.append(" MODIFY_DUE_DATES    ");
-		if(conf.readBoolean(TASK_ORDERING)) b.append(" TASK_ORDERING    ");
+		if(conf.readBoolean(MODIFY_DUE_DATES)) b.append("MODIFY_DUE_DATES    ");
+		if(conf.readBoolean(TASK_ORDERING)) b.append("TASK_ORDERING    ");
 		if(conf.readBoolean(TASK_WEAK_ORDERING)) b.append(" TASK_WEAK_ORDERING    ");
 		PropagagationLevel level = conf.readEnum(RELAX_PMTN_PROPAGATION, PropagagationLevel.class);
 		b.append(level).append(" PMTN_RELAX    ");

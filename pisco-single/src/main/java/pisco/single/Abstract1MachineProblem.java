@@ -52,6 +52,7 @@ import pisco.single.parsers.Abstract1MachineParser;
 import choco.Choco;
 import choco.Options;
 import choco.cp.model.CPModel;
+import choco.cp.solver.CPSolver;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
 import choco.cp.solver.preprocessor.PreProcessConfiguration;
 import choco.kernel.common.logging.ChocoLogging;
@@ -215,7 +216,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 	//****************************************************************//
 
 	@Override
-	protected IResource<?>[] generateFakeResources() {
+	protected IResource<?>[] generateFakeResources(CPSolver solver) {
 		return TaskUtils.createFakeResources(solver, machine);
 	}
 
@@ -261,7 +262,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		if (parser instanceof Abstract1MachineParser) {
 			logMsg.storeConfiguration(((Abstract1MachineParser) parser).getParserMsg());
 		}
-		logMsg.storeConfiguration(getPropertyDiagnostic());
+		//logMsg.storeConfiguration(getPropertyDiagnostic());
 	}
 
 

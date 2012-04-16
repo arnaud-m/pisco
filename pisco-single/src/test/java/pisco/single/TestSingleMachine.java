@@ -18,25 +18,37 @@ public class TestSingleMachine {
 
 	private final static String[] CMD_PREFIX = {"--seed","0","-t", "LP"};
 
-	private final static String[] CONFS = {"basic", "pmtn", "prec", "pmtn-swap", "pmtn-sweep", "prec-swap", "pmtn-prec-swaps"};
-	//private final static String[] CONFS = {"prec"};
-	
-		
+	private final static String[] CONFS = {"basic", "pmtn", "pmtn-swap", "pmtn-sweep",
+		"prec", "prec-swap", "pmtn-prec-swaps", 
+		"clauses"
+	};
+	// FIXME - Bug when replacing variables - created 16 avr. 2012 by A. Malapert
+	//private final static String[] CONFS = {"ordering"};
+
+	private final static SchedulingBranchingFactory.Branching[] branchings = new SchedulingBranchingFactory.Branching[]{
+		// FIXME - Bug when recording solution - created 16 avr. 2012 by A. Malapert
+		//SchedulingBranchingFactory.Branching.ST,
+		SchedulingBranchingFactory.Branching.MINPRES,
+		SchedulingBranchingFactory.Branching.PROFILE,
+		SchedulingBranchingFactory.Branching.RAND, 
+		SchedulingBranchingFactory.Branching.LEX,
+		SchedulingBranchingFactory.Branching.SWDEG
+	};
+
+
 	@BeforeClass
 	public final static void setUp() {
 		ChocoLogging.setVerbosity(Verbosity.QUIET);
-		//ChocoLogging.setVerbosity(Verbosity.VERBOSE);
+		ChocoLogging.setVerbosity(Verbosity.SEARCH);
 	}
-	
+
 	@AfterClass
 	public final static void tearDown() {
 		ChocoLogging.setVerbosity(Verbosity.SILENT);
 	}
 
-	private void testInstances(String input, String... wildcardPatterns) {
-		testInstances(input,SchedulingBranchingFactory.Branching.values(), wildcardPatterns);
-	}
-	
+
+
 	private void testInstances(String input, String[] wildcardPatterns,SchedulingBranchingFactory.Branching br, int prop) {
 		cmd.doMain(
 				append(CMD_PREFIX, new String[] {
@@ -44,26 +56,21 @@ public class TestSingleMachine {
 						"-b", br.toString(), 
 						"-p" , "./src/test/resources/"+CONFS[prop]+".properties"}, 
 						wildcardPatterns
-				)
-		);
+						)
+				);
 	}
-	
+
 	private void testInstances(String input,SchedulingBranchingFactory.Branching[] branchings, String... wildcardPatterns) {
 		for (int i = 0; i < CONFS.length; i++) {
 			for (SchedulingBranchingFactory.Branching br : branchings) {
 				testInstances(input, wildcardPatterns, br, i);
 			}
 		}
-		// FIXME - Bug Profile  - created 16 sept. 2011 by Arnaud Malapert
+
 	}
 
-	private SchedulingBranchingFactory.Branching[] branchings = new SchedulingBranchingFactory.Branching[]{
-			SchedulingBranchingFactory.Branching.RAND, 
-			SchedulingBranchingFactory.Branching.LEX,
-			SchedulingBranchingFactory.Branching.SWDEG
-			};
-	
-	
+
+
 	@Test
 	public void testN10() {
 		testInstances(PATH, branchings, "p10_1*.dat");
@@ -73,20 +80,20 @@ public class TestSingleMachine {
 	public void testN20() {
 		testInstances(PATH, branchings, "p20_2.dat", "p20_200.dat", "p20_205.dat", "p20_23*.dat");
 	}
-	
+
 	@Test
 	public void testBoolDecisionVarBug() {
 		String arguments = "-t LP -f src/main/benchmarks/instances/Ti/  p20_233.dat " +
 				"-b RAND -p src/test/resources/pmtn.properties -s -1930858313";
 		cmd.doMain(arguments.split("\\s"));
 	}
-	
+
 	@Test
 	public void testPrecBug() {
 		String arguments = "-t LP -f src/main/benchmarks/instances/Ti/  p10_106.dat " +
 				"-b RAND -p src/test/resources/pmtn.properties -s -1930858313";
 		cmd.doMain(arguments.split("\\s"));
 	}
-	
+
 }
-	
+
