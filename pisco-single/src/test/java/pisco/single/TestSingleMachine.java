@@ -20,10 +20,10 @@ public class TestSingleMachine {
 
 	private final static String[] CONFS = {"basic", "pmtn", "pmtn-swap", "pmtn-sweep",
 		"prec", "prec-swap", "pmtn-prec-swaps", 
-		"clauses", "ordering"
+		"clauses", "ordering", "mod-dd"
 	};
 	
-	//private final static String[] CONFS = {"pmtn"};
+	//private final static String[] CONFS = {"mod-dd"};
 
 	private final static SchedulingBranchingFactory.Branching[] branchings = new SchedulingBranchingFactory.Branching[]{
 		//SchedulingBranchingFactory.Branching.ST, //too slow

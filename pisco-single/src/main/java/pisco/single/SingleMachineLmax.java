@@ -41,9 +41,12 @@ import choco.cp.solver.CPSolver;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
 import choco.kernel.common.util.tools.ArrayUtils;
 import choco.kernel.model.Model;
+import choco.kernel.model.ModelException;
 import choco.kernel.model.constraints.ComponentConstraint;
 import choco.kernel.model.variables.integer.IntegerVariable;
+import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.Solver;
+import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.visu.components.chart.ChocoChartFactory;
 
 public class SingleMachineLmax extends Abstract1MachineProblem {
@@ -182,10 +185,7 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 	@Override
 	protected void setGoals(PreProcessCPSolver solver) {
 		super.setGoals(solver);
-		//solver.addGoal(new LexMaxFakeBranching(solver, solver.getVar(dueDates)));
-		//Pass the due dates and the boolean variable to escape from a bug in the preprocessing (variable replacement in the solver)
-		solver.addGoal(new LexMaxFakeBranching(solver, ArrayUtils.append(solver.getVar(dueDates), solver.getBooleanVariables())))
-		;
+		solver.addGoal(new LexMaxFakeBranching(solver, solver.getVar(dueDates)));		
 	}
 
 	@Override
@@ -200,6 +200,21 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 					new ComponentConstraint(RelaxLmaxManager.class, 
 							this, 
 							ArrayUtils.append(tasks, dueDates, new IntegerVariable[]{objVar})));				
+		}
+		
+		if( defaultConf.readBoolean(SingleMachineSettings.TASK_ORDERING) && ! hasSetupTimes() ) {
+			//Escape from a bug in the preprocessing by :
+			// instantiating variable replaced (but unfortunatly already created) during the preprocessing)
+			try {
+				for (int i = 0; i < s.getNbIntVars(); i++) {
+					final IntDomainVar v = s.getIntVarQuick(i);
+					if(v.getNbConstraints() == 0) {
+						v.instantiate(v.getInf(), null, false);
+					}
+				}
+			} catch (ContradictionException e) {
+				throw new ModelException("Preprocessing Patch Failed !! ");
+			}
 		}
 		return s;
 	}
