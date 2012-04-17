@@ -182,9 +182,7 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 	@Override
 	protected void setGoals(PreProcessCPSolver solver) {
 		super.setGoals(solver);
-		if(dueDates != null) {
-			solver.addGoal(new MaxFakeBranching(solver, solver.getVar(dueDates)));
-		}
+		solver.addGoal(new MaxFakeBranching(solver, solver.getVar(dueDates)));
 	}
 
 	@Override
@@ -198,8 +196,7 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 			s.addConstraint(
 					new ComponentConstraint(RelaxLmaxManager.class, 
 							this, 
-							ArrayUtils.append(tasks, new IntegerVariable[]{objVar})));				
-
+							ArrayUtils.append(tasks, dueDates, new IntegerVariable[]{objVar})));				
 		}
 		return s;
 	}

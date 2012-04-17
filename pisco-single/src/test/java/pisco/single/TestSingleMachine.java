@@ -25,6 +25,8 @@ public class TestSingleMachine {
 	
 	// FIXME - Bug when replacing variables - created 16 avr. 2012 by A. Malapert
 	//private final static String[] CONFS = {"ordering"};
+	
+	//private final static String[] CONFS = {"pmtn"};
 
 	private final static SchedulingBranchingFactory.Branching[] branchings = new SchedulingBranchingFactory.Branching[]{
 		//SchedulingBranchingFactory.Branching.ST, //too slow

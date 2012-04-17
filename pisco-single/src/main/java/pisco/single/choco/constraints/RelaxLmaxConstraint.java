@@ -1,6 +1,7 @@
 package pisco.single.choco.constraints;
 
 import static choco.Choco.MAX_UPPER_BOUND;
+import static pisco.common.JobUtils.modifyDueDates;
 import gnu.trove.TIntArrayList;
 import gnu.trove.TIntProcedure;
 import gnu.trove.TLinkableAdapter;
@@ -9,8 +10,6 @@ import gnu.trove.TObjectProcedure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.logging.Level;
 
 import pisco.common.ITJob;
 import pisco.common.JobUtils;
@@ -25,7 +24,6 @@ import choco.cp.common.util.preprocessor.detector.scheduling.DisjunctiveSModel;
 import choco.cp.solver.constraints.global.scheduling.precedence.ITemporalSRelation;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
 import choco.cp.solver.variables.integer.IntVarEvent;
-import choco.kernel.common.DottyBean;
 import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.common.util.comparator.TaskComparators;
 import choco.kernel.common.util.iterators.DisposableIntIterator;
@@ -34,7 +32,6 @@ import choco.kernel.solver.SolverException;
 import choco.kernel.solver.constraints.global.scheduling.AbstractTaskSConstraint;
 import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.kernel.solver.variables.scheduling.TaskVar;
-import choco.kernel.visu.VisuFactory;
 
 public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
@@ -42,6 +39,8 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 	protected final Abstract1MachineProblem problem;
 
+	private final boolean modifyDueDate;
+	
 	protected final ITJob[] jobs;
 
 	protected final ITJob[] tempJobs;
@@ -66,6 +65,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 	public RelaxLmaxConstraint(Abstract1MachineProblem problem, TaskVar[] taskvars, IntDomainVar[] disjuncts, IntDomainVar lmax) {
 		super(taskvars, disjuncts, lmax);
 		this.problem = problem;
+		modifyDueDate = ! problem.getConfiguration().readBoolean(SingleMachineSettings.MODIFY_DUE_DATES);
 		jobs = new ITJob[taskvars.length];
 		for (int i = 0; i < jobs.length; i++) {
 			jobs[i] = new PJob(taskvars[i].getID());
@@ -99,9 +99,6 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 	@Override
 	public void awakeOnInst(int idx) throws ContradictionException {
-		//		if(idx >= taskIntVarOffset && idx < vars.length - 1) {
-		//			fireDisjunctList.set(true);
-		//		}
 		constAwake(false);
 	}
 
@@ -126,7 +123,9 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 
 	@Override
-	public void awakeOnSup(int varIdx) throws ContradictionException {}
+	public void awakeOnSup(int varIdx) throws ContradictionException {
+		this.constAwake(false);
+	}
 
 
 	//	@Override
@@ -149,7 +148,8 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			jobs[i].resetSchedule();
 			jobs[i].resetPrecedences();
 			jobs[i].setReleaseDate(taskvars[i].getEST());
-			jobs[i].setDueDate(problem.jobs[i].getDueDate());
+			//jobs[i].setDueDate(jobs[i].getDueDate());
+			jobs[i].setDueDate(vars[taskIntVarOffset + i].getSup());
 			jobs[i].setDeadline(taskvars[i].getLCT());
 		}
 	}
@@ -197,8 +197,10 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		buildJobs();
 		buildPrecedence();
 		//Modify Due Dates 
-		// FIXME - Remove this step in further version by stating dedicated constraints  - created 6 avr. 2012 by A. Malapert
-		JobUtils.modifyDueDates(tempJobs);
+		if(modifyDueDate) {
+			modifyDueDates(tempJobs);
+		} //else all (due date) constraints are not always revised and therefore some due dates entirely modified
+		//We should prove that the lower bound is still valid or enforce their consistency "by hand" 
 		////////////////
 		if(pmtnRelaxation.filterObjective() || precRelaxation.filterObjective()  ||
 				pmtnRelaxation.filterPrecedences() || precRelaxation.filterPrecedences()) {
@@ -268,6 +270,7 @@ public int getFilteredEventMask(int idx) {
 	if(idx < startOffset) return IntVarEvent.INCINF_MASK;
 	else if(idx < endOffset) return 0;
 	else if(idx < taskIntVarOffset) return IntVarEvent.INCINF_MASK;
+	else if(idx < taskIntVarOffset + taskvars.length) return IntVarEvent.DECSUP;
 	else if(idx == vars.length - 1) return IntVarEvent.DECSUP_MASK;
 	else return IntVarEvent.INSTINT_MASK;
 }
