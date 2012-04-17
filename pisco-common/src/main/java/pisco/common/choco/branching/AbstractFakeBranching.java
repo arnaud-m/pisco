@@ -110,6 +110,7 @@ public abstract class AbstractFakeBranching extends AbstractIntBranchingStrategy
 			solver.propagate();
 		} catch (ContradictionException e) {
 			LOGGER.log(Level.SEVERE, "Fake branching raise a contradiction caused by "+e.getCause(), e);
+			LOGGER.info(solver.pretty());
 			throw new SolverException("Fake branching raises a contradiction !");
 		}
 		tearDown();

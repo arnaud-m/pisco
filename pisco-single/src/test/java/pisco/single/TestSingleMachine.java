@@ -20,11 +20,8 @@ public class TestSingleMachine {
 
 	private final static String[] CONFS = {"basic", "pmtn", "pmtn-swap", "pmtn-sweep",
 		"prec", "prec-swap", "pmtn-prec-swaps", 
-		"clauses"
+		"clauses", "ordering"
 	};
-	
-	// FIXME - Bug when replacing variables - created 16 avr. 2012 by A. Malapert
-	//private final static String[] CONFS = {"ordering"};
 	
 	//private final static String[] CONFS = {"pmtn"};
 
@@ -40,8 +37,8 @@ public class TestSingleMachine {
 
 	@BeforeClass
 	public final static void setUp() {
-		//ChocoLogging.setVerbosity(Verbosity.QUIET);
-		ChocoLogging.setVerbosity(Verbosity.VERBOSE);
+		ChocoLogging.setVerbosity(Verbosity.QUIET);
+		//ChocoLogging.setVerbosity(Verbosity.SEARCH);
 	}
 
 	@AfterClass

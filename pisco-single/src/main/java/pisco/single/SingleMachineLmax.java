@@ -31,7 +31,7 @@ import pisco.common.JobUtils;
 import pisco.common.PDR1Scheduler;
 import pisco.common.Pmtn1Scheduler;
 import pisco.common.SchedulingBranchingFactory;
-import pisco.common.choco.branching.MaxFakeBranching;
+import pisco.common.choco.branching.LexMaxFakeBranching;
 import pisco.single.choco.constraints.ModifyDueDateManager;
 import pisco.single.choco.constraints.RelaxLmaxConstraint;
 import pisco.single.choco.constraints.RelaxLmaxManager;
@@ -182,7 +182,10 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 	@Override
 	protected void setGoals(PreProcessCPSolver solver) {
 		super.setGoals(solver);
-		solver.addGoal(new MaxFakeBranching(solver, solver.getVar(dueDates)));
+		//solver.addGoal(new LexMaxFakeBranching(solver, solver.getVar(dueDates)));
+		//Pass the due dates and the boolean variable to escape from a bug in the preprocessing (variable replacement in the solver)
+		solver.addGoal(new LexMaxFakeBranching(solver, ArrayUtils.append(solver.getVar(dueDates), solver.getBooleanVariables())))
+		;
 	}
 
 	@Override

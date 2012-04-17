@@ -4,11 +4,15 @@ import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.Solver;
 import choco.kernel.solver.variables.integer.IntDomainVar;
 
-public class MaxFakeBranching extends AbstractFakeBranching {
+public class LexMaxFakeBranching extends AbstractFakeBranching {
 
 	private final IntDomainVar[] vars;
 
-	public MaxFakeBranching(Solver solver, IntDomainVar[] vars) {
+	public LexMaxFakeBranching(Solver solver) {
+		this(solver, null);
+	}
+	
+	public LexMaxFakeBranching(Solver solver, IntDomainVar[] vars) {
 		super(solver);
 		this.vars = vars;
 	}
@@ -23,6 +27,7 @@ public class MaxFakeBranching extends AbstractFakeBranching {
 			for (int i = 0; i < n ; i++) {
 				final IntDomainVar v = solver.getIntVarQuick(i);
 				if( ! v.isInstantiated() ) {
+					
 					v.instantiate(v.getSup(), null, false);
 				}
 			}
