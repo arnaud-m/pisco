@@ -28,6 +28,7 @@
 package pisco.single.choco.constraints;
 
 import choco.cp.solver.constraints.global.scheduling.precedence.AbstractPrecedenceSConstraint;
+import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.kernel.solver.variables.scheduling.TaskVar;
@@ -46,24 +47,16 @@ public final class ModifyDueDateConstraint extends AbstractPrecedenceSConstraint
 		this.k1 = k1;
 		this.k2 = k2;
 	}
-	
-	/**
-	 * propagate if(vars[idx1] + k1 <= vars[idx2])
-	 */
-	protected final void weakPropagate(final int idx1, final int k1, final int idx2) throws ContradictionException {
-		vars[idx2].updateInf(vars[idx1].getInf() + k1, this, false);
-		vars[idx1].updateSup(vars[idx2].getSup() - k1, this, false);
-	}
 
-	
+
 	@Override
 	public final void propagateP1() throws ContradictionException {
-		weakPropagate(1, k1, 2);
+		propagate(1, k1, 2);
 	}
 
 	@Override
 	public final void propagateP2() throws ContradictionException {
-		weakPropagate(2, k2, 1);
+		propagate(2, k2, 1);
 	}
 
 
@@ -72,15 +65,13 @@ public final class ModifyDueDateConstraint extends AbstractPrecedenceSConstraint
 	 */
 
 	protected final Boolean isWeakEntailed(final int idx1, final int k1, final int idx2) {
-//		if (vars[idx1].getSup() + k1 <= vars[idx2].getInf())
-//			return Boolean.TRUE;
+		//		if (vars[idx1].getSup() + k1 <= vars[idx2].getInf())
+		//			return Boolean.TRUE;
 		if (vars[idx1].getInf() + k1 > vars[idx2].getSup())
 			return Boolean.FALSE;
 		return null;
 	}
 
-
-	
 	@Override
 	public final Boolean isP1Entailed() {
 		return isWeakEntailed(1, k1, 2);
@@ -91,11 +82,23 @@ public final class ModifyDueDateConstraint extends AbstractPrecedenceSConstraint
 		return isWeakEntailed(2, k2, 1);
 	}
 
+	public void filterOnP1P2TowardsB() throws ContradictionException {
+		if(isP1Entailed() == Boolean.FALSE){
+			vars[BIDX].instantiate(BWD, this, false);
+			propagateP2();
+		}else if(isP2Entailed() == Boolean.FALSE) {
+			vars[BIDX].instantiate(FWD, this, false);
+			propagateP1();
+		}
+	}
+
+
+
 	@Override
 	public boolean isSatisfied(int[] tuple) {
 		return tuple[0] == 1 ? tuple[1] + k1 <= tuple[2] : tuple[2] + k2 <= tuple[1];
 	}
-	
+
 	@Override
 	public String pretty() {
 		return pretty( "Modify Due Date", pretty(1, k1, 2), pretty(2, k2, 1) );
