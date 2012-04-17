@@ -29,7 +29,7 @@
  */
 package pisco.single;
 
-
+import static pisco.common.JobUtils.*;
 import static choco.Choco.MAX_UPPER_BOUND;
 import static choco.Choco.constantArray;
 import static choco.Choco.disjunctive;
@@ -156,7 +156,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		setHeuristic(new SingleMachineRHeuristic(this));
 
 		/////////////////
-		JobUtils.shiftLeftReleaseDates(jobs);
+		shiftLeftReleaseDates(jobs);
 	}
 
 
@@ -185,8 +185,8 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		makespan = Choco.makeIntVar("makespan",0 , horizon,
 				Options.V_MAKESPAN,Options.V_BOUND, Options.V_NO_DECISION);
 		model.addVariables(makespan);
-		JobUtils.modifyDeadlines(horizon, jobs);
-		tasks = Choco.makeTaskVarArray("T", JobUtils.releaseDates(jobs), JobUtils.deadlines(jobs), constantArray(JobUtils.durations(jobs)), Options.V_BOUND);
+		modifyDeadlines(horizon, jobs);
+		tasks = Choco.makeTaskVarArray("T", releaseDates(jobs), deadlines(jobs), constDurations(jobs), Options.V_BOUND);
 		for (int i = 0; i < tasks.length; i++) {
 			if( jobs[i].getDuration() == 0) model.addConstraint(Choco.eq(tasks[i].start(), jobs[i].getReleaseDate()));
 			tasks[i].end().addOption(Options.V_NO_DECISION);
@@ -202,7 +202,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 			}
 		}
 
-		machine = disjunctive(tasks, Options.C_DISJ_NFNL, Options.C_DISJ_EF, Options.C_NO_DETECTION);
+		machine = disjunctive(tasks, Options.C_DISJ_EF, Options.C_NO_DETECTION);
 		if( ! defaultConf.readBoolean(BasicSettings.LIGHT_MODEL) ) {
 			model.addConstraint(machine);
 		}

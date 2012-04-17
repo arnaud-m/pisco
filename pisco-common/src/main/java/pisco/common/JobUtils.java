@@ -1,8 +1,9 @@
 package pisco.common;
-
+import static choco.Choco.constant;
 import java.util.Iterator;
 import java.util.ListIterator;
 
+import choco.kernel.model.variables.integer.IntegerConstantVariable;
 import choco.kernel.solver.variables.scheduling.ITask;
 
 public final class JobUtils {
@@ -176,6 +177,15 @@ public final class JobUtils {
 		}
 		return tab;
 	}
+	
+	public final static IntegerConstantVariable[] constDurations(IJob... jobs) {
+		IntegerConstantVariable[] tab = new IntegerConstantVariable[jobs.length];
+		for (int i = 0; i < tab.length; i++) {
+			tab[i] = constant(jobs[i].getDuration());
+		}
+		return tab;
+	}
+	
 
 	public final static int minSize(IJob... jobs) {
 		int min = Integer.MAX_VALUE;
@@ -214,6 +224,13 @@ public final class JobUtils {
 		return tab;
 	}
 
+	public final static IntegerConstantVariable[] constSizes(IJob... jobs) {
+		IntegerConstantVariable[] tab = new IntegerConstantVariable[jobs.length];
+		for (int i = 0; i < tab.length; i++) {
+			tab[i] = constant(jobs[i].getSize());
+		}
+		return tab;
+	}
 	public final static int minReleaseDate(IJob... jobs) {
 		int min = Integer.MAX_VALUE;
 		for (IJob job : jobs) {
@@ -238,6 +255,14 @@ public final class JobUtils {
 		int[] tab = new int[jobs.length];
 		for (int i = 0; i < tab.length; i++) {
 			tab[i] = jobs[i].getReleaseDate();
+		}
+		return tab;
+	}
+	
+	public final static IntegerConstantVariable[] constReleaseDates(IJob... jobs) {
+		IntegerConstantVariable[] tab = new IntegerConstantVariable[jobs.length];
+		for (int i = 0; i < tab.length; i++) {
+			tab[i] = constant(jobs[i].getReleaseDate());
 		}
 		return tab;
 	}
@@ -269,6 +294,15 @@ public final class JobUtils {
 		}
 		return tab;
 	}
+	
+	public final static IntegerConstantVariable[] constDeadlines(IJob... jobs) {
+		IntegerConstantVariable[] tab = new IntegerConstantVariable[jobs.length];
+		for (int i = 0; i < tab.length; i++) {
+			tab[i] = constant(jobs[i].getDeadline());
+		}
+		return tab;
+	}
+	
 	public final static int minWeight(IJob... jobs) {
 		int min = Integer.MAX_VALUE;
 		for (IJob job : jobs) {
@@ -305,6 +339,14 @@ public final class JobUtils {
 		}
 		return tab;
 	}
+	
+	public final static IntegerConstantVariable[] constWeights(IJob... jobs) {
+		IntegerConstantVariable[] tab = new IntegerConstantVariable[jobs.length];
+		for (int i = 0; i < tab.length; i++) {
+			tab[i] = constant(jobs[i].getWeight());
+		}
+		return tab;
+	}
 
 	public final static int minDueDate(IJob... jobs) {
 		int min = Integer.MAX_VALUE;
@@ -334,6 +376,14 @@ public final class JobUtils {
 		return tab;
 	}
 
+	public final static IntegerConstantVariable[] constDueDates(IJob... jobs) {
+		IntegerConstantVariable[] tab = new IntegerConstantVariable[jobs.length];
+		for (int i = 0; i < tab.length; i++) {
+			tab[i] = constant(jobs[i].getDueDate());
+		}
+		return tab;
+	}
+	
 	public final static int minSlackTime(IJob... jobs) {
 		int min = Integer.MAX_VALUE;
 		for (IJob job : jobs) {

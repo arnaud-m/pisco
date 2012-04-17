@@ -1,5 +1,6 @@
 package pisco.single;
 
+import static pisco.common.JobUtils.*;
 import static choco.Choco.MAX_UPPER_BOUND;
 import static choco.Choco.constant;
 import static choco.Choco.eq;
@@ -130,21 +131,16 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 					idx++;
 				}
 			}
-		}
+		} else dueDates = constDueDates(jobs);
 		///////////
 		//state lateness constraints
 		IntegerVariable[] lateness = makeIntVarArray("L", nbJobs, 
 				- maxDueDate(jobs), makespan.getUppB() - minDueDate(jobs), 
 				Options.V_BOUND, Options.V_NO_DECISION);
-		if(dueDates == null) {
-			for (int i = 0; i < nbJobs; i++) {
-				model.addConstraint(eq(lateness[i], minus(tasks[i].end(), jobs[i].getDueDate())));
-			}
-		} else {
-			for (int i = 0; i < nbJobs; i++) {
-				model.addConstraint(eq(lateness[i], minus(tasks[i].end(), dueDates[i])));
-			}	
-		}
+		for (int i = 0; i < nbJobs; i++) {
+			model.addConstraint(eq(lateness[i], minus(tasks[i].end(), dueDates[i])));
+		}	
+
 
 		///////////
 		//create objective constraints
