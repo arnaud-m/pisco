@@ -22,12 +22,12 @@ public class TestSingleMachine {
 		"prec", "prec-swap", "pmtn-prec-swaps", 
 		"clauses"
 	};
+	
 	// FIXME - Bug when replacing variables - created 16 avr. 2012 by A. Malapert
 	//private final static String[] CONFS = {"ordering"};
 
 	private final static SchedulingBranchingFactory.Branching[] branchings = new SchedulingBranchingFactory.Branching[]{
-		// FIXME - Bug when recording solution - created 16 avr. 2012 by A. Malapert
-		//SchedulingBranchingFactory.Branching.ST,
+		//SchedulingBranchingFactory.Branching.ST, //too slow
 		SchedulingBranchingFactory.Branching.MINPRES,
 		SchedulingBranchingFactory.Branching.PROFILE,
 		SchedulingBranchingFactory.Branching.RAND, 
@@ -39,7 +39,7 @@ public class TestSingleMachine {
 	@BeforeClass
 	public final static void setUp() {
 		ChocoLogging.setVerbosity(Verbosity.QUIET);
-		ChocoLogging.setVerbosity(Verbosity.SEARCH);
+		//ChocoLogging.setVerbosity(Verbosity.VERBOSE);
 	}
 
 	@AfterClass

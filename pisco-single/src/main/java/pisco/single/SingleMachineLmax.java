@@ -17,15 +17,18 @@ import net.sf.cglib.transform.impl.AddPropertyTransformer;
 import parser.instances.BasicSettings;
 import static pisco.common.JobUtils.*;
 import pisco.common.CostFactory;
+import pisco.common.DisjunctiveSettings;
 import pisco.common.ICostFunction;
 import pisco.common.ITJob;
 import pisco.common.JobComparators;
 import pisco.common.JobUtils;
 import pisco.common.Pmtn1Scheduler;
+import pisco.common.SchedulingBranchingFactory;
 import static pisco.common.JobComparators.*;
 import pisco.common.PDR1Scheduler;
 import pisco.common.choco.branching.MaxFakeBranching;
 import pisco.single.choco.constraints.ModifyDueDateManager;
+import pisco.single.choco.constraints.RelaxLmaxConstraint;
 import pisco.single.choco.constraints.RelaxLmaxManager;
 import pisco.single.parsers.Abstract1MachineParser;
 import choco.Options;
@@ -187,6 +190,7 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 		if(SingleMachineSettings.stateRelaxationConstraint(this)) {
 			////////////
 			//Add relaxation constraint
+			RelaxLmaxConstraint.canFailOnSolutionRecording = DisjunctiveSettings.getBranching(s.getConfiguration()) == SchedulingBranchingFactory.Branching.ST;
 			// FIXME - Awful : can not really postponed until the disjunctive model is built - created 10 avr. 2012 by A. Malapert
 			s.addConstraint(
 					new ComponentConstraint(RelaxLmaxManager.class, 
