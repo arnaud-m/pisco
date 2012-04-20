@@ -40,7 +40,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 	protected final Abstract1MachineProblem problem;
 
 	private final boolean modifyDueDate;
-	
+
 	protected final ITJob[] jobs;
 
 	protected final ITJob[] tempJobs;
@@ -153,8 +153,8 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			jobs[i].setDeadline(taskvars[i].getLCT());
 		}
 	}
-	
-	
+
+
 
 	class TSuccprocedure implements TIntProcedure {
 
@@ -255,309 +255,321 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 
 
-private void recordUpperBound() {
-	problem.getSolver().worldPushDuringPropagation();
-	try {
-		recordSolution();
-		problem.getSolver().propagate();
-		problem.getSolver().getSearchStrategy().recordSolution();
-	} catch (ContradictionException e) {
-		throw new SolverException("Unable to record new upper found.");
+	private void recordUpperBound() {
+		//	problem.getSolver().worldPushDuringPropagation();
+		//	try {
+		//		recordSolution();
+		//		problem.getSolver().propagate();
+		//		problem.getSolver().getSearchStrategy().recordSolution();
+		//	} catch (ContradictionException e) {
+		//		throw new SolverException("Unable to record new upper found.");
+		//	}
+		//	problem.getSolver().worldPopDuringPropagation();
 	}
-	problem.getSolver().worldPopDuringPropagation();
-}
 
-@Override
-public int getFilteredEventMask(int idx) {
-	if(idx < startOffset) return IntVarEvent.INCINF_MASK;
-	else if(idx < endOffset) return 0;
-	else if(idx < taskIntVarOffset) return IntVarEvent.INCINF_MASK;
-	else if(idx < taskIntVarOffset + taskvars.length) return IntVarEvent.DECSUP;
-	else if(idx == vars.length - 1) return IntVarEvent.DECSUP_MASK;
-	else return IntVarEvent.INSTINT_MASK;
-}
+	@Override
+	public int getFilteredEventMask(int idx) {
+		if(idx < startOffset) return IntVarEvent.INCINF_MASK;
+		else if(idx < endOffset) return 0;
+		else if(idx < taskIntVarOffset) return IntVarEvent.INCINF_MASK;
+		else if(idx < taskIntVarOffset + taskvars.length) return IntVarEvent.DECSUP;
+		else if(idx == vars.length - 1) return IntVarEvent.DECSUP_MASK;
+		else return IntVarEvent.INSTINT_MASK;
+	}
 
 
-final class PmtnRelaxationFilter extends AbstractRelaxationFilter implements TObjectProcedure<SweepEvent> {
+	final class PmtnRelaxationFilter extends AbstractRelaxationFilter implements TObjectProcedure<SweepEvent> {
 
-	private final SweepEvent[][] sweepEventMap;
+		private final SweepEvent[][] sweepEventMap;
 
-	protected final TLinkedList<SweepEvent> sweepEventList = new TLinkedList<SweepEvent>();
+		protected final TLinkedList<SweepEvent> sweepEventList = new TLinkedList<SweepEvent>();
 
-	private final TLinkedList<SweepEvent> sweepCurrentList = new TLinkedList<SweepEvent>();
+		private final TLinkedList<SweepEvent> sweepCurrentList = new TLinkedList<SweepEvent>();
 
-	public PmtnRelaxationFilter(PropagagationLevel propLevel) {
-		super(propLevel);
-		sweepEventMap = new SweepEvent[jobs.length][2];
-		for (int i = 0; i < jobs.length; i++) {
-			sweepEventMap[i][START] = new SweepEvent(i, true);
-			sweepEventMap[i][END] = new SweepEvent(i, false);
+		public PmtnRelaxationFilter(PropagagationLevel propLevel) {
+			super(propLevel);
+			sweepEventMap = new SweepEvent[jobs.length][2];
+			for (int i = 0; i < jobs.length; i++) {
+				sweepEventMap[i][START] = new SweepEvent(i, true);
+				sweepEventMap[i][END] = new SweepEvent(i, false);
+			}
 		}
-	}
 
 
 
-	@Override
-	public int doPropagate() {
-		return Pmtn1Scheduler.schedule1PrecLmax(tempJobs);
-	}
-
-
-	@Override
-	public boolean isFeasibleSchedule() {
-		return ! JobUtils.isInterrupted(jobs);
-	}
-
-
-	@Override
-	public void clearEventLists() {
-		sweepCurrentList.clear();
-		sweepEventList.clear();
-	}
-
-
-	@Override
-	public void buildEventLists() {
-		for (int i = 0; i < jobs.length; i++) {
-			sweepEventMap[i][START].setCoordinate(jobs[i].getEST());
-			sweepEventList.add(sweepEventMap[i][START]);
-			sweepEventMap[i][END].setCoordinate(jobs[i].getLCT());
-			sweepEventList.add(sweepEventMap[i][END]);
+		@Override
+		public int doPropagate() {
+			return Pmtn1Scheduler.schedule1PrecLmax(tempJobs);
 		}
-		TCollections.sort(sweepEventList);
+
+
+		@Override
+		public boolean isFeasibleSchedule() {
+			return ! JobUtils.isInterrupted(jobs);
+		}
+
+
+		@Override
+		public void clearEventLists() {
+			sweepCurrentList.clear();
+			sweepEventList.clear();
+		}
+
+
+		@Override
+		public void buildEventLists() {
+			for (int i = 0; i < jobs.length; i++) {
+				sweepEventMap[i][START].setCoordinate(jobs[i].getEST());
+				sweepEventList.add(sweepEventMap[i][START]);
+				sweepEventMap[i][END].setCoordinate(jobs[i].getLCT());
+				sweepEventList.add(sweepEventMap[i][END]);
+			}
+			TCollections.sort(sweepEventList);
+		}
+
+		private SweepEvent evt;
+
+		@Override
+		public final boolean sweep() {
+			swap();
+			if( ! sweepEventList.isEmpty()) {
+				assert sweepEventList.getFirst().isStartEvent();
+				do {
+					evt = sweepEventList.removeFirst();
+					if(evt.isStartEvent()) {
+						sweepCurrentList.add(evt);
+					} else {
+						sweepCurrentList.remove(sweepEventMap[evt.index][START]);
+						if ( ! sweepCurrentList.forEachValue(this)) {
+							return true;
+						}
+					}
+				}while(! sweepEventList.isEmpty());
+			}
+			return false;
+		}
+
+
+		@Override
+		public final boolean swap() {
+			if( ! sweepEventList.isEmpty()) {
+				assert sweepEventList.getFirst().isStartEvent();
+				SweepEvent pred = sweepEventList.getFirst();
+				SweepEvent succ = pred;
+				while( ( succ = sweepEventList.getNext(succ) ) != null) {
+					if(succ.isStartEvent()) {
+						final ITemporalSRelation rel = disjSMod.getEdgeConstraint(pred.index, succ.index);
+						if( rel != null && //Model stated precedence
+								! rel.isFixed()) { //Solver fixed precedence
+							Boolean b = propagatePrecedence(jobs[succ.index], jobs[pred.index]);
+							if (b == Boolean.TRUE) {
+								return true;
+							}
+						}
+						pred = succ;
+					}
+				}
+			}
+			return false;
+		}
+
+
+		@Override
+		public boolean execute(SweepEvent evt2) {
+			return propagatePrecedence(jobs[evt2.index], jobs[evt.index]) != Boolean.TRUE;
+		}
+
 	}
 
-	private SweepEvent evt;
 
-	@Override
-	public final boolean sweep() {
-		sequenceSwaps();
-		if( ! sweepEventList.isEmpty()) {
-			assert sweepEventList.getFirst().isStartEvent();
-			do {
-				evt = sweepEventList.removeFirst();
-				if(evt.isStartEvent()) {
-					sweepCurrentList.add(evt);
+	final class PrecRelaxationFilter extends AbstractRelaxationFilter {
+
+		public PrecRelaxationFilter(PropagagationLevel propLevel) {
+			super(propLevel);
+		}
+
+
+		@Override
+		public boolean sweep() {
+			return swap();
+		}
+
+
+		@Override
+		public int doPropagate() {
+			return PDR1Scheduler.schedule1PrecLmax(tempJobs);
+		}
+
+		@Override
+		public boolean isFeasibleSchedule() {
+			return JobUtils.isScheduledInTimeWindows(jobs);
+		}
+
+		@Override
+		public void clearEventLists() {}
+
+
+		@Override
+		public void buildEventLists() {}
+
+
+
+
+	}
+
+
+	abstract class AbstractRelaxationFilter implements IRelaxationFilter {
+
+
+		private final PropagagationLevel propLevel;
+
+		protected final ITJob[] jobSequence;
+
+		private int newUpperBound = MAX_UPPER_BOUND;
+
+		private final ArrayList<ITemporalSRelation> forwardUpdateList = new ArrayList<ITemporalSRelation>();
+
+		private final ArrayList<ITemporalSRelation> backwardUpdateList = new ArrayList<ITemporalSRelation>();
+
+		public AbstractRelaxationFilter(PropagagationLevel level) {
+			super();
+			this.propLevel = level;
+			jobSequence = Arrays.copyOf(jobs, jobs.length);
+		}
+
+
+		@Override
+		public final PropagagationLevel getPropagagationLevel() {
+			return propLevel;
+		}
+
+
+		public final void flushUpdateLists() throws ContradictionException {
+			vars[vars.length-1].updateSup(newUpperBound, RelaxLmaxConstraint.this, false);
+			for (ITemporalSRelation rel : forwardUpdateList) {
+				rel.getDirection().instantiate(1, RelaxLmaxConstraint.this, false);
+				//LOGGER.info("f "+rel.toString());
+			}
+			for (ITemporalSRelation rel : backwardUpdateList) {
+				rel.getDirection().instantiate(0, RelaxLmaxConstraint.this, false);
+				//LOGGER.info("b "+rel.toString());
+			}
+			//ChocoLogging.flushLogs();
+			clearUpdateLists();
+		}
+
+
+
+		public final void clearUpdateLists() {
+			newUpperBound = MAX_UPPER_BOUND;
+			forwardUpdateList.clear();
+			backwardUpdateList.clear();
+		}
+
+		public abstract int doPropagate();
+
+		@Override
+		public final Boolean propagatePrecedence(ITJob j1, ITJob j2) {
+			//Add successor
+			j1.addSuccessor(j2);
+			modifyDueDates(j1, j2);
+			JobUtils.resetSchedule(tempJobs);
+			//Schedule
+			final int cost = doPropagate();
+			//Unset successor
+			j1.removeSuccessor(j2);
+			// FIXME - False when modifyDueDate flag is active ! - created 20 avr. 2012 by A. Malapert
+			for (int i = 0; i < taskvars.length; i++) {
+				jobs[i].setDueDate(vars[taskIntVarOffset + i].getSup());
+			}
+			//Analyze results
+			if(cost > vars[vars.length-1].getSup()) {
+				final int idx1 = j1.getID();
+				final int idx2 = j2.getID();
+				if( disjSMod.containsConstraint(idx1, idx2)) {
+					backwardUpdateList.add(disjSMod.getConstraint(idx1, idx2));
 				} else {
-					sweepCurrentList.remove(sweepEventMap[evt.index][START]);
-					if ( ! sweepCurrentList.forEachValue(this)) {
+					forwardUpdateList.add(disjSMod.getConstraint(idx2, idx1));
+				}
+			} else if(isFeasibleSchedule() ){
+				if(cost == vars[vars.length-1].getInf()) {
+					//an optimal solution has been found
+					return Boolean.TRUE;
+				} else {
+					//else a new upper bound has been found
+					if(newUpperBound > cost ) {
+						newUpperBound = cost;
+						// FIXME - How to record an upper bound ? - created 14 avr. 2012 by A. Malapert
+						//recordUpperBound();
+					}
+				} 
+			} //else a unfeasible schedule has been found
+			return null;
+
+		}
+
+
+
+
+
+		@Override
+		public boolean swap() {
+			//On ne peut pas vérifier toutes les disjonctions, 
+			//on ne peut pas être certain que la propagation des clauses de transitivité a eu lieu
+			//Par contre, on peut inverser deux jobs consécutifs quand ils sont triés par date de début (même avec préemption)
+			//on ne peut pas se heurter au problème de transitivité (au plus une precedence entre les deux taches)
+			for (int i = 1; i < jobSequence.length; i++) {
+				final int pred = jobSequence[i-1].getID();
+				final int succ = jobSequence[i].getID();
+				final ITemporalSRelation rel = disjSMod.getEdgeConstraint(pred, succ);
+				if( rel != null && //Model stated precedence
+						! rel.isFixed()) { //Solver fixed precedence
+					//System.out.println(rel);
+					Boolean b = propagatePrecedence(jobSequence[i], jobSequence[i-1]);
+					if (b == Boolean.TRUE) {
 						return true;
 					}
 				}
-			}while(! sweepEventList.isEmpty());
-		}
-		return false;
-	}
-
-	@Override
-	public boolean execute(SweepEvent evt2) {
-		return propagatePrecedence(jobs[evt2.index], jobs[evt.index]) != Boolean.TRUE;
-	}
-
-}
-
-
-final class PrecRelaxationFilter extends AbstractRelaxationFilter {
-
-	public PrecRelaxationFilter(PropagagationLevel propLevel) {
-		super(propLevel);
-	}
-
-
-	@Override
-	public boolean sweep() {
-		return sequenceSwaps();
-	}
-
-
-	@Override
-	public int doPropagate() {
-		return PDR1Scheduler.schedule1PrecLmax(tempJobs);
-	}
-
-	@Override
-	public boolean isFeasibleSchedule() {
-		return JobUtils.isScheduledInTimeWindows(jobs);
-	}
-
-	@Override
-	public void clearEventLists() {}
-
-
-	@Override
-	public void buildEventLists() {}
-
-
-
-
-}
-
-
-abstract class AbstractRelaxationFilter implements IRelaxationFilter {
-
-
-	private final PropagagationLevel propLevel;
-
-	protected final ITJob[] jobSequence;
-
-	private int newUpperBound = MAX_UPPER_BOUND;
-
-	private final ArrayList<ITemporalSRelation> forwardUpdateList = new ArrayList<ITemporalSRelation>();
-
-	private final ArrayList<ITemporalSRelation> backwardUpdateList = new ArrayList<ITemporalSRelation>();
-
-	public AbstractRelaxationFilter(PropagagationLevel level) {
-		super();
-		this.propLevel = level;
-		jobSequence = Arrays.copyOf(jobs, jobs.length);
-	}
-
-
-	@Override
-	public final PropagagationLevel getPropagagationLevel() {
-		return propLevel;
-	}
-
-
-	public final void flushUpdateLists() throws ContradictionException {
-		vars[vars.length-1].updateSup(newUpperBound, RelaxLmaxConstraint.this, false);
-		for (ITemporalSRelation rel : forwardUpdateList) {
-			rel.getDirection().instantiate(1, RelaxLmaxConstraint.this, false);
-			//LOGGER.info("f "+rel.toString());
-		}
-		for (ITemporalSRelation rel : backwardUpdateList) {
-			rel.getDirection().instantiate(0, RelaxLmaxConstraint.this, false);
-			//LOGGER.info("b "+rel.toString());
-		}
-		//ChocoLogging.flushLogs();
-		clearUpdateLists();
-	}
-
-
-
-	public final void clearUpdateLists() {
-		newUpperBound = MAX_UPPER_BOUND;
-		forwardUpdateList.clear();
-		backwardUpdateList.clear();
-	}
-
-	public abstract int doPropagate();
-
-	@Override
-	public final Boolean propagatePrecedence(ITJob j1, ITJob j2) {
-		//Add successor
-		j1.addSuccessor(j2);
-		modifyDueDates(j1, j2);
-		JobUtils.resetSchedule(tempJobs);
-		//Schedule
-		final int cost = doPropagate();
-		//Unset successor
-		j1.removeSuccessor(j2);
-		// FIXME - False when modifyDueDate flag is active ! - created 20 avr. 2012 by A. Malapert
-		for (int i = 0; i < taskvars.length; i++) {
-			jobs[i].setDueDate(vars[taskIntVarOffset + i].getSup());
-		}
-		//Analyze results
-		if(cost > vars[vars.length-1].getSup()) {
-			final int idx1 = j1.getID();
-			final int idx2 = j2.getID();
-			if( disjSMod.containsConstraint(idx1, idx2)) {
-				backwardUpdateList.add(disjSMod.getConstraint(idx1, idx2));
-			} else {
-				forwardUpdateList.add(disjSMod.getConstraint(idx2, idx1));
 			}
-		} else if(isFeasibleSchedule() ){
-			if(cost == vars[vars.length-1].getInf()) {
-				//an optimal solution has been found
-				return Boolean.TRUE;
-			} else {
-				//else a new upper bound has been found
-				if(newUpperBound > cost ) {
-					newUpperBound = cost;
-					// FIXME - How to record an upper bound ? - created 14 avr. 2012 by A. Malapert
-					//recordUpperBound();
-				}
-			} 
-		} //else a unfeasible schedule has been found
-		return null;
-
-	}
+			return false;
+		}
 
 
 
-
-
-	@Override
-	public final boolean sequenceSwaps() {
-		//On ne peut pas vérifier toutes les disjonctions, 
-		//on ne peut pas être certain que la propagation des clauses de transitivité a eu lieu
-		// par contre on peut inverser des paires de taches consecutives ?
-		//			for (ITemporalSRelation rel : disjunctList) {
-		//				if( ! rel.isFixed()) {
-		//					//System.out.println(rel);
-		//					ITJob j1 = jobs[rel.getOrigin().getID()];
-		//					ITJob j2 = jobs[rel.getDestination().getID()];
-		//					Boolean b = propagatePrecedence(j1, j2);
-		//					if(b == null) {
-		//						b = propagatePrecedence(j2, j1);
-		//					}
-		//					if (b == Boolean.TRUE) {
-		//						return true;
-		//					}
-		//				}
-		//			}
-		//Par contre, on peut inverser deux jobs consécutifs quand ils sont triés par date de début (même avec préemption)
-		//on ne peut pas se heurter au problème de transitivité (au plus une precedence entre les deux taches)
-		for (int i = 1; i < jobSequence.length; i++) {
-			final int pred = jobSequence[i-1].getID();
-			final int succ = jobSequence[i].getID();
-			final ITemporalSRelation rel = disjSMod.getEdgeConstraint(pred, succ);
-			if( rel != null && //Model stated precedence
-					! rel.isFixed()) { //Solver fixed precedence
-				//System.out.println(rel);
-				Boolean b = propagatePrecedence(jobSequence[i], jobSequence[i-1]);
-				if (b == Boolean.TRUE) {
-					return true;
+		@Override
+		public final boolean filterObjective() throws ContradictionException {
+			if(propLevel.isOn()) {
+				JobUtils.resetSchedule(tempJobs);
+				final int lb = doPropagate();
+				//LOGGER.info("LB "+lb + " -> "+vars[vars.length-1].pretty());
+				vars[vars.length-1].updateInf(lb, RelaxLmaxConstraint.this, false);
+				if(isFeasibleSchedule()) return true;
+				else if(propLevel == PropagagationLevel.SWEEP) {
+					Arrays.sort(jobSequence, TaskComparators.makeEarliestStartingTimeCmp());
+					clearUpdateLists();
+					clearEventLists();
+					buildEventLists();	
+				} else if (propLevel == PropagagationLevel.SWAP) {
+					Arrays.sort(jobSequence, TaskComparators.makeEarliestStartingTimeCmp());
+					clearUpdateLists();
+					clearEventLists();
+					buildEventLists();	
 				}
 			}
+			return false;
 		}
-		return false;
-	}
 
-
-
-	@Override
-	public final boolean filterObjective() throws ContradictionException {
-		if(propLevel.isOn()) {
-			JobUtils.resetSchedule(tempJobs);
-			final int lb = doPropagate();
-			//LOGGER.info("LB "+lb + " -> "+vars[vars.length-1].pretty());
-			vars[vars.length-1].updateInf(lb, RelaxLmaxConstraint.this, false);
-			if(isFeasibleSchedule()) return true;
-			else if(propLevel == PropagagationLevel.SWEEP) {
-				Arrays.sort(jobSequence, TaskComparators.makeEarliestStartingTimeCmp());
-				clearUpdateLists();
-				clearEventLists();
-				buildEventLists();	
-			} else if (propLevel == PropagagationLevel.SWAP) {
-				Arrays.sort(jobSequence, TaskComparators.makeEarliestStartingTimeCmp());
-				clearUpdateLists();
+		@Override
+		public final boolean filterPrecedences() {
+			assert ( forwardUpdateList.isEmpty() && backwardUpdateList.isEmpty());
+			switch (propLevel) {
+			case SWEEP : return sweep();
+			case SWAP: return swap();
+			default:return false;
 			}
 		}
-		return false;
-	}
 
-	@Override
-	public final boolean filterPrecedences() {
-		assert ( forwardUpdateList.isEmpty() && backwardUpdateList.isEmpty());
-		switch (propLevel) {
-		case SWEEP : return sweep();
-		case SWAP: return sequenceSwaps();
-		default:return false;
-		}
 	}
-
-}
 
 
 
@@ -622,7 +634,7 @@ interface IRelaxationFilter {
 
 	abstract Boolean propagatePrecedence(ITJob j1, ITJob j2);
 
-	abstract boolean sequenceSwaps();
+	abstract boolean swap();
 
 	abstract void buildEventLists();
 
