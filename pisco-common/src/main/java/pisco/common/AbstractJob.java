@@ -5,6 +5,8 @@ import gnu.trove.TObjectProcedure;
 import java.util.Arrays;
 
 import choco.Choco;
+import choco.kernel.common.util.iterators.ArrayIterator;
+import choco.kernel.common.util.iterators.DisposableIterator;
 import choco.kernel.solver.variables.scheduling.AbstractTask;
 import choco.kernel.solver.variables.scheduling.ITimePeriodList;
 
@@ -276,9 +278,22 @@ public abstract class AbstractJob extends AbstractTask implements ITJob, IHook {
 		succ.unsetPredecessor(this);
 	}
 
+	
 	////////////////////////////////////////////////////////////////////
 	///////////////////// Scheduling  //////////////////////////////////
 	////////////////////////////////////////////////////////////////////
+
+	@Override
+	public DisposableIterator<ITJob> getPredIterator() {
+		return ArrayIterator.getIterator(predecessors, predecessorCount);
+	}
+
+
+	@Override
+	public DisposableIterator<ITJob> getSuccIterator() {
+		return ArrayIterator.getIterator(successors, successorCount);
+	}
+
 
 	@Override
 	public final int getRemainingDuration() {

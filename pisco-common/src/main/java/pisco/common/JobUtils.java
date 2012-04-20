@@ -3,6 +3,7 @@ import static choco.Choco.constant;
 import java.util.Iterator;
 import java.util.ListIterator;
 
+import choco.kernel.common.util.iterators.DisposableIterator;
 import choco.kernel.model.variables.integer.IntegerConstantVariable;
 import choco.kernel.solver.variables.scheduling.ITask;
 
@@ -67,6 +68,8 @@ public final class JobUtils {
 	public final static void modifyDueDates(final ITJob[] jobs) {
 		modifyDueDates(jobs, new ProcModDueDate());
 	}
+	
+	
 
 	public final static void modifyDueDates(final ITJob[] jobs, final ProcModDueDate procedure) {
 		//initialize
@@ -80,6 +83,21 @@ public final class JobUtils {
 			current.forEachPredecessor(procedure);
 		}
 	}
+
+	
+
+	public final static void modifyDueDates(final ITJob origin, final ITJob Destination) {
+		final int modifiedDueDate = Destination.getDueDate() - Destination.getDuration();
+		if(modifiedDueDate < origin.getDueDate()) {
+			origin.setDueDate(modifiedDueDate);
+			final DisposableIterator<ITJob> iter = origin.getPredIterator();
+			while(iter.hasNext()) {
+				modifyDueDates(iter.next(), origin);
+			}
+		}
+	}
+		
+	
 	public final static void modifyDeadlines(int horizon, ITJob... jobs) {
 		for (ITJob j : jobs) {
 			if(j.getDeadline() > horizon) j.setDeadline(horizon);

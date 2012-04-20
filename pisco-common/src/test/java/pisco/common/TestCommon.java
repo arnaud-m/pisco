@@ -102,6 +102,22 @@ public class TestCommon {
 	}
 	
 	@Test
+	public void testIncModifyDueDates() {
+		final PJob[] jobs = buildInstance();
+		JobUtils.modifyDueDates(jobs);
+		jobs[1].addSuccessor(jobs[4]);
+		JobUtils.modifyDueDates(jobs[1], jobs[4]);
+		jobs[0].addSuccessor(jobs[4]);
+		JobUtils.modifyDueDates(jobs[0], jobs[4]);
+		//VisuFactory.getDotManager().show(new DottyBean(jobs));
+		//System.out.println(Arrays.toString(jobs));
+		final int[] mdd = {6,6,0,14,12};
+		for (int i = 0; i < jobs.length; i++) {
+			assertEquals(mdd[i], jobs[i].getDueDate());
+		}
+	}
+	
+	@Test
 	public void testPreemptiveLmaxBug() {
 		final int n = 3;
 		ITJob[] jobs = new ITJob[n];
