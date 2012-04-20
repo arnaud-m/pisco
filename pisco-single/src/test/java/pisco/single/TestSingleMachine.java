@@ -23,7 +23,7 @@ public class TestSingleMachine {
 		"clauses", "ordering", "mod-dd"
 	};
 	
-	//private final static String[] CONFS = {"mod-dd"};
+	//private final static String[] CONFS = {"pmtn-swap", "pmtn-sweep"};
 
 	private final static SchedulingBranchingFactory.Branching[] branchings = new SchedulingBranchingFactory.Branching[]{
 		//SchedulingBranchingFactory.Branching.ST, //too slow
@@ -38,7 +38,7 @@ public class TestSingleMachine {
 	@BeforeClass
 	public final static void setUp() {
 		ChocoLogging.setVerbosity(Verbosity.QUIET);
-		//ChocoLogging.setVerbosity(Verbosity.SEARCH);
+		ChocoLogging.setVerbosity(Verbosity.VERBOSE);
 	}
 
 	@AfterClass

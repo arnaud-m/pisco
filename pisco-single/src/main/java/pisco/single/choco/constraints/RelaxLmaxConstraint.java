@@ -208,8 +208,6 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		if(pmtnRelaxation.filterObjective() || precRelaxation.filterObjective()  ||
 				pmtnRelaxation.filterPrecedences() || precRelaxation.filterPrecedences()) {
 			//an optimal solution has been found during propagation
-			pmtnRelaxation.clearUpdateLists();
-			precRelaxation.clearUpdateLists();
 			recordSolution();
 		} else {
 			pmtnRelaxation.flushUpdateLists();
@@ -455,6 +453,7 @@ abstract class AbstractRelaxationFilter implements IRelaxationFilter {
 		final int cost = doPropagate();
 		//Unset successor
 		j1.removeSuccessor(j2);
+		// FIXME - False when modifyDueDate flag is active ! - created 20 avr. 2012 by A. Malapert
 		for (int i = 0; i < taskvars.length; i++) {
 			jobs[i].setDueDate(vars[taskIntVarOffset + i].getSup());
 		}
@@ -537,10 +536,12 @@ abstract class AbstractRelaxationFilter implements IRelaxationFilter {
 			if(isFeasibleSchedule()) return true;
 			else if(propLevel == PropagagationLevel.SWEEP) {
 				Arrays.sort(jobSequence, TaskComparators.makeEarliestStartingTimeCmp());
+				clearUpdateLists();
 				clearEventLists();
 				buildEventLists();	
 			} else if (propLevel == PropagagationLevel.SWAP) {
 				Arrays.sort(jobSequence, TaskComparators.makeEarliestStartingTimeCmp());
+				clearUpdateLists();
 			}
 		}
 		return false;
@@ -548,6 +549,7 @@ abstract class AbstractRelaxationFilter implements IRelaxationFilter {
 
 	@Override
 	public final boolean filterPrecedences() {
+		assert ( forwardUpdateList.isEmpty() && backwardUpdateList.isEmpty());
 		switch (propLevel) {
 		case SWEEP : return sweep();
 		case SWAP: return sequenceSwaps();
