@@ -359,7 +359,7 @@ final class PmtnRelaxationFilter extends AbstractRelaxationFilter implements TOb
 		if( ! sweepEventList.isEmpty()) {
 			assert sweepEventList.getFirst().isStartEvent();
 			do {
-				final SweepEvent evt = sweepEventList.removeFirst();
+				evt = sweepEventList.removeFirst();
 				if(evt.isStartEvent()) {
 					sweepCurrentList.add(evt);
 				} else {
@@ -608,7 +608,7 @@ final class SweepEvent extends TLinkableAdapter implements Comparable<SweepEvent
 
 	@Override
 	public int compareTo(SweepEvent o) {
-		return coordinate< o.coordinate? -1 : coordinate== o.coordinate ? (startEvent ? -1 : o.startEvent ? 1 : 0) : 1;
+		return coordinate< o.coordinate? -1 : coordinate== o.coordinate ?  ( startEvent ? ( o.startEvent ? 0 : 1) : -1) : 1;
 	}
 
 	@Override
