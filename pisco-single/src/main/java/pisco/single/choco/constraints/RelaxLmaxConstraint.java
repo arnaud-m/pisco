@@ -153,6 +153,8 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			jobs[i].setDeadline(taskvars[i].getLCT());
 		}
 	}
+	
+	
 
 	class TSuccprocedure implements TIntProcedure {
 
@@ -196,7 +198,8 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		checkSolutionStamp();
 		buildJobs();
 		buildPrecedence();
-		//Modify Due Dates 
+		//Modify Due Dates
+		//LOGGER.info(vars[vars.length-1].pretty());
 		if(modifyDueDate) {
 			modifyDueDates(tempJobs);
 		} //else all (due date) constraints are not always revised and therefore some due dates entirely modified
@@ -248,6 +251,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		} catch (ContradictionException e) {
 			throw new SolverException("can't record solution because of time windows");
 		}
+		setEntailed();
 	} 
 
 
@@ -276,32 +280,6 @@ public int getFilteredEventMask(int idx) {
 }
 
 
-static interface IRelaxationFilter {
-
-
-	abstract PropagagationLevel getPropagagationLevel();
-
-	abstract boolean isFeasibleSchedule();
-
-	abstract boolean filterObjective() throws ContradictionException;
-
-	abstract Boolean propagatePrecedence(ITJob j1, ITJob j2);
-
-	abstract boolean sequenceSwaps();
-
-	abstract void buildEventLists();
-
-	abstract void clearEventLists();
-
-	abstract boolean sweep();
-
-	abstract boolean filterPrecedences();
-
-	void flushUpdateLists() throws ContradictionException;
-
-	void clearUpdateLists();
-}
-
 final class PmtnRelaxationFilter extends AbstractRelaxationFilter implements TObjectProcedure<SweepEvent> {
 
 	private final SweepEvent[][] sweepEventMap;
@@ -323,7 +301,7 @@ final class PmtnRelaxationFilter extends AbstractRelaxationFilter implements TOb
 
 	@Override
 	public int doPropagate() {
-		return Pmtn1Scheduler.schedule1Lmax(tempJobs);
+		return Pmtn1Scheduler.schedule1PrecLmax(tempJobs);
 	}
 
 
@@ -375,7 +353,7 @@ final class PmtnRelaxationFilter extends AbstractRelaxationFilter implements TOb
 
 	@Override
 	public boolean execute(SweepEvent evt2) {
-		return propagatePrecedence(jobs[evt.index], jobs[evt2.index]) != Boolean.TRUE;
+		return propagatePrecedence(jobs[evt2.index], jobs[evt.index]) != Boolean.TRUE;
 	}
 
 }
@@ -447,12 +425,13 @@ abstract class AbstractRelaxationFilter implements IRelaxationFilter {
 		vars[vars.length-1].updateSup(newUpperBound, RelaxLmaxConstraint.this, false);
 		for (ITemporalSRelation rel : forwardUpdateList) {
 			rel.getDirection().instantiate(1, RelaxLmaxConstraint.this, false);
-			//LOGGER.info("u "+rel.toString());
+			//LOGGER.info("f "+rel.toString());
 		}
 		for (ITemporalSRelation rel : backwardUpdateList) {
 			rel.getDirection().instantiate(0, RelaxLmaxConstraint.this, false);
-			//LOGGER.info("u "+rel.toString());
+			//LOGGER.info("b "+rel.toString());
 		}
+		//ChocoLogging.flushLogs();
 		clearUpdateLists();
 	}
 
@@ -468,10 +447,18 @@ abstract class AbstractRelaxationFilter implements IRelaxationFilter {
 
 	@Override
 	public final Boolean propagatePrecedence(ITJob j1, ITJob j2) {
+		//Add successor
 		j1.addSuccessor(j2);
+		modifyDueDates(j1, j2);
 		JobUtils.resetSchedule(tempJobs);
+		//Schedule
 		final int cost = doPropagate();
+		//Unset successor
 		j1.removeSuccessor(j2);
+		for (int i = 0; i < taskvars.length; i++) {
+			jobs[i].setDueDate(vars[taskIntVarOffset + i].getSup());
+		}
+		//Analyze results
 		if(cost > vars[vars.length-1].getSup()) {
 			final int idx1 = j1.getID();
 			final int idx2 = j2.getID();
@@ -547,14 +534,14 @@ abstract class AbstractRelaxationFilter implements IRelaxationFilter {
 			final int lb = doPropagate();
 			//LOGGER.info("LB "+lb + " -> "+vars[vars.length-1].pretty());
 			vars[vars.length-1].updateInf(lb, RelaxLmaxConstraint.this, false);
-			if(propLevel == PropagagationLevel.SWEEP) {
+			if(isFeasibleSchedule()) return true;
+			else if(propLevel == PropagagationLevel.SWEEP) {
 				Arrays.sort(jobSequence, TaskComparators.makeEarliestStartingTimeCmp());
 				clearEventLists();
 				buildEventLists();	
 			} else if (propLevel == PropagagationLevel.SWAP) {
 				Arrays.sort(jobSequence, TaskComparators.makeEarliestStartingTimeCmp());
 			}
-			return isFeasibleSchedule();
 		}
 		return false;
 	}
@@ -618,4 +605,32 @@ final class SweepEvent extends TLinkableAdapter implements Comparable<SweepEvent
 
 
 
+}
+
+
+
+interface IRelaxationFilter {
+
+
+	abstract PropagagationLevel getPropagagationLevel();
+
+	abstract boolean isFeasibleSchedule();
+
+	abstract boolean filterObjective() throws ContradictionException;
+
+	abstract Boolean propagatePrecedence(ITJob j1, ITJob j2);
+
+	abstract boolean sequenceSwaps();
+
+	abstract void buildEventLists();
+
+	abstract void clearEventLists();
+
+	abstract boolean sweep();
+
+	abstract boolean filterPrecedences();
+
+	void flushUpdateLists() throws ContradictionException;
+
+	void clearUpdateLists();
 }

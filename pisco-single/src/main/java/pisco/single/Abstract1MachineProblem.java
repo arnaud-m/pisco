@@ -97,7 +97,8 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		//settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);
 		//		settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
 		//		settings.putBoolean(BasicSettings.LIGHT_MODEL, true);
-		//	settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
+		//settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);
+		//settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
 	}
 
 

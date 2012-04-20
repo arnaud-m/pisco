@@ -76,7 +76,7 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 				heuristic.storeSolution(lbjobs, getComputedLowerBound());
 			} else {
 				JobUtils.resetSchedule(lbjobs);
-				final int lb = Pmtn1Scheduler.schedule1Lmax(lbjobs);
+				final int lb = Pmtn1Scheduler.schedule1PrecLmax(lbjobs);
 
 				if(! JobUtils.isInterrupted(lbjobs)) {
 					setComputedLowerBound(lb);

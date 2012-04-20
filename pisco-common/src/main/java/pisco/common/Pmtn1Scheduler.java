@@ -53,11 +53,11 @@ public final class Pmtn1Scheduler {
 		
 	}
 
-	public final static int schedule1Lmax(ITJob[] jobs) {
-		return schedule1Lmax(jobs, new Proc1Lmax());
+	public final static int schedule1PrecLmax(ITJob[] jobs) {
+		return schedule1PrecLmax(jobs, new Proc1Lmax());
 	}
 	
-	public final static int schedule1Lmax(ITJob[] jobs, Proc1Lmax procedure) {
+	public final static int schedule1PrecLmax(ITJob[] jobs, Proc1Lmax procedure) {
 		//initialize
 		int lmax = MIN_LOWER_BOUND;
 		for (int i = 0; i < jobs.length; i++) {

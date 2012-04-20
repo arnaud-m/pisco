@@ -75,7 +75,7 @@ public class TestCommon {
 	public void testPreemptiveSchedule() {
 		PJob[] jobs = buildInstance();
 		System.out.println(Arrays.toString(jobs));
-		Pmtn1Scheduler.schedule1Lmax(jobs);
+		Pmtn1Scheduler.schedule1PrecLmax(jobs);
 		//ChocoChartFactory.createAndShowGUI("Test", ChocoChartFactory.createGanttChart("Test", jobs));
 		System.out.println(Arrays.toString(jobs));
 	}
@@ -136,7 +136,7 @@ public class TestCommon {
 		jobs[0].addSuccessor(jobs[2]);
 		jobs[1].addSuccessor(jobs[2]);
 		
-		Pmtn1Scheduler.schedule1Lmax(jobs);
+		Pmtn1Scheduler.schedule1PrecLmax(jobs);
 		
 		testJob(jobs[0], 0, 1);
 		testJob(jobs[1], 1, 3);
