@@ -608,7 +608,12 @@ final class SweepEvent extends TLinkableAdapter implements Comparable<SweepEvent
 
 	@Override
 	public int compareTo(SweepEvent o) {
-		return index < o.index ? -1 : index == o.index ? (startEvent ? -1 : o.startEvent ? 1 : 0) : 1;
+		return coordinate< o.coordinate? -1 : coordinate== o.coordinate ? (startEvent ? -1 : o.startEvent ? 1 : 0) : 1;
+	}
+
+	@Override
+	public String toString() {
+		return (startEvent ? "S" : "E" )+"("+coordinate + "," + index + ")";
 	}
 
 
