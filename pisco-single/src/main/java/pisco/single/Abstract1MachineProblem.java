@@ -97,8 +97,9 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		//settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);
 		//		settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
 		//		settings.putBoolean(BasicSettings.LIGHT_MODEL, true);
-		//settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);
-		//settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
+		defaultConf.putTrue(SingleMachineSettings.MODIFY_DUE_DATES);
+//		settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);
+//		settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
 	}
 
 
@@ -240,19 +241,19 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		return solver;
 	}
 
-	@Override
-	public Boolean solve() {
-		//		//Print initial propagation		
-		//		try {
-		//			solver.propagate();
-		//		} catch (ContradictionException e) {
-		//			e.printStackTrace();
-		//		}
-		//		if( defaultConf.readBoolean(BasicSettings.SOLUTION_REPORT) ) {
-		//			displayChart(disjSModel, VisuFactory.getDotManager());
-		//		}
-		return super.solve();
-	}
+//	@Override
+//	public Boolean solve() {
+//		//		//Print initial propagation		
+//		//		try {
+//		//			solver.propagate();
+//		//		} catch (ContradictionException e) {
+//		//			e.printStackTrace();
+//		//		}
+//		//		if( defaultConf.readBoolean(BasicSettings.SOLUTION_REPORT) ) {
+//		//			displayChart(disjSModel, VisuFactory.getDotManager());
+//		//		}
+//		return super.solve();
+//	}
 
 
 	@Override
@@ -263,7 +264,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		if (parser instanceof Abstract1MachineParser) {
 			logMsg.storeConfiguration(((Abstract1MachineParser) parser).getParserMsg());
 		}
-		//logMsg.storeConfiguration(getPropertyDiagnostic());
+		logMsg.storeConfiguration(getPropertyDiagnostic());
 	}
 
 

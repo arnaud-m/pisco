@@ -47,6 +47,7 @@ import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.Solver;
 import choco.kernel.solver.variables.integer.IntDomainVar;
+import choco.kernel.visu.VisuFactory;
 import choco.visu.components.chart.ChocoChartFactory;
 
 public class SingleMachineLmax extends Abstract1MachineProblem {
@@ -111,7 +112,6 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 	public Model buildModel() {
 		final Model model = super.buildModel();
 		objVar = buildObjective("Lmax",MAX_UPPER_BOUND);
-		defaultConf.putTrue(SingleMachineSettings.MODIFY_DUE_DATES);
 		if(defaultConf.readBoolean(SingleMachineSettings.MODIFY_DUE_DATES)) {
 			///////////
 			//Create Due date Variables 
@@ -191,17 +191,16 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 	@Override
 	public Solver buildSolver() {
 		CPSolver s = (CPSolver) super.buildSolver();
-		if(SingleMachineSettings.stateRelaxationConstraint(this)) {
-			////////////
-			//Add relaxation constraint
-			RelaxLmaxConstraint.canFailOnSolutionRecording = DisjunctiveSettings.getBranching(s.getConfiguration()) == SchedulingBranchingFactory.Branching.ST;
-			// FIXME - Awful : can not really postponed until the disjunctive model is built - created 10 avr. 2012 by A. Malapert
-			s.addConstraint(
-					new ComponentConstraint(RelaxLmaxManager.class, 
-							this, 
-							ArrayUtils.append(tasks, dueDates, new IntegerVariable[]{objVar})));				
-		}
-		
+//		if(SingleMachineSettings.stateRelaxationConstraint(this)) {
+//			////////////
+//			//Add relaxation constraint
+//			RelaxLmaxConstraint.canFailOnSolutionRecording = DisjunctiveSettings.getBranching(s.getConfiguration()) == SchedulingBranchingFactory.Branching.ST;
+//			// FIXME - Awful : can not really postponed until the disjunctive model is built - created 10 avr. 2012 by A. Malapert
+//			s.addConstraint(
+//					new ComponentConstraint(RelaxLmaxManager.class, 
+//							this, 
+//							ArrayUtils.append(tasks, dueDates, new IntegerVariable[]{objVar})));				
+//		}
 		if( defaultConf.readBoolean(SingleMachineSettings.TASK_ORDERING) && ! hasSetupTimes() ) {
 			//Escape from a bug in the preprocessing by :
 			// instantiating variable replaced (but unfortunatly already created) during the preprocessing)
@@ -220,6 +219,28 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 	}
 
 
+	@Override
+	public Boolean solve() {
+		//Print initial propagation		
+		
+		solver.getSearchStrategy().initialPropagation();
+		//VisuFactory.getDotManager().show(((PreProcessCPSolver) solver).getDisjSModel());
+		//LOGGER.info(solver.pretty());
+		if(SingleMachineSettings.stateRelaxationConstraint(this)) {
+			////////////
+			//Add relaxation constraint
+			RelaxLmaxConstraint.canFailOnSolutionRecording = DisjunctiveSettings.getBranching(solver.getConfiguration()) == SchedulingBranchingFactory.Branching.ST;
+			// FIXME - Awful : can not really postponed until the disjunctive model is built - created 10 avr. 2012 by A. Malapert
+			//More awful : all other constraints must be awaken before the relaxation.
+			//The only advantage build a better precedence graph
+			((CPSolver) solver).addConstraint(
+					new ComponentConstraint(RelaxLmaxManager.class, 
+							this, 
+							ArrayUtils.append(tasks, dueDates, new IntegerVariable[]{objVar})));				
+		}
+		return super.solve();
+	}
+	
 	@Override
 	protected Object makeSolutionChart() {
 		return solver != null && solver.existsSolution() ?

@@ -20,10 +20,10 @@ public class TestSingleMachine {
 
 	private final static String[] CONFS = {"basic", "pmtn", "pmtn-swap", "pmtn-sweep",
 		"prec", "prec-swap", "pmtn-prec-swaps", 
-		"clauses", "ordering", "mod-dd"
+		"clauses", "ordering", "mod-dd", "all"
 	};
 	
-	//private final static String[] CONFS = {"pmtn-swap", "pmtn-sweep"};
+	//private final static String[] CONFS = {"all"};
 
 	private final static SchedulingBranchingFactory.Branching[] branchings = new SchedulingBranchingFactory.Branching[]{
 		//SchedulingBranchingFactory.Branching.ST, //too slow
@@ -72,12 +72,12 @@ public class TestSingleMachine {
 
 	@Test
 	public void testN10() {
-		testInstances(PATH, branchings, "p10_1*.dat");
+		testInstances(PATH, branchings, "p10_1*.dat", "p10_2*.dat");
 	}
 
 	@Test
 	public void testN20() {
-		testInstances(PATH, branchings, "p20_2.dat", "p20_200.dat", "p20_205.dat", "p20_23*.dat");
+		testInstances(PATH, branchings, "p20_2.dat", "p20_192", "p20_194", "p20_199", "p20_200.dat", "p20_205.dat", "p20_23*.dat");
 	}
 
 	@Test

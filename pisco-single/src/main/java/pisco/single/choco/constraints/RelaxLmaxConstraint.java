@@ -1,5 +1,6 @@
 package pisco.single.choco.constraints;
 
+import static choco.cp.common.util.preprocessor.detector.scheduling.DisjunctiveSModel.*;
 import static choco.Choco.MAX_UPPER_BOUND;
 import static pisco.common.JobUtils.modifyDueDates;
 import gnu.trove.TIntArrayList;
@@ -10,12 +11,15 @@ import gnu.trove.TObjectProcedure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 
 import pisco.common.ITJob;
 import pisco.common.JobUtils;
 import pisco.common.PDR1Scheduler;
 import pisco.common.PJob;
 import pisco.common.Pmtn1Scheduler;
+import pisco.common.PDR1Scheduler.Proc1PrecLmax;
+import pisco.common.Pmtn1Scheduler.Proc1Lmax;
 import pisco.common.TCollections;
 import pisco.single.Abstract1MachineProblem;
 import pisco.single.SingleMachineSettings;
@@ -24,6 +28,7 @@ import choco.cp.common.util.preprocessor.detector.scheduling.DisjunctiveSModel;
 import choco.cp.solver.constraints.global.scheduling.precedence.ITemporalSRelation;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
 import choco.cp.solver.variables.integer.IntVarEvent;
+import choco.kernel.common.DottyBean;
 import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.common.util.iterators.DisposableIntIterator;
 import choco.kernel.solver.ContradictionException;
@@ -31,6 +36,7 @@ import choco.kernel.solver.SolverException;
 import choco.kernel.solver.constraints.global.scheduling.AbstractTaskSConstraint;
 import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.kernel.solver.variables.scheduling.TaskVar;
+import choco.kernel.visu.VisuFactory;
 
 public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
@@ -38,7 +44,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 	protected final Abstract1MachineProblem problem;
 
-	private final boolean modifyDueDate;
+	private final int[] savedDueDates;
 
 	protected final ITJob[] jobs;
 
@@ -64,7 +70,6 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 	public RelaxLmaxConstraint(Abstract1MachineProblem problem, TaskVar[] taskvars, IntDomainVar[] disjuncts, IntDomainVar lmax) {
 		super(taskvars, disjuncts, lmax);
 		this.problem = problem;
-		modifyDueDate = ! problem.getConfiguration().readBoolean(SingleMachineSettings.MODIFY_DUE_DATES);
 		jobs = new ITJob[taskvars.length];
 		for (int i = 0; i < jobs.length; i++) {
 			jobs[i] = new PJob(taskvars[i].getID());
@@ -72,6 +77,10 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			assert(taskvars[i].getID() == i && taskvars[i].getID() == problem.jobs[i].getID());
 		}
 		tempJobs = Arrays.copyOf(jobs, jobs.length);
+
+		savedDueDates = problem.getConfiguration().readBoolean(SingleMachineSettings.MODIFY_DUE_DATES) ? null : new int[jobs.length];
+		//savedDueDates = new int[jobs.length];
+
 
 		pmtnRelaxation = new PmtnRelaxationFilter(SingleMachineSettings.readPmtnLevel(problem));
 		precRelaxation = new PrecRelaxationFilter(SingleMachineSettings.readPrecLevel(problem));
@@ -137,7 +146,29 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 	public void awake() throws ContradictionException {
 		PreProcessCPSolver ppsolver = ( (PreProcessCPSolver) problem.getSolver());
 		disjSMod = ppsolver.getDisjSModel();
-		precReductionGraph = ppsolver.getDisjModel().convertPrecGraph();
+		//Generate Precedence Graph
+		BitSet[] graph = disjSMod.generatePrecGraph();
+		//Compute and propagate Transitive Closure
+		floydMarshallClosure(graph);
+		BitSet[] toPropagate = copy(graph);
+		andNot(toPropagate, graph);
+		for (int i = 0; i < toPropagate.length; i++) {
+			//From currently fixed disjunctions
+			for (int j = toPropagate[i].nextSetBit(0); j >= 0; j = toPropagate[i]
+					.nextSetBit(j + 1)) {
+				if(disjSMod.containsEdge(i, j)) {
+					final ITemporalSRelation rel = disjSMod.getConstraint(i, j);
+					if(rel == null) {
+						disjSMod.getConstraint(j, i).getDirection().instantiate(0, this, false);
+					} else {
+						rel.getDirection().instantiate(1, this, false);
+					}
+				}
+			}
+		}
+		//Compute and convert reduction graph for further uses
+		floydMarshallReduction(graph);
+		precReductionGraph = convertToLists(graph);
 		disjunctList = disjSMod.getEdges();
 		super.awake();
 	}
@@ -175,7 +206,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			precReductionGraph[i].forEach( succProc);
 		}
 
-		// FIXME - Brute force implementation (not incremental at all) - created 10 avr. 2012 by A. Malapert
+		// FIXME - Brute force (not incremental at all) - created 10 avr. 2012 by A. Malapert
 		for (ITemporalSRelation rel : disjunctList) {
 			//assert(rel.isFixed());
 			if(rel.isFixed()) {
@@ -190,17 +221,20 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		}
 	}
 
-
-
 	@Override
 	public void propagate() throws ContradictionException {
 		checkSolutionStamp();
 		buildJobs();
 		buildPrecedence();
+		//VisuFactory.getDotManager().show(new DottyBean(jobs));
 		//Modify Due Dates
 		//LOGGER.info(vars[vars.length-1].pretty());
-		if(modifyDueDate) {
+		//modifyDueDates(tempJobs);
+		if(savedDueDates != null) {
 			modifyDueDates(tempJobs);
+			for (int i = 0; i < jobs.length; i++) {
+				savedDueDates[i] = jobs[i].getDueDate();
+			}
 		} //else all (due date) constraints are not always revised and therefore some due dates entirely modified
 		//We should prove that the lower bound is still valid or enforce their consistency "by hand" 
 		////////////////
@@ -266,6 +300,22 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		//	problem.getSolver().worldPopDuringPropagation();
 	}
 
+
+
+	private void restoreDueDates() {
+		if(savedDueDates == null) {
+			for (int i = 0; i < taskvars.length; i++) {
+				jobs[i].setDueDate(vars[taskIntVarOffset + i].getSup());
+			}
+		} else {
+			for (int i = 0; i < taskvars.length; i++) {
+				jobs[i].setDueDate(savedDueDates[i]);
+			}	
+		}
+	}
+
+
+	
 	@Override
 	public int getFilteredEventMask(int idx) {
 		if(idx < startOffset) return IntVarEvent.INCINF_MASK;
@@ -279,13 +329,14 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 	final class PmtnRelaxationFilter extends AbstractRelaxationFilter implements TObjectProcedure<SweepEvent> {
 
+		private final Proc1Lmax procedure = new Proc1Lmax();
 		public PmtnRelaxationFilter(PropagagationLevel propLevel) {
 			super(propLevel);
 		}
 
 		@Override
 		public int doPropagate() {
-			return Pmtn1Scheduler.schedule1PrecLmax(tempJobs);
+			return Pmtn1Scheduler.schedule1PrecLmax(tempJobs, procedure);
 		}
 
 
@@ -298,14 +349,16 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 	final class PrecRelaxationFilter extends AbstractRelaxationFilter {
 
+		private final Proc1PrecLmax procedure = new Proc1PrecLmax();
+		
 		public PrecRelaxationFilter(PropagagationLevel propLevel) {
 			super(propLevel);
 		}
 
-		
+
 		@Override
 		public int doPropagate() {
-			return PDR1Scheduler.schedule1PrecLmax(tempJobs);
+			return PDR1Scheduler.schedule1PrecLmax(tempJobs, procedure);
 		}
 
 		@Override
@@ -400,7 +453,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			TCollections.sort(sweepEventList);
 		}
 
-		
+
 		public abstract int doPropagate();
 
 		@Override
@@ -420,7 +473,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			return false;
 		}
 
-		
+
 		@Override
 		public final Boolean propagatePrecedence(ITJob j1, ITJob j2) {
 			//Add successor
@@ -431,10 +484,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			final int cost = doPropagate();
 			//Unset successor
 			j1.removeSuccessor(j2);
-			// FIXME - False when modifyDueDate flag is active ! - created 20 avr. 2012 by A. Malapert
-			for (int i = 0; i < taskvars.length; i++) {
-				jobs[i].setDueDate(vars[taskIntVarOffset + i].getSup());
-			}
+			restoreDueDates();
 			//Analyze results
 			if(cost > vars[vars.length-1].getSup()) {
 				final int idx1 = j1.getID();
@@ -452,7 +502,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 					//else a new upper bound has been found
 					if(newUpperBound > cost ) {
 						newUpperBound = cost;
-						// FIXME - How to record an upper bound ? - created 14 avr. 2012 by A. Malapert
+						// FIXME - How to record an upper bound as solution ? - created 14 avr. 2012 by A. Malapert
 						//recordUpperBound();
 					}
 				} 
@@ -484,28 +534,28 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			}
 			return false;
 		}
-		
-//		@Override
-//		public boolean swap() {
-//			//On ne peut pas vérifier toutes les disjonctions, 
-//			//on ne peut pas être certain que la propagation des clauses de transitivité a eu lieu
-//			//Par contre, on peut inverser deux jobs consécutifs quand ils sont triés par date de début (même avec préemption)
-//			//on ne peut pas se heurter au problème de transitivité (au plus une precedence entre les deux taches)
-//			for (int i = 1; i < jobSequence.length; i++) {
-//				final int pred = jobSequence[i-1].getID();
-//				final int succ = jobSequence[i].getID();
-//				final ITemporalSRelation rel = disjSMod.getEdgeConstraint(pred, succ);
-//				if( rel != null && //Model stated precedence
-//						! rel.isFixed()) { //Solver fixed precedence
-//					//System.out.println(rel);
-//					Boolean b = propagatePrecedence(jobSequence[i], jobSequence[i-1]);
-//					if (b == Boolean.TRUE) {
-//						return true;
-//					}
-//				}
-//			}
-//			return false;
-//		}
+
+		//		@Override
+		//		public boolean swap() {
+		//			//On ne peut pas vérifier toutes les disjonctions, 
+		//			//on ne peut pas être certain que la propagation des clauses de transitivité a eu lieu
+		//			//Par contre, on peut inverser deux jobs consécutifs quand ils sont triés par date de début (même avec préemption)
+		//			//on ne peut pas se heurter au problème de transitivité (au plus une precedence entre les deux taches)
+		//			for (int i = 1; i < jobSequence.length; i++) {
+		//				final int pred = jobSequence[i-1].getID();
+		//				final int succ = jobSequence[i].getID();
+		//				final ITemporalSRelation rel = disjSMod.getEdgeConstraint(pred, succ);
+		//				if( rel != null && //Model stated precedence
+		//						! rel.isFixed()) { //Solver fixed precedence
+		//					//System.out.println(rel);
+		//					Boolean b = propagatePrecedence(jobSequence[i], jobSequence[i-1]);
+		//					if (b == Boolean.TRUE) {
+		//						return true;
+		//					}
+		//				}
+		//			}
+		//			return false;
+		//		}
 
 		private SweepEvent evt;
 
@@ -527,13 +577,13 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			}
 			return false;
 		}
-		
+
 
 		@Override
 		public final boolean execute(SweepEvent evt2) {
 			return propagatePrecedence(jobs[evt2.index], jobs[evt.index]) != Boolean.TRUE;
 		}
-		
+
 		@Override
 		public boolean filterPrecedences() {
 			assert ( forwardUpdateList.isEmpty() && backwardUpdateList.isEmpty());

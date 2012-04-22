@@ -19,7 +19,7 @@ public final class Pmtn1Scheduler {
 	}
 
 
-	static final class Proc1Lmax extends DefaultJobProcedure {
+	public static final class Proc1Lmax extends DefaultJobProcedure {
 
 		private int time;
 
