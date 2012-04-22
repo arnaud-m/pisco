@@ -23,7 +23,7 @@ public class TestSingleMachine {
 		"clauses", "ordering", "mod-dd", "all"
 	};
 	
-	//private final static String[] CONFS = {"all"};
+//	private final static String[] CONFS = {"pmtn-sweep"};
 
 	private final static SchedulingBranchingFactory.Branching[] branchings = new SchedulingBranchingFactory.Branching[]{
 		//SchedulingBranchingFactory.Branching.ST, //too slow

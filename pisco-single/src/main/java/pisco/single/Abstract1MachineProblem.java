@@ -264,7 +264,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		if (parser instanceof Abstract1MachineParser) {
 			logMsg.storeConfiguration(((Abstract1MachineParser) parser).getParserMsg());
 		}
-		logMsg.storeConfiguration(getPropertyDiagnostic());
+		//logMsg.storeConfiguration(getPropertyDiagnostic());
 	}
 
 

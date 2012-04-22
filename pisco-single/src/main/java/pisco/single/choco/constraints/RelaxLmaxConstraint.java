@@ -541,21 +541,6 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		//			//on ne peut pas être certain que la propagation des clauses de transitivité a eu lieu
 		//			//Par contre, on peut inverser deux jobs consécutifs quand ils sont triés par date de début (même avec préemption)
 		//			//on ne peut pas se heurter au problème de transitivité (au plus une precedence entre les deux taches)
-		//			for (int i = 1; i < jobSequence.length; i++) {
-		//				final int pred = jobSequence[i-1].getID();
-		//				final int succ = jobSequence[i].getID();
-		//				final ITemporalSRelation rel = disjSMod.getEdgeConstraint(pred, succ);
-		//				if( rel != null && //Model stated precedence
-		//						! rel.isFixed()) { //Solver fixed precedence
-		//					//System.out.println(rel);
-		//					Boolean b = propagatePrecedence(jobSequence[i], jobSequence[i-1]);
-		//					if (b == Boolean.TRUE) {
-		//						return true;
-		//					}
-		//				}
-		//			}
-		//			return false;
-		//		}
 
 		private SweepEvent evt;
 
@@ -581,7 +566,9 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 		@Override
 		public final boolean execute(SweepEvent evt2) {
-			return propagatePrecedence(jobs[evt2.index], jobs[evt.index]) != Boolean.TRUE;
+			return propagatePrecedence(jobs[evt2.index], jobs[evt.index]) != Boolean.TRUE 
+					&& propagatePrecedence(jobs[evt.index], jobs[evt2.index]) != Boolean.TRUE;
+			//return propagatePrecedence(jobs[evt2.index], jobs[evt.index]) != Boolean.TRUE;
 		}
 
 		@Override
