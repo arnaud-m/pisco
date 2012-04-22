@@ -224,6 +224,7 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 		//Print initial propagation		
 		
 		solver.getSearchStrategy().initialPropagation();
+		if(solver.isFeasible() == Boolean.FALSE) return Boolean.FALSE;
 		//VisuFactory.getDotManager().show(((PreProcessCPSolver) solver).getDisjSModel());
 		//LOGGER.info(solver.pretty());
 		if(SingleMachineSettings.stateRelaxationConstraint(this)) {
