@@ -62,6 +62,7 @@ import choco.kernel.model.Model;
 import choco.kernel.model.constraints.Constraint;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.scheduling.TaskVariable;
+import choco.kernel.solver.Configuration;
 import choco.kernel.solver.Solver;
 import choco.kernel.solver.constraints.global.scheduling.IResource;
 import choco.kernel.solver.variables.scheduling.TaskVar;
@@ -100,6 +101,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 //		defaultConf.putTrue(SingleMachineSettings.MODIFY_DUE_DATES);
 //		settings.putBoolean(BasicSettings.SOLUTION_REPORT, true);
 //		settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
+//		getConfiguration().putTrue(Configuration.BOTTOM_UP);
 	}
 
 

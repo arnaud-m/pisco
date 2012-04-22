@@ -44,6 +44,7 @@ import choco.kernel.model.Model;
 import choco.kernel.model.ModelException;
 import choco.kernel.model.constraints.ComponentConstraint;
 import choco.kernel.model.variables.integer.IntegerVariable;
+import choco.kernel.solver.Configuration;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.Solver;
 import choco.kernel.solver.variables.integer.IntDomainVar;
@@ -174,8 +175,6 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 				}
 			}
 		}
-
-
 		return model;
 	}
 
@@ -191,6 +190,7 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 	@Override
 	public Solver buildSolver() {
 		CPSolver s = (CPSolver) super.buildSolver();
+		
 //		if(SingleMachineSettings.stateRelaxationConstraint(this)) {
 //			////////////
 //			//Add relaxation constraint
@@ -240,6 +240,11 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 							ArrayUtils.append(tasks, dueDates, new IntegerVariable[]{objVar})));				
 		}
 		return super.solve();
+	}
+	
+	protected double getGapILB() {
+		final int maxDueDate = maxDueDate(jobs);
+		return ( objective.doubleValue() + maxDueDate) / ( getComputedLowerBound()+ maxDueDate);
 	}
 	
 	@Override

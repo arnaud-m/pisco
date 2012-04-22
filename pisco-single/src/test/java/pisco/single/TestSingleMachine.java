@@ -45,7 +45,7 @@ public class TestSingleMachine {
 	public final static void tearDown() {
 		ChocoLogging.setVerbosity(Verbosity.SILENT);
 	}
-
+	
 
 
 	private void testInstances(String input, String[] wildcardPatterns,SchedulingBranchingFactory.Branching br, int prop) {
