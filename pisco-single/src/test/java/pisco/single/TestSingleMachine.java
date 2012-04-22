@@ -38,7 +38,7 @@ public class TestSingleMachine {
 	@BeforeClass
 	public final static void setUp() {
 		ChocoLogging.setVerbosity(Verbosity.QUIET);
-		ChocoLogging.setVerbosity(Verbosity.VERBOSE);
+		//ChocoLogging.setVerbosity(Verbosity.VERBOSE);
 	}
 
 	@AfterClass
