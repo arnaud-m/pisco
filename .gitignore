@@ -30,5 +30,5 @@ Thumbs.db
 *~
 
 #some instances files (temporary)
-pisco-single/src/main/benchmarks/**
+pisco-single/src/main/benchmarks/instances/**
 
