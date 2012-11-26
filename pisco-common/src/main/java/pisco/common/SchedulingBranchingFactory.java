@@ -37,7 +37,6 @@ import static choco.cp.solver.search.BranchingFactory.randomSearch;
 import static choco.cp.solver.search.BranchingFactory.setTimes;
 import static choco.cp.solver.search.BranchingFactory.slackWDeg;
 
-import java.util.LinkedList;
 
 import parser.instances.BasicSettings;
 import pisco.common.choco.branching.FinishBranchingGraph;
@@ -55,6 +54,7 @@ import choco.cp.solver.search.task.ordering.LexOrdering;
 import choco.cp.solver.search.task.ordering.MaxPreservedOrdering;
 import choco.cp.solver.search.task.ordering.MinPreservedOrdering;
 import choco.cp.solver.search.task.ordering.RandomOrdering;
+import choco.kernel.common.util.tools.VariableUtils;
 import choco.kernel.model.constraints.Constraint;
 import choco.kernel.solver.Configuration;
 import choco.kernel.solver.SolverException;
@@ -79,7 +79,8 @@ public final class SchedulingBranchingFactory {
 		SWDEG("Slack/WDEG", true),
 		PWDEG("Pres/WDEG", true),
 		MINPRES("Min-Preserved", true),
-		MAXPRES("Max-Preserved", true);
+		MAXPRES("Max-Preserved", true),
+		USR("User-disjunct-branching", true);
 
 		private final String name;
 
@@ -145,24 +146,6 @@ public final class SchedulingBranchingFactory {
 						userValSel;
 	}
 
-	private static IntDomainVar[] getBoolDecisionVars(PreProcessCPSolver solver) {
-		IntDomainVar[] ivs = solver.getIntDecisionVars();
-		int i = 0;
-		while( i < ivs.length && ivs[i].hasBooleanDomain()) {
-			i++;
-		}
-		if(i < ivs.length) {
-			LinkedList<IntDomainVar> bvs = new LinkedList<IntDomainVar>();
-			for (IntDomainVar v : ivs) {
-				if(v.hasBooleanDomain()) {
-					bvs.add(v);
-				}
-			}
-			ivs =  bvs.toArray(new IntDomainVar[bvs.size()]);
-		}
-		return ivs;
-	}
-
 	public static AbstractIntBranchingStrategy generateDisjunctBranching(PreProcessCPSolver solver, OrderingValSelector userValSel, long seed) {
 		final Configuration conf = solver.getConfiguration();
 		final SchedulingBranchingFactory.Branching br = DisjunctiveSettings.getBranching(conf);
@@ -170,22 +153,22 @@ public final class SchedulingBranchingFactory {
 		final boolean breakTie = conf.readBoolean(BasicSettings.RANDOM_TIE_BREAKING);
 		switch (br) {
 		case LEX: {
-			return lexicographic(solver, getBoolDecisionVars(solver));
+			return lexicographic(solver, VariableUtils.getBoolDecisionVars(solver));
 		}
 		case RAND: {
-			return randomSearch(solver, getBoolDecisionVars(solver), seed);
+			return randomSearch(solver, VariableUtils.getBoolDecisionVars(solver), seed);
 		}
 		case PROFILE: {
 			return profile(solver, solver.getDisjSModel(), makeOrderValSel(userValSel, randVal, breakTie, null, seed));
 		}
 		case DDEG: {
-			return domDDegBin(solver, getBoolDecisionVars(solver), makeBoolValSel(randVal, seed));
+			return domDDegBin(solver, VariableUtils.getBoolDecisionVars(solver), makeBoolValSel(randVal, seed));
 		}
 		case WDEG: {
-			return domWDegBin(solver, getBoolDecisionVars(solver), makeBoolValSel(randVal, seed));
+			return domWDegBin(solver, VariableUtils.getBoolDecisionVars(solver), makeBoolValSel(randVal, seed));
 		}
 		case BWDEG: {
-			return incDomWDegBin(solver, getBoolDecisionVars(solver), makeBoolValSel(randVal, seed));
+			return incDomWDegBin(solver, VariableUtils.getBoolDecisionVars(solver), makeBoolValSel(randVal, seed));
 		}
 		case SWDEG: {
 			return slackWDeg(solver, getDisjuncts(solver), makeOrderValSel(userValSel, randVal, breakTie, null, seed)); 
@@ -207,9 +190,9 @@ public final class SchedulingBranchingFactory {
 
 	public static AbstractIntBranchingStrategy generateDisjunctSubBranching(PreProcessCPSolver solver, Constraint ignoredCut) {
 		if(solver.getConfiguration().readBoolean(DisjunctiveSettings.ASSIGN_BELLMAN)) {
-			final ITemporalSRelation[] disjuncts = getDisjuncts(solver);
-			if(disjuncts != null) {
-				return new FinishBranchingGraph(solver, getDisjuncts(solver), ignoredCut);
+			final DisjunctiveSModel disjSMod = solver.getDisjSModel();
+			if(disjSMod != null) {
+				return new FinishBranchingGraph(solver, disjSMod, ignoredCut);
 			}
 		}
 		return new FinishBranchingNaive(solver, ignoredCut);

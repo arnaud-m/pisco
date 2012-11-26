@@ -37,6 +37,7 @@ import java.io.File;
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.BasicSettings;
 import pisco.common.AbstractDisjunctiveProblem;
+import pisco.common.DisjunctiveSettings;
 import pisco.common.SchedulingBranchingFactory;
 import pisco.common.SchedulingBranchingFactory.Branching;
 import pisco.shop.heuristics.CrashHeuristics;
@@ -59,7 +60,11 @@ import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.scheduling.TaskVariable;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.Solver;
+import choco.kernel.solver.branch.AbstractIntBranchingStrategy;
+import choco.kernel.solver.constraints.AbstractSConstraint;
 import choco.kernel.solver.constraints.global.scheduling.IResource;
+import choco.kernel.solver.search.ISolutionDisplay;
+import choco.kernel.solver.variables.AbstractVar;
 import choco.kernel.solver.variables.scheduling.TaskVar;
 import choco.kernel.visu.VisuFactory;
 import choco.visu.components.chart.ChocoChartFactory;
@@ -69,9 +74,9 @@ import choco.visu.components.chart.ChocoChartFactory;
  * @author Arnaud Malapert
  *
  */
-public class GenericShopProblem extends AbstractDisjunctiveProblem {
+public class GenericShopProblem extends AbstractDisjunctiveProblem implements ISolutionDisplay {
 
-	
+
 	public int nbMachines;
 
 	public int[][] processingTimes;
@@ -86,7 +91,6 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 
 	public Constraint[] forbIntMachines;
 
-	
 	protected ICrashLearning crashLearning;
 
 	public GenericShopProblem(IShopData parser, BasicSettings settings) {
@@ -99,7 +103,7 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 		//	settings.putBoolean(BasicSettings.SOLUTION_EXPORT, true);
 	}
 
-	
+
 	//****************************************************************//
 	//********* Getters/Setters *******************************************//
 	//****************************************************************//
@@ -131,10 +135,6 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 		return tasks[machine][job];
 	}
 
-
-	public final int getNbMachines() {
-		return nbMachines;
-	}
 
 	protected final int getHorizon() {
 		return isFeasible() == Boolean.TRUE ? objective.intValue() - 1 : MathUtils.sum(processingTimes) - 1;
@@ -265,10 +265,24 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 
 	@Override
 	protected IResource<?>[] generateFakeResources(CPSolver solver) {
-		// FIXME - uncompatible with job-shop and flow-shop ?  - created 4 juil. 2011 by Arnaud Malapert
+		// FIXME - incompatible with job-shop and flow-shop ?  - created 4 juil. 2011 by Arnaud Malapert
 		return TaskUtils.createFakeResources(solver, ArrayUtils.append(jobs, machines));
 	}
-	
+
+
+
+	private void buildExtensions(Solver solver) {
+		if( solver.getConfiguration().readBoolean( ChocoshopSettings.NOGOOD_RECORDING_FROM_SOLUTION)) {
+			for (int i = 0; i < nbMachines; i++) {
+				for (int j = 0; j < nbJobs; j++) {
+					final TaskVar t = solver.getVar(tasks[i][j]);
+					t.addExtension(DisjunctiveSettings.MACHINE_EXTENSION, i);
+					t.addExtension(DisjunctiveSettings.JOB_EXTENSION, j);
+				}
+			}
+		}
+	}
+
 	@Override
 	public Solver buildSolver() {
 		PreProcessCPSolver solver = new PreProcessCPSolver(this.defaultConf);
@@ -285,9 +299,20 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 		solver.read(model);
 		setGoals(solver);
 		solver.generateSearchStrategy();
+		buildExtensions(solver);
 		return solver;
 	}
-	
+
+
+	@Override
+	protected AbstractIntBranchingStrategy makeDisjunctSubBranching(
+			PreProcessCPSolver solver) {
+		if( solver.getConfiguration().readBoolean( ChocoshopSettings.NOGOOD_RECORDING_FROM_SOLUTION)) {
+			return null;
+		} else return super.makeDisjunctSubBranching(solver);
+	}
+
+
 	@Override
 	public Boolean solve() {
 		//Print initial propagation		
@@ -305,9 +330,18 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 
 
 	@Override
+	protected void logOnDiagnostics() {
+		super.logOnDiagnostics();
+		if( solver.getConfiguration().readBoolean( ChocoshopSettings.NOGOOD_RECORDING_FROM_SOLUTION)) {
+			( (CPSolver) solver).getNogoodStore().getNbClause(); 
+		}
+	}
+
+
+	@Override
 	protected void logOnConfiguration() {
 		super.logOnConfiguration();
-		logMsg.storeConfiguration(
+		logMsg.appendConfiguration(
 				ChocoshopSettings.getHeuristicsMsg(defaultConf) + 
 				ChocoshopSettings.getBranchingMsg(defaultConf)
 				);
@@ -316,40 +350,27 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 
 
 	@Override
-	public String getValuesMessage() {
-		if(solver != null && solver.existsSolution()) {
-			final StringBuilder b = new StringBuilder();
-			final int n = solver.getNbTaskVars();
-			for (int i = 0; i < n; i++) {
-				b.append(solver.getTaskVar(i).pretty()).append(' ');
-			}
-			return b.toString();
-		}else return "";
-	}
+	public String solutionToString() {
+		final StringBuilder b1 = new StringBuilder();
+		final StringBuilder b2 = new StringBuilder();
+		b1.append("#m n\n").append(nbMachines).append(' ').append(nbJobs).append('\n');
+		b1.append("#Durations\n");
+		b2.append("#Starts\n");
 
-	protected String makeSolutionLog() {
-		if(solver != null && solver.existsSolution()) {
-			final StringBuilder b1 = new StringBuilder();
-			final StringBuilder b2 = new StringBuilder();
-			b1.append("#m n\n").append(nbMachines).append(' ').append(nbJobs).append('\n');
-			b1.append("#Durations\n");
-			b2.append("#Starts\n");
-
-			for (int i = 0; i < nbMachines; i++) {
-				for (int j = 0; j < nbJobs; j++) {
-					//b1.append(solver.getVar(tasks[i][j]).start().getVal()).append(' ');
-					final TaskVar tij = this.solver.getVar(tasks[i][j]);
-					b1.append(tij.duration().getVal()).append(' ');
-					b2.append(tij.start().getVal()).append(' ');
-
-				}
-				b1.append('\n');
-				b2.append('\n');
+		for (int i = 0; i < nbMachines; i++) {
+			for (int j = 0; j < nbJobs; j++) {
+				//b1.append(solver.getVar(tasks[i][j]).start().getVal()).append(' ');
+				final TaskVar tij = this.solver.getVar(tasks[i][j]);
+				b1.append(tij.duration().getVal()).append(' ');
+				b2.append(tij.start().getVal()).append(' ');
 
 			}
-			b1.append('\n').append(b2);
-			return b1.toString();
-		} else return null;
+			b1.append('\n');
+			b2.append('\n');
+
+		}
+		b1.append('\n').append(b2);
+		return b1.toString();
 	}
 
 
@@ -358,7 +379,6 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem {
 		super.makeReports();
 		if( defaultConf.readBoolean(BasicSettings.SOLUTION_REPORT) ) {
 			displayChart(( (PreProcessCPSolver) solver).getDisjSModel(), VisuFactory.getDotManager());
-			displayChart(makeSolutionLog(), VisuFactory.getSolManager());
 		}
 	}
 

@@ -65,6 +65,7 @@ import choco.kernel.model.variables.scheduling.TaskVariable;
 import choco.kernel.solver.Configuration;
 import choco.kernel.solver.Solver;
 import choco.kernel.solver.constraints.global.scheduling.IResource;
+import choco.kernel.solver.search.ISolutionDisplay;
 import choco.kernel.solver.variables.scheduling.TaskVar;
 import choco.kernel.visu.VisuFactory;
 import choco.visu.components.chart.ChocoChartFactory;
@@ -74,7 +75,7 @@ import choco.visu.components.chart.ChocoChartFactory;
  * @author Arnaud Malapert
  *
  */
-public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem {
+public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem implements ISolutionDisplay {
 
 
 	public ITJob[] jobs;
@@ -227,6 +228,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 	@Override
 	public Solver buildSolver() {
 		PreProcessCPSolver solver = new PreProcessCPSolver(this.defaultConf);
+		solver.setSolutionDisplay(this);
 		BasicSettings.updateTimeLimit(solver.getConfiguration(),  - getPreProcTime());
 		PreProcessConfiguration.cancelPreProcess(defaultConf);
 		defaultConf.putTrue(PreProcessConfiguration.DISJUNCTIVE_MODEL_DETECTION);
@@ -241,6 +243,7 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 		setGoals(solver);
 		solver.generateSearchStrategy();
 		return solver;
+		
 	}
 
 //	@Override
@@ -261,10 +264,10 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 	@Override
 	protected void logOnConfiguration() {
 		super.logOnConfiguration();
-		logMsg.storeConfiguration(DisjunctiveSettings.getBranchingMsg(defaultConf));
-		logMsg.storeConfiguration(SingleMachineSettings.getInstModelMsg(defaultConf));
+		logMsg.appendConfiguration(DisjunctiveSettings.getBranchingMsg(defaultConf));
+		logMsg.appendConfiguration(SingleMachineSettings.getInstModelMsg(defaultConf));
 		if (parser instanceof Abstract1MachineParser) {
-			logMsg.storeConfiguration(((Abstract1MachineParser) parser).getParserMsg());
+			logMsg.appendConfiguration(((Abstract1MachineParser) parser).getParserMsg());
 		}
 		//logMsg.storeConfiguration(getPropertyDiagnostic());
 	}
@@ -274,17 +277,17 @@ public abstract class Abstract1MachineProblem extends AbstractDisjunctiveProblem
 
 
 	@Override
-	public String getValuesMessage() {
-		if(solver != null && solver.existsSolution()) {
-			final StringBuilder b = new StringBuilder();
-			TaskVar[] tvars = solver.getVar(tasks);
-			Arrays.sort(tvars, TaskComparators.makeEarliestStartingTimeCmp());
-			for (int i = 0; i < tvars.length; i++) {
-				b.append(tvars[i].pretty()).append(' ');
-			}
-			return b.toString();
-		}else return "";
+	public String solutionToString() {
+		final StringBuilder b = new StringBuilder();
+		TaskVar[] tvars = solver.getVar(tasks);
+		Arrays.sort(tvars, TaskComparators.makeEarliestStartingTimeCmp());
+		for (int i = 0; i < tvars.length; i++) {
+			b.append(tvars[i].pretty()).append(' ');
+		}
+		return b.toString();
 	}
+
+
 
 	protected int[] computeSolutionSetups() {
 		int[] setups = new int[nbJobs];

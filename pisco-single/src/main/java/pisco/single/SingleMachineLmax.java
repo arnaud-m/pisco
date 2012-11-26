@@ -11,6 +11,8 @@ import static choco.Choco.max;
 import static choco.Choco.minus;
 import static choco.Choco.precedence;
 import static choco.Choco.precedenceDisjoint;
+import static choco.kernel.common.util.tools.VariableUtils.*;
+import static choco.cp.solver.search.BranchingFactory.*;
 import static pisco.common.JobComparators.getCompositeComparator;
 import static pisco.common.JobComparators.getShortestProcessingTime;
 import static pisco.common.JobUtils.dueDates;
@@ -39,6 +41,8 @@ import pisco.single.parsers.Abstract1MachineParser;
 import choco.Options;
 import choco.cp.solver.CPSolver;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
+import choco.cp.solver.search.integer.branching.AssignOrForbidIntVarValPair;
+import choco.cp.solver.search.task.profile.ProfileSelector;
 import choco.kernel.common.util.tools.ArrayUtils;
 import choco.kernel.model.Model;
 import choco.kernel.model.ModelException;
@@ -47,6 +51,9 @@ import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.solver.Configuration;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.Solver;
+import choco.kernel.solver.branch.AbstractIntBranchingStrategy;
+import choco.kernel.solver.search.integer.IntVarValPair;
+import choco.kernel.solver.search.integer.VarValPairSelector;
 import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.kernel.visu.VisuFactory;
 import choco.visu.components.chart.ChocoChartFactory;
@@ -56,6 +63,8 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 	private IntegerVariable objVar;
 
 	private IntegerVariable[] dueDates;
+
+	private ComponentConstraint relaxConstraint;
 
 	public SingleMachineLmax(BasicSettings settings,
 			Abstract1MachineParser parser) {
@@ -179,28 +188,57 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 	}
 
 
-
-
 	@Override
 	protected void setGoals(PreProcessCPSolver solver) {
 		super.setGoals(solver);
 		solver.addGoal(new LexMaxFakeBranching(solver, solver.getVar(dueDates)));		
 	}
 
+	//Ugly but quick
+	private final class VarValPairSelWrapper implements VarValPairSelector {
+
+		VarValPairSelector internal;
+		
+		public void init() {
+			internal = (VarValPairSelector) solver.getCstr(relaxConstraint);
+		}
+		
+		@Override
+		public IntVarValPair selectVarValPair() throws ContradictionException {
+			return internal.selectVarValPair();
+		}
+		
+		
+	}
+	
+	private final VarValPairSelWrapper VVPSWrapper = new VarValPairSelWrapper();
+		
+	@Override
+	protected AbstractIntBranchingStrategy makeUserDisjunctBranching(
+			PreProcessCPSolver solver, long seed) {
+		if(SingleMachineSettings.readPmtnLevel(this).isOn()) {
+		return new AssignOrForbidIntVarValPair(VVPSWrapper);
+		} else {
+			logMsg.appendConfiguration(SchedulingBranchingFactory.Branching.LEX + " OVERLOAD_BRANCHING");
+			return lexicographic(solver, getBoolDecisionVars(solver));
+		}
+	}
+
+
 	@Override
 	public Solver buildSolver() {
 		CPSolver s = (CPSolver) super.buildSolver();
-		
-//		if(SingleMachineSettings.stateRelaxationConstraint(this)) {
-//			////////////
-//			//Add relaxation constraint
-//			RelaxLmaxConstraint.canFailOnSolutionRecording = DisjunctiveSettings.getBranching(s.getConfiguration()) == SchedulingBranchingFactory.Branching.ST;
-//			// FIXME - Awful : can not really postponed until the disjunctive model is built - created 10 avr. 2012 by A. Malapert
-//			s.addConstraint(
-//					new ComponentConstraint(RelaxLmaxManager.class, 
-//							this, 
-//							ArrayUtils.append(tasks, dueDates, new IntegerVariable[]{objVar})));				
-//		}
+
+		//		if(SingleMachineSettings.stateRelaxationConstraint(this)) {
+		//			////////////
+		//			//Add relaxation constraint
+		//			RelaxLmaxConstraint.canFailOnSolutionRecording = DisjunctiveSettings.getBranching(s.getConfiguration()) == SchedulingBranchingFactory.Branching.ST;
+		//			// FIXME - Awful : can not really postponed until the disjunctive model is built - created 10 avr. 2012 by A. Malapert
+		//			s.addConstraint(
+		//					new ComponentConstraint(RelaxLmaxManager.class, 
+		//							this, 
+		//							ArrayUtils.append(tasks, dueDates, new IntegerVariable[]{objVar})));				
+		//		}
 		if( defaultConf.readBoolean(SingleMachineSettings.TASK_ORDERING) && ! hasSetupTimes() ) {
 			//Escape from a bug in the preprocessing by :
 			// instantiating variable replaced (but unfortunatly already created) during the preprocessing)
@@ -222,7 +260,7 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 	@Override
 	public Boolean solve() {
 		//Print initial propagation		
-		
+
 		solver.getSearchStrategy().initialPropagation();
 		if(solver.isFeasible() == Boolean.FALSE) return Boolean.FALSE;
 		//VisuFactory.getDotManager().show(((PreProcessCPSolver) solver).getDisjSModel());
@@ -231,22 +269,23 @@ public class SingleMachineLmax extends Abstract1MachineProblem {
 			////////////
 			//Add relaxation constraint
 			RelaxLmaxConstraint.canFailOnSolutionRecording = DisjunctiveSettings.getBranching(solver.getConfiguration()) == SchedulingBranchingFactory.Branching.ST;
+			relaxConstraint = new ComponentConstraint(RelaxLmaxManager.class, 
+					this, 
+					ArrayUtils.append(tasks, dueDates, new IntegerVariable[]{objVar}));		
 			// FIXME - Awful : can not really postponed until the disjunctive model is built - created 10 avr. 2012 by A. Malapert
 			//More awful : all other constraints must be awaken before the relaxation.
 			//The only advantage build a better precedence graph
-			((CPSolver) solver).addConstraint(
-					new ComponentConstraint(RelaxLmaxManager.class, 
-							this, 
-							ArrayUtils.append(tasks, dueDates, new IntegerVariable[]{objVar})));				
+			((CPSolver) solver).addConstraint(relaxConstraint);
+			VVPSWrapper.init();
 		}
 		return super.solve();
 	}
-	
+
 	protected double getGapILB() {
 		final int maxDueDate = maxDueDate(jobs);
 		return ( objective.doubleValue() + maxDueDate) / ( getComputedLowerBound()+ maxDueDate);
 	}
-	
+
 	@Override
 	protected Object makeSolutionChart() {
 		return solver != null && solver.existsSolution() ?

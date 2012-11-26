@@ -327,9 +327,9 @@ public abstract class AbstractBatchingProblem extends AbstractMinimizeModel {
 	@Override
 	protected void logOnConfiguration() {
 		super.logOnConfiguration();
-		logMsg.storeConfiguration(data.toString()+"    "+getM()+" BATCHES");
-		logMsg.storeConfiguration(BatchSettings.getFilteringMsg(defaultConf,getPrefixMsg()));
-		logMsg.storeConfiguration(BatchSettings.getBranchingMsg(defaultConf));
+		logMsg.appendConfiguration(data.toString()+"    "+getM()+" BATCHES");
+		logMsg.appendConfiguration(BatchSettings.getFilteringMsg(defaultConf,getPrefixMsg()));
+		logMsg.appendConfiguration(BatchSettings.getBranchingMsg(defaultConf));
 
 	}	
 

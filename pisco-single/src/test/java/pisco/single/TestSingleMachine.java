@@ -26,12 +26,13 @@ public class TestSingleMachine {
 //	private final static String[] CONFS = {"pmtn-sweep"};
 
 	private final static SchedulingBranchingFactory.Branching[] branchings = new SchedulingBranchingFactory.Branching[]{
-		//SchedulingBranchingFactory.Branching.ST, //too slow
+		SchedulingBranchingFactory.Branching.ST, //too slow
 		SchedulingBranchingFactory.Branching.MINPRES,
 		SchedulingBranchingFactory.Branching.PROFILE,
 		SchedulingBranchingFactory.Branching.RAND, 
 		SchedulingBranchingFactory.Branching.LEX,
-		SchedulingBranchingFactory.Branching.SWDEG
+		SchedulingBranchingFactory.Branching.SWDEG,
+		SchedulingBranchingFactory.Branching.USR
 	};
 
 

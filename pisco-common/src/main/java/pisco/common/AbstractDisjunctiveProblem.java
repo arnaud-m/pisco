@@ -1,6 +1,6 @@
 package pisco.common;
 
-import static pisco.common.SchedulingBranchingFactory.generateDisjunctBranching;
+import static pisco.common.SchedulingBranchingFactory.*;
 import static pisco.common.SchedulingBranchingFactory.generateDisjunctSubBranching;
 import static pisco.common.SchedulingBranchingFactory.generateProfile;
 import static pisco.common.SchedulingBranchingFactory.generateSetTimes;
@@ -15,6 +15,8 @@ import choco.kernel.model.constraints.Constraint;
 import choco.kernel.model.constraints.automaton.penalty.IsoPenaltyFunction;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.solver.Configuration;
+import choco.kernel.solver.SolverException;
+import choco.kernel.solver.branch.AbstractIntBranchingStrategy;
 import choco.kernel.solver.constraints.global.scheduling.IResource;
 
 public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
@@ -33,7 +35,7 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 	public final int getNbJobs() {
 		return nbJobs;
 	}
-	
+
 	public String getPropertyDiagnostic() {
 		return isFeasible() ?  
 				getInstanceName() + "="+ 
@@ -41,8 +43,8 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 				+" PROPERTY_FORMAT"
 				: "";
 	}
-	
-	
+
+
 	protected abstract IResource<?>[] generateFakeResources(CPSolver solver);
 
 
@@ -55,7 +57,14 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 		cancelHeuristic();
 	}
 
-
+	protected AbstractIntBranchingStrategy makeUserDisjunctBranching(PreProcessCPSolver solver, long seed) {
+		throw new SolverException("Invalid Search Strategy: "+SchedulingBranchingFactory.Branching.USR);
+	}
+	
+	protected AbstractIntBranchingStrategy makeDisjunctSubBranching(PreProcessCPSolver solver) {
+		return generateDisjunctSubBranching(solver, constraintCut);
+	}
+	
 	protected void setGoals(PreProcessCPSolver solver) {
 		solver.clearGoals();
 		final Configuration conf = solver.getConfiguration();
@@ -65,11 +74,15 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 			solver.addGoal(generateSetTimes(solver, getSeed()));
 		} else {			
 			if( conf.readBoolean(BasicSettings.LIGHT_MODEL) && br == SchedulingBranchingFactory.Branching.PROFILE) {
-				solver.addGoal(generateProfile(solver, generateFakeResources(solver), null, getSeed()));
+				solver.addGoal(generateProfile(solver, 
+						generateFakeResources(solver), 
+						null, getSeed()));
+			} else if( br == SchedulingBranchingFactory.Branching.USR) {
+				solver.addGoal(makeUserDisjunctBranching(solver, getSeed()));
 			} else {
-			solver.addGoal(generateDisjunctBranching(solver, null, getSeed()));
+				solver.addGoal(generateDisjunctBranching(solver, null, getSeed()));
 			}
-			solver.addGoal(generateDisjunctSubBranching(solver, constraintCut));
+			solver.addGoal(makeDisjunctSubBranching(solver));
 		}
 	}
 

@@ -96,35 +96,35 @@
 		<dependency>
 			<groupId>choco</groupId>
 			<artifactId>choco-visu</artifactId>
-			<version>2.1.4-SNAPSHOT</version>
+			<version>2.1.6-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>choco</groupId>
 			<artifactId>choco-parsers</artifactId>
-			<version>2.1.4-SNAPSHOT</version>
+			<version>2.1.6-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>choco</groupId>
 			<artifactId>choco-cli</artifactId>
-			<version>2.1.4-SNAPSHOT</version>
+			<version>2.1.6-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>choco</groupId>
 			<artifactId>choco-db</artifactId>
-			<version>2.1.4-SNAPSHOT</version>
+			<version>2.1.6-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>choco</groupId>
 			<artifactId>choco-cp</artifactId>
-			<version>2.1.4-SNAPSHOT</version>
+			<version>2.1.6-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>choco</groupId>
 			<artifactId>choco-kernel</artifactId>
-			<version>2.1.4-SNAPSHOT</version>
+			<version>2.1.6-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
 <!-- 		<dependency> -->

@@ -166,6 +166,7 @@ public class BinPackingModel extends AbstractMinimizeModel
   {
     Solver s = super.buildSolver();
     s.read(this.model);
+    solver.setSolutionDisplay(((PackSConstraint)this.solver.getCstr(this.pack)));
     s.addGoal(createBranching(s));
     s.clearGoals();
     s.generateSearchStrategy();
@@ -176,19 +177,12 @@ public class BinPackingModel extends AbstractMinimizeModel
   {
     super.logOnConfiguration();
 
-    this.logMsg.storeConfiguration(((BinPackingParser)getParser()).getInstanceMessage());
+    this.logMsg.appendConfiguration(((BinPackingParser)getParser()).getInstanceMessage());
 
     if (this.solver != null) {
-      this.logMsg.storeConfiguration(BinPackingSettings.getBranchingMsg(getConfiguration()));
-      this.logMsg.storeConfiguration(BinPackingSettings.getSymBreakMsg(getConfiguration()) + BasicSettings.getInstModelMsg(getConfiguration()));
+      this.logMsg.appendConfiguration(BinPackingSettings.getBranchingMsg(getConfiguration()));
+      this.logMsg.appendConfiguration(BinPackingSettings.getSymBreakMsg(getConfiguration()) + BasicSettings.getInstModelMsg(getConfiguration()));
     }
-  }
-
-  public String getValuesMessage()
-  {
-    if ((this.solver != null) && (this.solver.existsSolution()))
-      return ((PackSConstraint)this.solver.getCstr(this.pack)).getSolutionMsg();
-    return "";
   }
 
   protected Object makeSolutionChart()
@@ -197,8 +191,3 @@ public class BinPackingModel extends AbstractMinimizeModel
       ChocoChartFactory.createPackChart(getInstanceName() + " : " + getStatus(), (PackSConstraint)this.solver.getCstr(this.pack)) : null;
   }
 }
-
-/* Location:           /home/nono/recovery/pack/
- * Qualified Name:     pisco.pack.BinPackingModel
- * JD-Core Version:    0.6.0
- */

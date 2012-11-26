@@ -84,4 +84,11 @@ public final class SingleMachineRHeuristic extends AbstractRandomizedHeuristic {
 	}
 
 
+	@Override
+	public String solutionToString() {
+		return Arrays.toString(jobs);
+	}
+	
+	
+
 }

@@ -37,13 +37,14 @@ import pisco.common.SchedulingBranchingFactory;
 import pisco.shop.OpenShopProblem.CutOS;
 import choco.kernel.common.opres.heuristics.AbstractRandomizedHeuristic;
 import choco.kernel.solver.Configuration;
+import choco.kernel.solver.Configuration.Default;
 
 public final class ChocoshopSettings extends DisjunctiveSettings {
 	private static final long serialVersionUID = 936045358571219202L;
 
 	public static enum Heuristics {SPT, LPT, CROSH, LEX}
 
-	
+	//TODO Add settings for forbidden intervals
 
 
 	//****************************************************************//
@@ -83,6 +84,14 @@ public final class ChocoshopSettings extends DisjunctiveSettings {
 	@Default(value = VALUE_OFF)
 	public static final String INITIAL_CUT = "tools.cp.model.initial_cut";
 	
+	/**
+	 * <br/><b>Goal</b>: Enable nogood recording from solution.
+	 * <br/><b>Type</b>: boolean
+	 * <br/><b>Default value</b>: false
+	 */
+	@Default(value = VALUE_FALSE)
+	public static final String NOGOOD_RECORDING_FROM_SOLUTION = "cp.solution.nogood_recording";
+
 //*****************************************************************//
 //*******************  Constructors ******************************//
 //***************************************************************//

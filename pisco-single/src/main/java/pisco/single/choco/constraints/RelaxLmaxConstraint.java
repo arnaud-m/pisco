@@ -2,6 +2,7 @@ package pisco.single.choco.constraints;
 
 import static choco.cp.common.util.preprocessor.detector.scheduling.DisjunctiveSModel.*;
 import static choco.Choco.MAX_UPPER_BOUND;
+import static choco.Choco.MIN_LOWER_BOUND;
 import static pisco.common.JobUtils.modifyDueDates;
 import gnu.trove.TIntArrayList;
 import gnu.trove.TIntProcedure;
@@ -12,6 +13,7 @@ import gnu.trove.TObjectProcedure;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Iterator;
 
 import pisco.common.ITJob;
 import pisco.common.JobUtils;
@@ -34,11 +36,13 @@ import choco.kernel.common.util.iterators.DisposableIntIterator;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.SolverException;
 import choco.kernel.solver.constraints.global.scheduling.AbstractTaskSConstraint;
+import choco.kernel.solver.search.integer.IntVarValPair;
+import choco.kernel.solver.search.integer.VarValPairSelector;
 import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.kernel.solver.variables.scheduling.TaskVar;
 import choco.kernel.visu.VisuFactory;
 
-public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
+public class RelaxLmaxConstraint extends AbstractTaskSConstraint implements VarValPairSelector {
 
 	public static boolean canFailOnSolutionRecording = false;
 
@@ -113,10 +117,6 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 	@Override
 	public void awakeOnBounds(int varIndex) throws ContradictionException {}
-
-
-
-
 
 	@Override
 	public boolean isSatisfied(int[] tuple) {
@@ -236,7 +236,6 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 				savedDueDates[i] = jobs[i].getDueDate();
 			}
 		} //else all (due date) constraints are not always revised and therefore some due dates entirely modified
-		//We should prove that the lower bound is still valid or enforce their consistency "by hand" 
 		////////////////
 		if(pmtnRelaxation.filterObjective() || precRelaxation.filterObjective()  ||
 				pmtnRelaxation.filterPrecedences() || precRelaxation.filterPrecedences()) {
@@ -246,8 +245,22 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 			pmtnRelaxation.flushUpdateLists();
 			precRelaxation.flushUpdateLists();
 		}
+
 	}
 
+
+	@Override
+	public IntVarValPair selectVarValPair() throws ContradictionException {
+		buildJobs();
+		buildPrecedence();
+		//VisuFactory.getDotManager().show(new DottyBean(jobs));
+		//Modify Due Dates
+		modifyDueDates(tempJobs);
+		final ITemporalSRelation rel = pmtnRelaxation.getBestDecision();
+		return rel == null ? null : new IntVarValPair(rel.getDirection(), 
+				jobs[rel.getOrigin().getID()].getEST() < jobs[rel.getDestination().getID()].getEST() ? 1 : 0);
+		
+	}
 
 	private void checkSolutionStamp() {
 		if(backtrackStamp > 0 && 
@@ -315,7 +328,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 	}
 
 
-	
+
 	@Override
 	public int getFilteredEventMask(int idx) {
 		if(idx < startOffset) return IntVarEvent.INCINF_MASK;
@@ -344,16 +357,19 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		public boolean isFeasibleSchedule() {
 			return ! JobUtils.isInterrupted(jobs);
 		}
+
+
 	}
 
 
 	final class PrecRelaxationFilter extends AbstractRelaxationFilter {
 
 		private final Proc1PrecLmax procedure = new Proc1PrecLmax();
-		
+
 		public PrecRelaxationFilter(PropagagationLevel propLevel) {
 			super(propLevel);
 		}
+
 
 
 		@Override
@@ -383,7 +399,8 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 		public final PropagagationLevel propLevel;
 
-		private int newUpperBound = MAX_UPPER_BOUND;
+		private int lowerBound = MIN_LOWER_BOUND;
+		private int upperBound = MAX_UPPER_BOUND;
 
 		private final ArrayList<ITemporalSRelation> forwardUpdateList = new ArrayList<ITemporalSRelation>();
 
@@ -413,7 +430,7 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 
 		public final void flushUpdateLists() throws ContradictionException {
-			vars[vars.length-1].updateSup(newUpperBound, RelaxLmaxConstraint.this, false);
+			vars[vars.length-1].updateSup(upperBound, RelaxLmaxConstraint.this, false);
 			for (ITemporalSRelation rel : forwardUpdateList) {
 				rel.getDirection().instantiate(1, RelaxLmaxConstraint.this, false);
 				//LOGGER.info("f "+rel.toString());
@@ -429,7 +446,8 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 
 
 		public final void clearUpdateLists() {
-			newUpperBound = MAX_UPPER_BOUND;
+			lowerBound = MIN_LOWER_BOUND;
+			upperBound = MAX_UPPER_BOUND;
 			forwardUpdateList.clear();
 			backwardUpdateList.clear();
 		}
@@ -460,9 +478,9 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 		public final boolean filterObjective() throws ContradictionException {
 			if(propLevel.isOn()) {
 				JobUtils.resetSchedule(tempJobs);
-				final int lb = doPropagate();
+				lowerBound = doPropagate();
 				//LOGGER.info("LB "+lb + " -> "+vars[vars.length-1].pretty());
-				vars[vars.length-1].updateInf(lb, RelaxLmaxConstraint.this, false);
+				vars[vars.length-1].updateInf(lowerBound, RelaxLmaxConstraint.this, false);
 				if(isFeasibleSchedule()) return true;
 				else if(propLevel.ordinal() > PropagagationLevel.OBJ.ordinal()) {
 					clearUpdateLists();
@@ -500,8 +518,8 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 					return Boolean.TRUE;
 				} else {
 					//else a new upper bound has been found
-					if(newUpperBound > cost ) {
-						newUpperBound = cost;
+					if(upperBound > cost ) {
+						upperBound = cost;
 						// FIXME - How to record an upper bound as solution ? - created 14 avr. 2012 by A. Malapert
 						//recordUpperBound();
 					}
@@ -561,6 +579,69 @@ public class RelaxLmaxConstraint extends AbstractTaskSConstraint {
 				}while(! sweepEventList.isEmpty());
 			}
 			return false;
+		}
+
+
+		@Override
+		public ITemporalSRelation getBestDecision() {
+			//Re-propagate (safer to catch problem)
+			JobUtils.resetSchedule(tempJobs);
+			lowerBound = doPropagate();
+			//LOGGER.info("LB "+lb + " -> "+vars[vars.length-1].pretty());
+			try {
+				vars[vars.length-1].updateInf(lowerBound, RelaxLmaxConstraint.this, false);
+			} catch (ContradictionException e) {
+				e.printStackTrace();
+			}
+			if(isFeasibleSchedule()) recordSolution();
+			try {
+				problem.getSolver().propagate();
+			} catch (ContradictionException e) {
+				e.printStackTrace();
+			}
+			clearUpdateLists();
+			clearEventLists();
+			buildEventLists();	
+			////////
+			ITemporalSRelation decision = null;
+			int minDLateness = MIN_LOWER_BOUND;
+			int maxDLateness = MIN_LOWER_BOUND;
+			if( ! sweepEventList.isEmpty()) {
+				assert sweepEventList.getFirst().isStartEvent();
+				do {
+					evt = sweepEventList.removeFirst();
+					if(evt.isStartEvent()) {
+						sweepCurrentList.add(evt);							
+					} else {
+						sweepCurrentList.remove(sweepEventMap[evt.index][START]);
+						final Iterator<SweepEvent> iter = sweepCurrentList.iterator();
+						int predLateness;
+						int succLateness;
+						while(iter.hasNext()) {
+							final SweepEvent pevt = iter.next(); 
+							predLateness = jobs[pevt.index].getLateness();
+							succLateness = jobs[evt.index].getLateness();
+							if(succLateness > predLateness && 
+									succLateness > maxDLateness || 
+									(succLateness == maxDLateness && predLateness > minDLateness) ) {
+								minDLateness = predLateness;
+								maxDLateness = succLateness;
+								decision = disjSMod.getEdgeConstraint(taskvars[evt.index].getID(), taskvars[pevt.index].getID());
+							} else if(		predLateness > maxDLateness || 
+									(predLateness == maxDLateness && succLateness > minDLateness) ) {
+								minDLateness = succLateness;
+								maxDLateness = predLateness;
+								decision = disjSMod.getEdgeConstraint(taskvars[evt.index].getID(), taskvars[pevt.index].getID());
+							}
+						}
+					}
+				}while(! sweepEventList.isEmpty());
+			}
+
+//			if(decision != null ) {
+//				LOGGER.info(decision.toString());
+//			}
+			return decision;
 		}
 
 
@@ -659,4 +740,6 @@ interface IRelaxationFilter {
 	void flushUpdateLists() throws ContradictionException;
 
 	void clearUpdateLists();
+
+	ITemporalSRelation getBestDecision();
 }

@@ -83,7 +83,7 @@ public class JobShopProblem extends GenericShopProblem implements IBPrecFactory 
 	protected int[][] positions;
 
 	/**
-	 * The i-th operation of job j is processed on machine machines[j][j].
+	 * The i-th operation of job j is processed on machine machines[i][j].
 	 */
 	protected int[][] taimachines;
 
@@ -131,8 +131,8 @@ public class JobShopProblem extends GenericShopProblem implements IBPrecFactory 
 	}
 
 	@Override
-	protected String makeSolutionLog() {
-		StringBuilder b = new StringBuilder(super.makeSolutionLog());
+	public String solutionToString() {
+		StringBuilder b = new StringBuilder(super.solutionToString());
 		if(b.length()>0) {
 			b.append("\n#Positions\n");
 			for (int i = 0; i < nbMachines; i++) {
