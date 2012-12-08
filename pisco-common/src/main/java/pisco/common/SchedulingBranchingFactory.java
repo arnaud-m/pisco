@@ -36,8 +36,6 @@ import static choco.cp.solver.search.BranchingFactory.profile;
 import static choco.cp.solver.search.BranchingFactory.randomSearch;
 import static choco.cp.solver.search.BranchingFactory.setTimes;
 import static choco.cp.solver.search.BranchingFactory.slackWDeg;
-
-
 import parser.instances.BasicSettings;
 import pisco.common.choco.branching.FinishBranchingGraph;
 import pisco.common.choco.branching.FinishBranchingNaive;

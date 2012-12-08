@@ -30,28 +30,20 @@ import gnu.trove.TIntArrayList;
 import gnu.trove.TIntProcedure;
 
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
 
-import pisco.common.DisjunctiveSettings;
 import choco.cp.common.util.preprocessor.detector.scheduling.DisjunctiveSModel;
 import choco.cp.solver.constraints.global.scheduling.precedence.ITemporalSRelation;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
-import choco.kernel.common.logging.ChocoLogging;
-import choco.kernel.common.util.tools.StringUtils;
 import choco.kernel.model.constraints.Constraint;
 import choco.kernel.solver.ContradictionException;
-import choco.kernel.solver.Solver;
 import choco.kernel.solver.SolverException;
-import choco.kernel.solver.variables.integer.IntDomainVar;
-import choco.kernel.solver.variables.scheduling.TaskVar;
+
 
 
 /**
  * Finish the shop branching in a backtrack-free way
  */
-public final class FinishBranchingGraph extends AbstractShopFakeBranching {
+public class FinishBranchingGraph extends AbstractShopFakeBranching {
 
 	protected final DisjunctiveSModel disjSMod;
 
@@ -61,10 +53,10 @@ public final class FinishBranchingGraph extends AbstractShopFakeBranching {
 
 	private final TIntArrayList[] incoming;
 
-	protected final TopologicalOrder topOrder;
+	private final TopologicalOrder topOrder;
 
 	private final LongestPath longestPath;
-
+	
 	public FinishBranchingGraph(PreProcessCPSolver solver,
 			DisjunctiveSModel disjSMod, Constraint ignoredCut) {
 		super(solver, ignoredCut);
@@ -77,7 +69,8 @@ public final class FinishBranchingGraph extends AbstractShopFakeBranching {
 		longestPath = new LongestPath(n);
 		initialize();
 	}
-
+	
+	
 
 	private final void initialize() {
 		for (int i = 0; i < solver.getNbTaskVars(); i++) {
@@ -140,363 +133,12 @@ public final class FinishBranchingGraph extends AbstractShopFakeBranching {
 			if(time > makespan) {makespan = time;}
 		}
 		solver.getMakespan().setVal(makespan);
-		solver.propagate();// check that the schedule is feasible
-
-
-		final LinkedList<TaskVar> criticalPath = sol2path(topOrder.topologicalOrder, makespan);
-		LOGGER.info("CRITICAL_PATH "+criticalPath);
-		LOGGER.info("CRITICAL_PATH_LENGTH "  + criticalPath.size());
-		final LinkedList<LinkedList<Term>> dnf = block2dnf(criticalPath);
-		LOGGER.info("DNF "  + dnf2string(dnf));
-		LOGGER.info("DNF_LENGTH "  + dnf.size());
-		boolVars.clear();
-		final LinkedList<LinkedList<Term>> cnf = dnf2cnf(solver, dnf);
-		LOGGER.info("CNF "  + cnf2string(cnf));
-		LOGGER.info("CNF_LENGTH "  + cnf.size());
-		cnf2clauses(solver, cnf);
-		LOGGER.info("BOOL_VARS "+boolVars);
-		ChocoLogging.flushLogs();
 	}
-
-	public LinkedList<TaskVar> sol2path(int[] order, int makespan) {
-		//Find one of the last task of the schedule which belongs necessarily to a critical path
-		int i = tasks.length-1;
-		while(i >= 0) {
-			if(tasks[order[i]].end().getVal() == makespan) {
-				break;
-			}
-		}
-		assert(i >= 0);
-		// Follow the critical path in reverse order 
-		final LinkedList<TaskVar> criticalPath = new LinkedList<TaskVar>();
-		boolean predfound  = true;
-		while(predfound) {
-			predfound = false;
-			final TaskVar t = tasks[order[i]];
-			criticalPath.addFirst(t);
-			final int start1= t.start().getVal();
-			final int m1 = machine(order[i]);
-			final int j1 = job(order[i]);
-			//find the next task to add to the critical path
-			while(i > 0) {
-				i--;
-				final int end2 = tasks[order[i]].end().getVal();
-				final int m2 = machine(order[i]);
-				final int j2 = job(order[i]);
-				if( start1 == end2 && (m1 == m2 || j1 == j2) ) {
-					predfound=true;
-					break;
-				}
-			}
-		}
-		//Check that the critical path is complete
-		assert criticalPath.getFirst().start().getVal() == 0 && criticalPath.getLast().end().getVal() == makespan;
-		return criticalPath;
-	}
-
-	private LinkedList<LinkedList<Term>> block2dnf(LinkedList<TaskVar> criticalPath) {
-		final LinkedList<LinkedList<Term>> dnf = new LinkedList<LinkedList<Term>>();
-		if(criticalPath.size() > 1) {
-			final LinkedList<TaskVar> block = new LinkedList<TaskVar>();
-			final ListIterator<TaskVar> iter = criticalPath.listIterator();
-			//init
-			TaskVar t1 = iter.next();
-			TaskVar t2 = iter.next();
-			block.add(t1);
-			block.add(t2);
-			boolean machineBlock =  machine(t1) == machine(t2);
-			assert machineBlock || job(t1) == job(t2);
-			//Loop over block
-			while(iter.hasNext()) {
-				t1 = t2;
-				t2 = iter.next();
-				if(machineBlock) {
-					if(machine(t1) == machine(t2)) {
-						block.add(t2);
-					} else {
-						assert job(t1) == job(t2);
-						block2dnf(dnf,block);
-						block.clear();
-						block.add(t1);
-						block.add(t2);
-						machineBlock=false;
-					}
-				}else {
-					if(job(t1) == job(t2)) {
-						block.add(t2);
-					} else {
-						assert machine(t1) == machine(t2);
-						block2dnf(dnf,block);
-						block.clear();
-						block.add(t1);
-						block.add(t2);
-						machineBlock=true;
-					}
-				}
-
-			}
-			block2dnf(dnf, block);
-		}
-		return dnf;
-	}
-
-	private void block2dnf(LinkedList<LinkedList<Term>> dnf, LinkedList<TaskVar> block) {
-		LOGGER.info("BLOCK "+block);
-		if(block.size() == 2) {
-			final TaskVar t1 = block.getFirst();
-			final TaskVar t2 = block.getLast();
-			final LinkedList<Term> and = new LinkedList<Term>();
-			and.add(litteral(t2, t1));
-			dnf.add(and);
-		} else {
-			final int n = block.size() -1;
-			//Before First
-			final TaskVar first = block.removeFirst();
-			for (int i = 0; i < n; i++) {
-				final TaskVar current = block.removeFirst();
-				final LinkedList<Term> and = new LinkedList<Term>();
-				//Current Before 
-				for (TaskVar t : block) {
-					and.add(litteral(current, t));
-				}
-				and.add(litteral(current, first));
-				dnf.add(and);
-				block.addLast(current);
-			}
-			block.addFirst(first); //revert
-			// The previous procedure must preserve the block order
-			//After Last
-			final TaskVar last = block.removeLast();
-			for (int i = 0; i < n; i++) {
-				final TaskVar current = block.removeFirst();
-				final LinkedList<Term> and = new LinkedList<Term>();
-				//Current Before 
-				for (TaskVar t : block) {
-					and.add(litteral(t,current));
-				}
-				and.add(litteral(last, current));
-				dnf.add(and);
-				block.addLast(current);
-			}
-			block.addLast(last); //revert
-		}
-		// The method must preserve the block order
-	}
-
-
-	private final static LinkedList<LinkedList<Term>> dnf2cnf(Term lit, LinkedList<Term> and) {
-		LinkedList<LinkedList<Term>> cnf = new LinkedList<LinkedList<Term>>();
-		for (Term clit: and) {
-			LinkedList<Term> or = new LinkedList<Term>();
-			or.add(lit);
-			or.add(clit);
-			cnf.add(or);
-		}
-		return cnf;
-	}
-
-
 	
-	public LinkedList<LinkedList<Term>> dnf2cnf(Solver solver, LinkedList<LinkedList<Term>> dnf) {
-		if(dnf.isEmpty()) return new LinkedList<LinkedList<Term>>();
-		LinkedList<LinkedList<Term>> cnf = null;
-		LinkedList<Term> p = dnf.removeFirst();
-		assert p.size() > 0;
-		if(p.size() == 1) {
-			if(dnf.size() == 1) {
-				cnf = dnf2cnf(p.getFirst(), dnf.removeFirst());
-			} else {
-				cnf = dnf2cnf(solver,dnf);
-				for (LinkedList<Term> or : cnf) {
-					or.addFirst(p.getFirst());
-				}
-			}
-
-		} else {
-			IntDomainVar b= makeBoolVar();
-			Term z = new Term(b,true);
-			Term nz = new Term(b, false);
-			if(dnf.size() == 1) {
-				cnf = dnf2cnf(nz, dnf.removeFirst());
-			} else {
-				cnf = dnf2cnf(solver, dnf);
-				for (LinkedList<Term> or : cnf) {
-					or.addFirst(nz);
-				}
-			}
-			//Less insertions, but at the beginning of the list for readability
-			cnf.addAll(0, dnf2cnf(z,p));
-		}
-		return cnf;
+	protected int[] getTopologicalOrder() {
+		return topOrder.topologicalOrder;
 	}
-
-	List<IntDomainVar> boolVars = new LinkedList<IntDomainVar>();
 	
-	private IntDomainVar makeBoolVar() {
-		final IntDomainVar b= solver.createBooleanVar(StringUtils.randomName());
-		boolVars.add(b);
-		return b; 
-	}
-
-	public static void cnf2clauses(Solver solver, LinkedList<LinkedList<Term>> cnf) {
-		for (LinkedList<Term> or : cnf) {
-			int npos=0;
-			for (Term term : or) {
-				if(term.isPositive()) npos++;
-			}
-			IntDomainVar[] posLits = new IntDomainVar[npos];
-			IntDomainVar[] negLits = new IntDomainVar[or.size() - npos];
-			int pidx=0;
-			int nidx=0;
-			for (Term term : or) {
-				if(term.isPositive()) posLits[pidx++]=term.getLitteral();
-				else negLits[nidx++]=term.getLitteral();
-			}
-			LOGGER.info("CLAUSE POS"+Arrays.toString(posLits) + " NEG"+Arrays.toString(negLits));
-		}
-		
-	}
-
-
-	/**
-	 * the litteral is true if t1 precedes t2.
-	 * @param t1
-	 * @param t2
-	 * @return 
-	 */
-	private Term litteral(TaskVar t1, TaskVar t2) {
-		ITemporalSRelation rel = disjSMod.getConstraint(t1, t2);
-		if(rel == null) {
-			rel = disjSMod.getConstraint(t2, t1);
-			return new Term(rel.getDirection(), false);
-		} else return new Term(rel.getDirection(),true);
-
-	}
-
-	private String formula2string(LinkedList<LinkedList<Term>> formula, String termSep, String elemSep) {
-		StringBuilder b =new StringBuilder();
-		if(! formula.isEmpty() ) {	
-		for (LinkedList<Term> and : formula) {
-			if(and.size() == 1) {
-				b.append(and.getFirst());
-			} else {
-				b.append('(');
-				for (Term litteral : and) {
-					b.append(litteral).append(termSep);
-				}
-				b.delete(b.length() -termSep.length(), b.length());
-				b.append(")");
-			}
-			b.append(elemSep);
-		}
-		b.delete(b.length() -elemSep.length(), b.length());
-		}
-		return b.toString();
-	}
-
-	
-	private String dnf2string(LinkedList<LinkedList<Term>> dnf) {
-		return formula2string(dnf, " & ", " |\n");
-//		StringBuilder b =new StringBuilder();
-//		if(! dnf.isEmpty() ) {	
-//		for (LinkedList<Term> and : dnf) {
-//			if(and.size() == 1) {
-//				b.append(and.getFirst());
-//			} else {
-//				b.append('(');
-//				for (Term litteral : and) {
-//					b.append(litteral).append(" & ");
-//				}
-//				b.delete(b.length() -3, b.length());
-//				b.append(")");
-//			}
-//			b.append(" | ");
-//		}
-//		b.delete(b.length() -3, b.length());
-//		}
-//		return b.toString();
-	}
-
-	private String cnf2string(LinkedList<LinkedList<Term>> cnf) {
-		return formula2string(cnf, " | ", " &\n");
-//		StringBuilder b =new StringBuilder();
-//		if(! cnf.isEmpty() ) {
-//			for (LinkedList<Term> and : cnf) {
-//				if(and.size() == 1) {
-//					b.append(and.getFirst());
-//				} else {
-//					b.append('(');
-//					for (Term litteral : and) {
-//						b.append(litteral).append(" | ");
-//					}
-//					b.delete(b.length() -3, b.length());
-//					b.append(")");
-//				}
-//				b.append(" & ");
-//			}
-//			b.delete(b.length() -3, b.length());
-//		}
-//		return b.toString();
-	}
-
-	private void handleBlock(LinkedList<LinkedList<Term>> dnf, LinkedList<TaskVar> block) {
-		LOGGER.info("BLOCK "+block);
-		if(block.size() == 2) {
-			TaskVar t1 = block.getFirst();
-			TaskVar t2 = block.getLast();
-			LinkedList<Term> conjonction = new LinkedList<Term>();
-			conjonction.add(litteral(t2, t1));
-			dnf.add(conjonction);
-		} else {
-			final int n = block.size() -1;
-			//Before First
-			TaskVar first = block.removeFirst();
-			for (int i = 0; i < n; i++) {
-				TaskVar current = block.removeFirst();
-				LinkedList<Term> and = new LinkedList<Term>();
-				//Current Before 
-				for (TaskVar t : block) {
-					and.add(litteral(current, t));
-				}
-				and.add(litteral(current, first));
-				dnf.add(and);
-				block.addLast(current);
-			}
-			block.addFirst(first); //revert
-			// The previous procedure must preserve the block order
-			//After Last
-			TaskVar last = block.removeLast();
-			for (int i = 0; i < n; i++) {
-				TaskVar current = block.removeFirst();
-				LinkedList<Term> and = new LinkedList<Term>();
-				//Current Before 
-				for (TaskVar t : block) {
-					and.add(litteral(t,current));
-				}
-				and.add(litteral(last, current));
-				dnf.add(and);
-				block.addLast(current);
-			}
-			block.addLast(last); //revert
-		}
-		// The method must preserve the block order
-	}
-	private static final int job(TaskVar t) {
-		return t.getExtension(DisjunctiveSettings.JOB_EXTENSION).get();
-	}
-
-	private final int job(int i) {
-		return tasks[i].getExtension(DisjunctiveSettings.JOB_EXTENSION).get();
-	}
-
-	private final int machine(int i) {
-		return tasks[i].getExtension(DisjunctiveSettings.MACHINE_EXTENSION).get();
-	}
-
-	private static final int machine(TaskVar t) {
-		return t.getExtension(DisjunctiveSettings.MACHINE_EXTENSION).get();
-	}
-
 	private final class TopologicalOrder implements TIntProcedure {
 
 		public final int[] topologicalOrder;
@@ -598,38 +240,5 @@ public final class FinishBranchingGraph extends AbstractShopFakeBranching {
 		}
 
 	}
-}
-
-
-final class Term {
-
-
-	public final IntDomainVar litteral;
-
-	public final boolean positive;
-
-	public Term(IntDomainVar value, boolean positive) {
-		super();
-		this.litteral = value;
-		this.positive = positive;
-	}
-
-
-	public final IntDomainVar getLitteral() {
-		return litteral;
-	}
-
-
-	public final boolean isPositive() {
-		return positive;
-	}
-
-
-	@Override
-	public String toString() {
-		return (positive ? "" : "~")+ litteral;
-	}
-
-
 }
 

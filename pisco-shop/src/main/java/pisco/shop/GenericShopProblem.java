@@ -40,6 +40,7 @@ import pisco.common.AbstractDisjunctiveProblem;
 import pisco.common.DisjunctiveSettings;
 import pisco.common.SchedulingBranchingFactory;
 import pisco.common.SchedulingBranchingFactory.Branching;
+import pisco.shop.choco.branching.FinishBranchingNogood;
 import pisco.shop.heuristics.CrashHeuristics;
 import pisco.shop.heuristics.ICrashLearning;
 import pisco.shop.parsers.IShopData;
@@ -49,6 +50,7 @@ import choco.cp.common.util.preprocessor.detector.scheduling.DisjunctiveSModel;
 import choco.cp.model.CPModel;
 import choco.cp.solver.CPSolver;
 import choco.cp.solver.configure.RestartFactory;
+import choco.cp.solver.constraints.integer.bool.sat.ClauseStore;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
 import choco.cp.solver.preprocessor.PreProcessConfiguration;
 import choco.kernel.common.util.tools.ArrayUtils;
@@ -308,8 +310,11 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem implements IS
 	protected AbstractIntBranchingStrategy makeDisjunctSubBranching(
 			PreProcessCPSolver solver) {
 		if( solver.getConfiguration().readBoolean( ChocoshopSettings.NOGOOD_RECORDING_FROM_SOLUTION)) {
-			return null;
-		} else return super.makeDisjunctSubBranching(solver);
+			final FinishBranchingNogood branching = new FinishBranchingNogood(solver, solver.getDisjSModel(), constraintCut);
+			solver.setSolutionMonitor(branching);
+			return branching;
+		} else 
+		return super.makeDisjunctSubBranching(solver);
 	}
 
 
@@ -333,7 +338,8 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem implements IS
 	protected void logOnDiagnostics() {
 		super.logOnDiagnostics();
 		if( solver.getConfiguration().readBoolean( ChocoshopSettings.NOGOOD_RECORDING_FROM_SOLUTION)) {
-			( (CPSolver) solver).getNogoodStore().getNbClause(); 
+			final ClauseStore nogoodStore = ( (CPSolver) solver).getNogoodStore();
+			logMsg.appendDiagnostic("NOGOODS", (nogoodStore == null ? 0: nogoodStore.getNbClause()));
 		}
 	}
 
