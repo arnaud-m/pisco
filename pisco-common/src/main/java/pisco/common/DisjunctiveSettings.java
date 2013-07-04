@@ -8,9 +8,9 @@ import choco.kernel.solver.variables.scheduling.TaskVar;
 public class DisjunctiveSettings extends BasicSettings {
 
 	
+	public final static int MACHINE_EXTENSION= TaskVar.getTaskVarExtensionNumber("pisco.common.DisjunctiveSettings.machine");
 	public final static int JOB_EXTENSION= TaskVar.getTaskVarExtensionNumber("pisco.common.DisjunctiveSettings.job");
 
-	public final static int MACHINE_EXTENSION= TaskVar.getTaskVarExtensionNumber("pisco.common.DisjunctiveSettings.machine");
 	
 	private static final long serialVersionUID = -8592947447032416433L;
 	/**

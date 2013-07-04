@@ -33,6 +33,7 @@ package pisco.shop;
 import static choco.Choco.MAX_UPPER_BOUND;
 
 import java.io.File;
+import java.util.Arrays;
 
 import parser.absconparseur.tools.UnsupportedConstraintException;
 import parser.instances.BasicSettings;
@@ -53,6 +54,9 @@ import choco.cp.solver.configure.RestartFactory;
 import choco.cp.solver.constraints.integer.bool.sat.ClauseStore;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
 import choco.cp.solver.preprocessor.PreProcessConfiguration;
+import choco.cp.solver.search.BranchingFactory;
+import choco.kernel.common.logging.ChocoLogging;
+import choco.kernel.common.util.comparator.TaskComparators;
 import choco.kernel.common.util.tools.ArrayUtils;
 import choco.kernel.common.util.tools.MathUtils;
 import choco.kernel.common.util.tools.TaskUtils;
@@ -60,9 +64,11 @@ import choco.kernel.model.Model;
 import choco.kernel.model.constraints.Constraint;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.scheduling.TaskVariable;
+import choco.kernel.solver.Configuration;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.Solver;
 import choco.kernel.solver.branch.AbstractIntBranchingStrategy;
+import choco.kernel.solver.branch.BranchingWithLoggingStatements;
 import choco.kernel.solver.constraints.AbstractSConstraint;
 import choco.kernel.solver.constraints.global.scheduling.IResource;
 import choco.kernel.solver.search.ISolutionDisplay;
@@ -247,7 +253,6 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem implements IS
 		makespan = buildObjective("makespan", MathUtils.sum(processingTimes) - 1);
 		makespan.addOption(Options.V_MAKESPAN);
 		model.addVariables(makespan);
-		//m.addConstraint( Choco.geq( makespan, getComputedLowerBound()));
 		tasks = Choco.makeTaskVarArray("T", 0, makespan.getUppB(), processingTimes, Options.V_BOUND);
 		for (int i = 0; i < tasks.length; i++) {
 			for (int j = 0; j < tasks[i].length; j++) {
@@ -288,20 +293,24 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem implements IS
 	@Override
 	public Solver buildSolver() {
 		PreProcessCPSolver solver = new PreProcessCPSolver(this.defaultConf);
-		BasicSettings.updateTimeLimit(solver.getConfiguration(),  - getPreProcTime());
-		PreProcessConfiguration.cancelPreProcess(defaultConf);
+		Configuration currentConf = solver.getConfiguration();
+		BasicSettings.updateTimeLimit(currentConf,  - getPreProcTime());
+		PreProcessConfiguration.cancelPreProcess(currentConf);
 		final SchedulingBranchingFactory.Branching br = ChocoshopSettings.getBranching(defaultConf);
 		if( br != SchedulingBranchingFactory.Branching.ST ||
 				( br == SchedulingBranchingFactory.Branching.ST && defaultConf.readBoolean(BasicSettings.LIGHT_MODEL) ) ) {
-			defaultConf.putTrue(PreProcessConfiguration.DISJUNCTIVE_MODEL_DETECTION);
-			if( defaultConf.readBoolean(BasicSettings.LIGHT_MODEL) ) {
-				defaultConf.putTrue(PreProcessConfiguration.DMD_REMOVE_DISJUNCTIVE);
+			currentConf.putTrue(PreProcessConfiguration.DISJUNCTIVE_MODEL_DETECTION);
+			if( currentConf.readBoolean(BasicSettings.LIGHT_MODEL) ) {
+				currentConf.putTrue(PreProcessConfiguration.DMD_REMOVE_DISJUNCTIVE);
 			}
 		}
 		solver.read(model);
+		solver.setSolutionDisplay(this);
 		setGoals(solver);
+		if( solver.getConfiguration().readBoolean( ChocoshopSettings.NOGOOD_RECORDING_FROM_SOLUTION)) {
+			buildExtensions(solver);
+		}
 		solver.generateSearchStrategy();
-		buildExtensions(solver);
 		return solver;
 	}
 
@@ -314,7 +323,7 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem implements IS
 			solver.setSolutionMonitor(branching);
 			return branching;
 		} else 
-		return super.makeDisjunctSubBranching(solver);
+			return super.makeDisjunctSubBranching(solver);
 	}
 
 
@@ -333,17 +342,6 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem implements IS
 	}
 
 
-
-	@Override
-	protected void logOnDiagnostics() {
-		super.logOnDiagnostics();
-		if( solver.getConfiguration().readBoolean( ChocoshopSettings.NOGOOD_RECORDING_FROM_SOLUTION)) {
-			final ClauseStore nogoodStore = ( (CPSolver) solver).getNogoodStore();
-			logMsg.appendDiagnostic("NOGOODS", (nogoodStore == null ? 0: nogoodStore.getNbClause()));
-		}
-	}
-
-
 	@Override
 	protected void logOnConfiguration() {
 		super.logOnConfiguration();
@@ -357,26 +355,17 @@ public class GenericShopProblem extends AbstractDisjunctiveProblem implements IS
 
 	@Override
 	public String solutionToString() {
-		final StringBuilder b1 = new StringBuilder();
-		final StringBuilder b2 = new StringBuilder();
-		b1.append("#m n\n").append(nbMachines).append(' ').append(nbJobs).append('\n');
-		b1.append("#Durations\n");
-		b2.append("#Starts\n");
-
+		final StringBuilder b = new StringBuilder();
 		for (int i = 0; i < nbMachines; i++) {
-			for (int j = 0; j < nbJobs; j++) {
-				//b1.append(solver.getVar(tasks[i][j]).start().getVal()).append(' ');
-				final TaskVar tij = this.solver.getVar(tasks[i][j]);
-				b1.append(tij.duration().getVal()).append(' ');
-				b2.append(tij.start().getVal()).append(' ');
-
+			TaskVar[] machine = solver.getVar(tasks[i]);
+			Arrays.sort(machine, TaskComparators.makeEarliestStartingTimeCmp());
+			for (TaskVar t : machine) {
+				b.append(t).append(' ');
 			}
-			b1.append('\n');
-			b2.append('\n');
-
+			b.append('\n');
 		}
-		b1.append('\n').append(b2);
-		return b1.toString();
+		b.deleteCharAt(b.length()-1);
+		return b.toString();
 	}
 
 

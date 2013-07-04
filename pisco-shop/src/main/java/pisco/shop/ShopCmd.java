@@ -108,7 +108,10 @@ public class ShopCmd extends AbstractBenchmarkCmd {
 		seeder =  new Random(seed);
 		final ChocoshopSettings set = getChocoshopSettings();
 		if(branching != null) set.putEnum(ChocoshopSettings.BRANCHING_TYPE, branching);
-		if( heuristics != null) set.putEnum(ChocoshopSettings.HEURISTICS_TYPE, heuristics);
+		if( heuristics != null) {
+			set.putTrue(ChocoshopSettings.PREPROCESSING_HEURISTICS);
+			set.putEnum(ChocoshopSettings.HEURISTICS_TYPE, heuristics);
+		}
 		if(lightModel != null) set.putTrue(BasicSettings.LIGHT_MODEL);
 		//load status checkers
 		switch (type) {

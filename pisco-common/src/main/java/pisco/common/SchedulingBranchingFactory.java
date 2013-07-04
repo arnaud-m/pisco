@@ -127,9 +127,16 @@ public final class SchedulingBranchingFactory {
 		super();
 	}
 
-	public final static ITemporalSRelation[] getDisjuncts(PreProcessCPSolver solver) {
+	private final static IntDomainVar[] getDirections(PreProcessCPSolver solver) {
 		final DisjunctiveSModel disjSMod = solver.getDisjSModel();
-		return disjSMod == null ? null : disjSMod.getEdges();
+		if(disjSMod == null) throw new SolverException("No Disjunctive Model for branching.");
+		return disjSMod.getDisjuncts();
+	}
+	
+	private final static ITemporalSRelation[] getDisjuncts(PreProcessCPSolver solver) {
+		final DisjunctiveSModel disjSMod = solver.getDisjSModel();
+		if(disjSMod == null) throw new SolverException("No Disjunctive Model for branching.");
+		return disjSMod.getEdges();
 	}
 
 
@@ -151,22 +158,23 @@ public final class SchedulingBranchingFactory {
 		final boolean breakTie = conf.readBoolean(BasicSettings.RANDOM_TIE_BREAKING);
 		switch (br) {
 		case LEX: {
-			return lexicographic(solver, VariableUtils.getBoolDecisionVars(solver));
+			return lexicographic(solver, getDirections(solver));
 		}
 		case RAND: {
-			return randomSearch(solver, VariableUtils.getBoolDecisionVars(solver), seed);
+			return randomSearch(solver, getDirections(solver), seed);
 		}
+		//TODO case SLACK:
 		case PROFILE: {
 			return profile(solver, solver.getDisjSModel(), makeOrderValSel(userValSel, randVal, breakTie, null, seed));
 		}
 		case DDEG: {
-			return domDDegBin(solver, VariableUtils.getBoolDecisionVars(solver), makeBoolValSel(randVal, seed));
+			return domDDegBin(solver, getDirections(solver), makeBoolValSel(randVal, seed));
 		}
 		case WDEG: {
-			return domWDegBin(solver, VariableUtils.getBoolDecisionVars(solver), makeBoolValSel(randVal, seed));
+			return domWDegBin(solver, getDirections(solver), makeBoolValSel(randVal, seed));
 		}
 		case BWDEG: {
-			return incDomWDegBin(solver, VariableUtils.getBoolDecisionVars(solver), makeBoolValSel(randVal, seed));
+			return incDomWDegBin(solver, getDirections(solver), makeBoolValSel(randVal, seed));
 		}
 		case SWDEG: {
 			return slackWDeg(solver, getDisjuncts(solver), makeOrderValSel(userValSel, randVal, breakTie, null, seed)); 

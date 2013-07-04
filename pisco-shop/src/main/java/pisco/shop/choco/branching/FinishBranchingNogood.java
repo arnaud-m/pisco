@@ -29,6 +29,7 @@ package pisco.shop.choco.branching;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.ListIterator;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import pisco.common.DisjunctiveSettings;
@@ -41,6 +42,7 @@ import choco.cp.common.util.preprocessor.detector.scheduling.DisjunctiveSModel;
 import choco.cp.solver.CPSolver;
 import choco.cp.solver.constraints.global.scheduling.precedence.ITemporalSRelation;
 import choco.cp.solver.preprocessor.PreProcessCPSolver;
+import choco.cp.solver.search.integer.branching.domwdeg.DomWDegUtils;
 import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.common.util.tools.StringUtils;
 import choco.kernel.model.constraints.Constraint;
@@ -95,15 +97,19 @@ final class NogoodFactory implements BoolConstraintFactory {
 
 class StaticBoolVarFactory implements BoolVariableFactory {
 
+	private Solver solver;
+
 	private int currentIndex;
 
 	private final IntDomainVar[] boolVarPool;
 
 
-	public StaticBoolVarFactory(IntDomainVar[] boolVarPool) {
+	public StaticBoolVarFactory(Solver solver,IntDomainVar[] boolVarPool) {
 		super();
+		this.solver=solver;
 		this.currentIndex=0;
 		this.boolVarPool = boolVarPool;
+
 	}
 
 
@@ -125,15 +131,27 @@ class StaticBoolVarFactory implements BoolVariableFactory {
 
 	@Override
 	public void validate() {
+		ChocoLogging.flushLogs();
 		try {
 			for (int i = currentIndex; i < boolVarPool.length; i++) {
 				//	for (int i = 0; i < boolVarPool.length; i++) {
-				boolVarPool[i].instantiate(0, null,false);
+				if( !boolVarPool[i].isInstantiated()) 
+					boolVarPool[i].instantiate(0, null,false);
+				else System.err.println("Bizarre");
+			}
+			for (int i = 0; i < currentIndex; i++) {
+				if( !boolVarPool[i].isInstantiated()) {
+					//ChocoLogging.getBranchingLogger().severe("INST "+boolVarPool[i]);
+					//ChocoLogging.flushLogs();
+					boolVarPool[i].instantiate(0, null,false);
+					solver.propagate();
+				}
 			}
 		} catch (ContradictionException e) {
+			ChocoLogging.flushLogs();
+			ChocoLogging.getBranchingLogger().severe(solver.pretty());
 			throw new SolverException("Contradiction raised by the boolean variables pool.");
 		}
-
 	}
 
 
@@ -146,37 +164,31 @@ class StaticBoolVarFactory implements BoolVariableFactory {
  */
 public final class FinishBranchingNogood extends FinishBranchingGraph  implements ISolutionMonitor {
 
-	//TODO Le preprocessing ne logge pas les suppressions ?
-	//TODO Le preprocessing n'est pas déterministe (ajout des variables et contraintes)
 
 	private final BoolConstraintFactory ctFactory;
 
-	private BoolVariableFactory boolFactory;
+	private final BoolVariableFactory boolFactory;
+
+	private final IBlockManager blockManager;
 
 	public FinishBranchingNogood(PreProcessCPSolver solver,
 			DisjunctiveSModel disjSMod, Constraint ignoredCut) {
 		super(solver,disjSMod, ignoredCut);
 		ctFactory = new NogoodFactory(solver);
-		initialize();
-
-	}
-
-	private final void initialize() {
-		int n = 100;
+		int n = 10000;
 		IntDomainVar[] bvarPool = new IntDomainVar[n];
 		for (int i = 0; i < n; i++) {
 			bvarPool[i]=solver.createBoundIntVar(StringUtils.randomName(), 0, 1);
+			DomWDegUtils.addVariableExtension(bvarPool[i]);
 		}
-		boolFactory = new StaticBoolVarFactory(bvarPool);
+		boolFactory = new StaticBoolVarFactory(solver, bvarPool);
+		blockManager = disjSMod.getNbArcs() == 0 ? 
+				new OSBlockManager() : new JFSBlockManager();
 	}
 
-	/**
-	 * This version build the precedence graph and then schedule in a linear time with dynamic bellman algorithm.
-	 * First, we compute the topolical order, then the longest path from the starting task node to each concrete task.
-	 * Finally, we instantiate all unscheduled starting time with the length of the computed longest path.
-	 * The drawback is the need to initialize more complex data structures.
-	 * The advantage is to schedule all tasks in linear time and to need a single propagation phase.
-	 */
+
+
+
 	@Override
 	protected void doFakeBranching() throws ContradictionException {
 		super.doFakeBranching();
@@ -187,21 +199,25 @@ public final class FinishBranchingNogood extends FinishBranchingGraph  implement
 	@Override
 	public void recordSolution(Solver solver) {
 		final LinkedList<TaskVar> criticalPath = sol2path(getTopologicalOrder(), solver.getMakespanValue());
-		LOGGER.info("CRITICAL_PATH "+criticalPath);
-		LOGGER.info("CRITICAL_PATH_LENGTH "  + criticalPath.size());
-		final LinkedList<LinkedList<Term>> dnf = block2dnf(criticalPath);
-		LOGGER.info("DNF "  + NogoodUtils.dnf2string(dnf));
-		LOGGER.info("DNF_LENGTH "  + dnf.size());
+		final LinkedList<LinkedList<Term>> dnf = blockManager.block2dnf(criticalPath);
+		if(LOGGER.isLoggable(Level.CONFIG)) {
+			LOGGER.log(Level.CONFIG, "CRITICAL_PATH {0}", criticalPath);
+			//if(LOGGER.isLoggable(Level.CONFIG)) {
+				LOGGER.config("DNF "+NogoodUtils.dnf2string(dnf));
+			//}
+			ChocoLogging.flushLogs();
+
+		}
 		final LinkedList<LinkedList<Term>> cnf = NogoodUtils.dnf2cnf(dnf, boolFactory);
-		LOGGER.info("CNF "  + NogoodUtils.cnf2string(cnf));
-		LOGGER.info("CNF_LENGTH "  + cnf.size());
-		//BoolFormulaUtils.formula2constraints(cnf, LogCtFactory.SINGLOTON);
+		if(LOGGER.isLoggable(Level.CONFIG)) {
+			LOGGER.config("CNF "+NogoodUtils.cnf2string(cnf));
+			ChocoLogging.flushLogs();
+
+		}
 		NogoodUtils.formula2constraints(cnf, ctFactory);
-		LOGGER.info("BOOL_VARS "+boolFactory.getVariableCount());
-		ChocoLogging.flushLogs();
 	}
 
-	
+
 	public LinkedList<TaskVar> sol2path(int[] order, int makespan) {
 		//Find one of the last task of the schedule which belongs necessarily to a critical path
 		int i = tasks.length-1;
@@ -237,55 +253,7 @@ public final class FinishBranchingNogood extends FinishBranchingGraph  implement
 		assert criticalPath.getFirst().start().getVal() == 0 && criticalPath.getLast().end().getVal() == makespan;
 		return criticalPath;
 	}
-
-	private LinkedList<LinkedList<Term>> block2dnf(LinkedList<TaskVar> criticalPath) {
-		final LinkedList<LinkedList<Term>> dnf = new LinkedList<LinkedList<Term>>();
-		if(criticalPath.size() > 1) {
-			final LinkedList<TaskVar> block = new LinkedList<TaskVar>();
-			final ListIterator<TaskVar> iter = criticalPath.listIterator();
-			//init
-			TaskVar t1 = iter.next();
-			TaskVar t2 = iter.next();
-			block.add(t1);
-			block.add(t2);
-			boolean machineBlock =  machine(t1) == machine(t2);
-			assert machineBlock || job(t1) == job(t2);
-			//Loop over block
-			while(iter.hasNext()) {
-				t1 = t2;
-				t2 = iter.next();
-				if(machineBlock) {
-					if(machine(t1) == machine(t2)) {
-						block.add(t2);
-					} else {
-						assert job(t1) == job(t2);
-						block2dnf(dnf,block);
-						block.clear();
-						block.add(t1);
-						block.add(t2);
-						machineBlock=false;
-					}
-				}else {
-					if(job(t1) == job(t2)) {
-						block.add(t2);
-					} else {
-						assert machine(t1) == machine(t2);
-						block2dnf(dnf,block);
-						block.clear();
-						block.add(t1);
-						block.add(t2);
-						machineBlock=true;
-					}
-				}
-
-			}
-			block2dnf(dnf, block);
-		}
-		return dnf;
-	}
-
 	private void block2dnf(LinkedList<LinkedList<Term>> dnf, LinkedList<TaskVar> block) {
-		LOGGER.info("BLOCK "+block);
 		if(block.size() == 2) {
 			final TaskVar t1 = block.getFirst();
 			final TaskVar t2 = block.getLast();
@@ -363,5 +331,118 @@ public final class FinishBranchingNogood extends FinishBranchingGraph  implement
 
 
 
+	private static interface IBlockManager {
+
+		LinkedList<LinkedList<Term>> block2dnf(LinkedList<TaskVar> criticalPath);
+
+	}
+
+	private final class OSBlockManager implements IBlockManager {
+
+		@Override
+		public LinkedList<LinkedList<Term>> block2dnf(LinkedList<TaskVar> criticalPath) {
+			final LinkedList<LinkedList<Term>> dnf = new LinkedList<LinkedList<Term>>();
+			if(criticalPath.size() > 1) {
+				final LinkedList<TaskVar> block = new LinkedList<TaskVar>();
+				final ListIterator<TaskVar> iter = criticalPath.listIterator();
+				//init
+				TaskVar t1 = iter.next();
+				TaskVar t2 = iter.next();
+				block.add(t1);
+				block.add(t2);
+				boolean machineBlock =  machine(t1) == machine(t2);
+				assert machineBlock || job(t1) == job(t2);
+				//Loop over block
+				while(iter.hasNext()) {
+					t1 = t2;
+					t2 = iter.next();
+					if(machineBlock) {
+						if(machine(t1) == machine(t2)) {
+							block.add(t2);
+						} else {
+							assert job(t1) == job(t2);
+							FinishBranchingNogood.this.block2dnf(dnf,block);
+							block.clear();
+							block.add(t1);
+							block.add(t2);
+							machineBlock=false;
+						}
+					}else {
+						if(job(t1) == job(t2)) {
+							block.add(t2);
+						} else {
+							assert machine(t1) == machine(t2);
+							FinishBranchingNogood.this.block2dnf(dnf,block);
+							block.clear();
+							block.add(t1);
+							block.add(t2);
+							machineBlock=true;
+						}
+					}
+
+				}
+				FinishBranchingNogood.this.block2dnf(dnf, block);
+			}
+			return dnf;
+		}
+
+	}
+
+
+
+	private final class JFSBlockManager implements IBlockManager {
+
+
+		@Override
+		public LinkedList<LinkedList<Term>> block2dnf(LinkedList<TaskVar> criticalPath) {
+			final LinkedList<LinkedList<Term>> dnf = new LinkedList<LinkedList<Term>>();
+			if(criticalPath.size() > 1) {
+				final LinkedList<TaskVar> block = new LinkedList<TaskVar>();
+				final ListIterator<TaskVar> iter = criticalPath.listIterator();
+				//init
+				TaskVar t1 = iter.next();
+				TaskVar t2 = iter.next();
+				block.add(t1);
+				block.add(t2);
+				boolean machineBlock =  machine(t1) == machine(t2);
+				assert machineBlock || job(t1) == job(t2);
+				//Loop over block
+				while(iter.hasNext()) {
+					t1 = t2;
+					t2 = iter.next();
+					if(machineBlock) {
+						if(machine(t1) == machine(t2)) {
+							block.add(t2);
+						} else {
+							assert job(t1) == job(t2);
+							FinishBranchingNogood.this.block2dnf(dnf,block);
+							block.clear();
+							machineBlock=false;
+						}
+					}else {
+						if(job(t1) != job(t2)) {
+							assert machine(t1) == machine(t2);
+							block.clear();
+							block.add(t1);
+							block.add(t2);
+							machineBlock=true;
+						}
+					}
+
+				}
+				if(machine(t1) == machine(t2)) {
+					FinishBranchingNogood.this.block2dnf(dnf, block);
+				}
+			}
+			return dnf;
+		}
+
+	}
+
 }
+
+
+
+
+
 

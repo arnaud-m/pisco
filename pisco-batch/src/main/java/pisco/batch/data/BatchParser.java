@@ -26,18 +26,10 @@
  */
 package pisco.batch.data;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Arrays;
-import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 import parser.absconparseur.tools.UnsupportedConstraintException;
-import parser.instances.InstanceFileParser;
-import pisco.common.parsers.AbstractTextParser;
-import choco.kernel.common.logging.ChocoLogging;
+import parser.instances.AbstractTextParser;
 
 public class BatchParser extends AbstractTextParser {
 

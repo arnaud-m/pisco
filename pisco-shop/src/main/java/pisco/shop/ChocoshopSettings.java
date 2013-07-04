@@ -90,7 +90,7 @@ public final class ChocoshopSettings extends DisjunctiveSettings {
 	 * <br/><b>Default value</b>: false
 	 */
 	@Default(value = VALUE_FALSE)
-	public static final String NOGOOD_RECORDING_FROM_SOLUTION = "cp.solution.nogood_recording";
+	public static final String NOGOOD_RECORDING_FROM_SOLUTION = "tools.solution.nogood_recording";
 
 //*****************************************************************//
 //*******************  Constructors ******************************//
@@ -138,16 +138,17 @@ public final class ChocoshopSettings extends DisjunctiveSettings {
 	public static String getBranchingMsg(Configuration conf) {
 		StringBuilder b = new StringBuilder();
 		b.append(DisjunctiveSettings.getBranchingMsg(conf));
-		b.append(conf.readString(INITIAL_CUT)).append(" INITIAL_CUT");
+		b.append(conf.readString(INITIAL_CUT)).append(" INITIAL_CUT    ");
+		if (conf.readBoolean(NOGOOD_RECORDING_FROM_SOLUTION)) b.append("NOGOOD_FROM_SOLUTION");
 		return new String(b);
 	}
 	
 	
 
-//	public static void main(String[] args) throws IOException {
-//		ChocoshopSettings s = new ChocoshopSettings();
-//		s.storeDefault(new File("/tmp/shop1.properties"), null);
-//	}
+	public static void main(String[] args) throws IOException {
+		ChocoshopSettings s = new ChocoshopSettings();
+		s.storeDefault(new File("/tmp/sandbox.properties"), null);
+	}
 
 }
 

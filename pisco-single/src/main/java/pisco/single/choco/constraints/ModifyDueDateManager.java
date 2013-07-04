@@ -67,7 +67,7 @@ public final class ModifyDueDateManager extends MixedConstraintManager {
 			final IntDomainVar x2 = solver.getVar((IntegerVariable) variables[2]);
 			final int k2 = getConstantValue(s, variables[3]);
 			final IntDomainVar dir = solver.getVar((IntegerVariable)variables[4]);
-			if(dir.getDomain().isBoolean()) {
+			if(dir.hasBooleanDomain()) {
 				return new ModifyDueDateConstraint(x1, k1, x2, k2, dir);
 			} 
 		}

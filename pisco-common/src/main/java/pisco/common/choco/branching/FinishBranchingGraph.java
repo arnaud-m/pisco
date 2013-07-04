@@ -30,6 +30,7 @@ import gnu.trove.TIntArrayList;
 import gnu.trove.TIntProcedure;
 
 import java.util.Arrays;
+import java.util.BitSet;
 
 import choco.cp.common.util.preprocessor.detector.scheduling.DisjunctiveSModel;
 import choco.cp.solver.constraints.global.scheduling.precedence.ITemporalSRelation;
@@ -56,7 +57,7 @@ public class FinishBranchingGraph extends AbstractShopFakeBranching {
 	private final TopologicalOrder topOrder;
 
 	private final LongestPath longestPath;
-	
+
 	public FinishBranchingGraph(PreProcessCPSolver solver,
 			DisjunctiveSModel disjSMod, Constraint ignoredCut) {
 		super(solver, ignoredCut);
@@ -69,11 +70,12 @@ public class FinishBranchingGraph extends AbstractShopFakeBranching {
 		longestPath = new LongestPath(n);
 		initialize();
 	}
-	
-	
+
+
 
 	private final void initialize() {
-		for (int i = 0; i < solver.getNbTaskVars(); i++) {
+		final int n = solver.getNbTaskVars();
+		for (int i = 0; i < n; i++) {
 			incoming[i]=new TIntArrayList();
 			outgoing[i]=new TIntArrayList();
 			if(tasks[i].getID() != i) {
@@ -85,9 +87,18 @@ public class FinishBranchingGraph extends AbstractShopFakeBranching {
 
 	protected final void buildGraph() {
 		for (int i = 0; i < incoming.length; i++) {
-			outgoing[i].clear();
-			incoming[i].clear();
+			outgoing[i].resetQuick();
+			incoming[i].resetQuick();
 		}
+		
+		for (int i = 0; i < incoming.length; i++) {
+			BitSet succ = disjSMod.getPrecSuccessors(i);
+			for (int j = succ.nextSetBit(0); j >= 0; j = succ.nextSetBit(j + 1)) {
+				outgoing[i].add(j);
+				incoming[j].add(i);
+			}
+		}
+		//Add fixed disjunctions
 		for (int i = 0; i < precedences.length; i++) {
 			final int lid = precedences[i].getOrigin().getID();
 			final int rid = precedences[i].getDestination().getID();
@@ -105,7 +116,7 @@ public class FinishBranchingGraph extends AbstractShopFakeBranching {
 
 	/**
 	 * This version build the precedence graph and then schedule in a linear time with dynamic bellman algorithm.
-	 * First, we compute the topolical order, then the longest path from the starting task node to each concrete task.
+	 * First, we compute the topological order, then the longest path from the starting task node to each concrete task.
 	 * Finally, we instantiate all unscheduled starting time with the length of the computed longest path.
 	 * The drawback is the need to initialize more complex data structures.
 	 * The advantage is to schedule all tasks in linear time and to need a single propagation phase.
@@ -134,11 +145,11 @@ public class FinishBranchingGraph extends AbstractShopFakeBranching {
 		}
 		solver.getMakespan().setVal(makespan);
 	}
-	
+
 	protected int[] getTopologicalOrder() {
 		return topOrder.topologicalOrder;
 	}
-	
+
 	private final class TopologicalOrder implements TIntProcedure {
 
 		public final int[] topologicalOrder;
@@ -202,6 +213,8 @@ public class FinishBranchingGraph extends AbstractShopFakeBranching {
 
 	}
 
+
+
 	private final class LongestPath implements TIntProcedure {
 
 		private int taskIndex;
@@ -239,6 +252,7 @@ public class FinishBranchingGraph extends AbstractShopFakeBranching {
 			return true;
 		}
 
-	}
+	}		
+
 }
 

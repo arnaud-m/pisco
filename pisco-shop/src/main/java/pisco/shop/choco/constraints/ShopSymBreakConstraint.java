@@ -82,6 +82,7 @@ public final class ShopSymBreakConstraint extends AbstractBinIntSConstraint {
 	}
 
 	private final static boolean IS_ALWAYS_SATISFIED = true;
+
 	@Override
 	public boolean isSatisfied(int[] tuple) {
 		return IS_ALWAYS_SATISFIED ? true : 2 * tuple[0] + task.duration().getVal() <= tuple[1] + 1;

@@ -1,7 +1,7 @@
 package pisco.single.parsers;
 
+import parser.instances.AbstractTextParser;
 import pisco.common.ITJob;
-import pisco.common.parsers.AbstractTextParser;
 
 public abstract class Abstract1MachineParser extends AbstractTextParser {
 

@@ -83,6 +83,7 @@ public abstract class AbstractDisjunctiveProblem extends AbstractMinimizeModel {
 				solver.addGoal(generateDisjunctBranching(solver, null, getSeed()));
 			}
 			solver.addGoal(makeDisjunctSubBranching(solver));
+			
 		}
 	}
 

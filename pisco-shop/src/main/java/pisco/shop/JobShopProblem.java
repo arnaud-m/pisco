@@ -130,21 +130,6 @@ public class JobShopProblem extends GenericShopProblem implements IBPrecFactory 
 		return model;
 	}
 
-	@Override
-	public String solutionToString() {
-		StringBuilder b = new StringBuilder(super.solutionToString());
-		if(b.length()>0) {
-			b.append("\n#Positions\n");
-			for (int i = 0; i < nbMachines; i++) {
-				for (int j = 0; j < nbJobs; j++) {
-					b.append(positions[i][j]).append(' ');
-				}
-				b.append('\n');
-			}
-		}
-		return b.toString();
-	}
-
 
 	class BPrecJS extends BPrecedence {
 
