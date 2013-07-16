@@ -54,7 +54,6 @@ public final class TaskPackingLmaxCF extends AbstractLmaxPackingCF {
 			taskPool[j].setDuration(newBatchDurations[j]);
 			taskPool[j].setDueDate(newBatchDueDates[offset+j]);
 		}
-		// DONE 8 nov. 2011 - do not copy the array- created 5 nov. 2011 by Arnaud Malapert
 		return PDRScheduler.insert(taskL.taskList, taskL.size, 
 				cstr.problem.getPriorityDispatchingRule(),
 				taskPool, nbNewBatches);

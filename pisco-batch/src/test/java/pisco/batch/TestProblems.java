@@ -54,7 +54,7 @@ import choco.kernel.solver.variables.integer.IntDomainVar;
 
 public class TestProblems {
 
-	private static final String PATH = "./src/main/benchmarks/daste/";
+	private static final String PATH = "./src/main/benchmarks/instances/daste/";
 	private static final BatchCmd BCMD = new BatchCmd();
 
 	private final static String[] CMD_PREFIX = { "--seed", "0" };
@@ -65,7 +65,7 @@ public class TestProblems {
 	@BeforeClass
 	public final static void setUp() {
 		ChocoLogging.toQuiet();
-		ChocoLogging.toSearch();
+		//ChocoLogging.toSearch();
 	}
 
 	@AfterClass

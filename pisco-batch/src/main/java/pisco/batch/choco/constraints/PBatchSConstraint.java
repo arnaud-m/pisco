@@ -34,6 +34,7 @@ import pisco.batch.data.BJob;
 import pisco.common.ICostAggregator;
 import pisco.common.PDR1Scheduler;
 import choco.cp.solver.variables.integer.IntVarEvent;
+import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.common.util.iterators.DisposableIntIterator;
 import choco.kernel.memory.IEnvironment;
 import choco.kernel.memory.IStateInt;
@@ -153,13 +154,13 @@ public class PBatchSConstraint extends AbstractLargeIntSConstraint{
 	@Override
 	public void awakeOnInst(int idx) throws ContradictionException
 	{
-		if(idx < this.nbBatchesX3) {
-		this.nbInstVarsB.add(1);
+		if(idx < nbBatchesX3) {
+			this.nbInstVarsB.increment();
 		}
 		this.constAwake(false);
 	}
 	
-	/**
+	/*
 	 * nothing to do
 	 */
 	@Override

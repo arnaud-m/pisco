@@ -26,6 +26,9 @@
  */
 package pisco.batch;
 
+import java.io.File;
+import java.io.IOException;
+
 import parser.instances.AbstractInstanceModel;
 import parser.instances.BasicSettings;
 import choco.kernel.solver.Configuration;
@@ -198,7 +201,12 @@ public class BatchSettings extends BasicSettings {
 	}
 
 
-
+	public static void main(String[] args) throws IOException {
+		File f  = File.createTempFile("batching", ".properties");
+		(new BatchSettings()).storeDefault(f, "");
+		System.out.println("Generate "+f);
+		
+	}
 
 
 

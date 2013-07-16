@@ -130,9 +130,8 @@ PBatchSConstraint {
 	}
 
 	protected final void updateSupDuration(int batch, int maxDelta) throws ContradictionException {
-		if(vars[batch].updateSup(vars[batch].getInf() + maxDelta, this, false)) {
-			if(vars[batch].isInstantiated()) {nbInstVarsB.add(1);}
-		}
+		vars[batch].updateSup(vars[batch].getInf() + maxDelta, this, false);
+			
 	}
 
 	protected final int getNbNonEmpty() {

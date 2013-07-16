@@ -60,8 +60,8 @@ public final class TaskPpmtnLmaxF extends AbstractTaskPList {
 			final int maxFlow = flowgraph.edmondsKarp();
 			if(expectedMaxFlow > maxFlow) {
 				//VisuFactory.getDotManager().show(flowgraph);
-				ChocoLogging.getBranchingLogger().info("FAIL");
-				//cstr.fail();
+				//ChocoLogging.getBranchingLogger().info("FAIL");
+				//FIXME cstr.fail();
 			}
 			//assert(expectedMaxFlow == maxFlow && maxFlow == flowgraph.computeSourceCutCapacity());
 		}

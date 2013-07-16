@@ -85,7 +85,6 @@ public final class PBatchLmax extends AbstractBatchingProblem {
 		// FIXME - Improve Lower bound computation - created 12 oct. 2011 by Arnaud Malapert
 		setComputedLowerBound( -data.getMinDueDate()); // equivalent to Cmax = 0 !
 		if( getHeuristic().existsSolution()) {
-			// DONE 22 sept. 2011- Useless maxLateness Field - created 21 sept. 2011 by Arnaud Malapert
 			computedHorizon = getHeuristic().getObjectiveValue().intValue() + data.getMaxDueDate();
 			//estimate maximum number of batch compatible with the horizon
 			final int[] durations = Arrays.copyOf(data.getDurations(), data.getNbJobs());
