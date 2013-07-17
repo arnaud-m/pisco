@@ -1,0 +1,7 @@
+s
+o 
+d RUNTIME
+d NBSOLS
+d NODES
+d LOWER_BOUND
+
